@@ -1,3 +1,6 @@
 {
-  "custom": "https://www.paypal.me/mirabilos"
+  "custom": [
+    "https://www.paypal.me/mirabilos",
+    "https://www.openbsd.org/donations.html"
+  ]
 }
