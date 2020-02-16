@@ -1,0 +1,84 @@
+? ./ssh/scp/obj
+? ./ssh/sftp/obj
+? ./ssh/sftp-server/obj
+? ./ssh/ssh/obj
+? ./ssh/ssh-add/obj
+? ./ssh/ssh-agent/obj
+? ./ssh/ssh-keygen/obj
+? ./ssh/ssh-keyscan/obj
+? ./ssh/ssh-keysign/obj
+? ./ssh/ssh-pkcs11-helper/obj
+? ./ssh/ssh-sk-helper/obj
+? ./ssh/sshd/obj
+Index: ./ssh/Makefile.inc
+===================================================================
+RCS file: /cvs/src/usr.bin/ssh/Makefile.inc,v
+retrieving revision 1.82
+diff -u -p -r1.82 Makefile.inc
+--- ./ssh/Makefile.inc	25 Jan 2020 23:02:13 -0000	1.82
++++ ./ssh/Makefile.inc	12 Feb 2020 03:08:06 -0000
+@@ -133,7 +133,7 @@ SRCS_MODULI+=
+ .endif
+ 
+ SRCS_SK=		ssh-sk.c
+-SRCS_SK+=		sk-usbhid.c
++#SRCS_SK+=		sk-usbhid.c
+ SRCS_SK_CLIENT=		ssh-sk-client.c
+ SRCS_SK_CLIENT+=	msg.c
+ 
+Index: ./ssh/misc.c
+===================================================================
+RCS file: /cvs/src/usr.bin/ssh/misc.c,v
+retrieving revision 1.146
+diff -u -p -r1.146 misc.c
+--- ./ssh/misc.c	28 Jan 2020 01:49:36 -0000	1.146
++++ ./ssh/misc.c	12 Feb 2020 03:08:06 -0000
+@@ -1493,7 +1493,7 @@ static const struct {
+ 	{ "cs6", IPTOS_DSCP_CS6 },
+ 	{ "cs7", IPTOS_DSCP_CS7 },
+ 	{ "ef", IPTOS_DSCP_EF },
+-	{ "le", IPTOS_DSCP_LE },
++	{ "le", 0x01 },
+ 	{ "lowdelay", IPTOS_LOWDELAY },
+ 	{ "throughput", IPTOS_THROUGHPUT },
+ 	{ "reliability", IPTOS_RELIABILITY },
+Index: ./ssh/ssh-sk.c
+===================================================================
+RCS file: /cvs/src/usr.bin/ssh/ssh-sk.c,v
+retrieving revision 1.27
+diff -u -p -r1.27 ssh-sk.c
+--- ./ssh/ssh-sk.c	6 Feb 2020 22:30:54 -0000	1.27
++++ ./ssh/ssh-sk.c	12 Feb 2020 03:08:06 -0000
+@@ -104,10 +104,14 @@ sshsk_open(const char *path)
+ 	}
+ 	/* Skip the rest if we're using the linked in middleware */
+ 	if (strcasecmp(ret->path, "internal") == 0) {
++#if 0
+ 		ret->sk_enroll = ssh_sk_enroll;
+ 		ret->sk_sign = ssh_sk_sign;
+ 		ret->sk_load_resident_keys = ssh_sk_load_resident_keys;
+ 		return ret;
++#endif
++		error("Internal provider not available");
++		goto fail;
+ 	}
+ 	if ((ret->dlhandle = dlopen(path, RTLD_NOW)) == NULL) {
+ 		error("Provider \"%s\" dlopen failed: %s", path, dlerror());
+Index: ./ssh/ssh-sk-helper/Makefile
+===================================================================
+RCS file: /cvs/src/usr.bin/ssh/ssh-sk-helper/Makefile,v
+retrieving revision 1.5
+diff -u -p -r1.5 Makefile
+--- ./ssh/ssh-sk-helper/Makefile	13 Dec 2019 19:09:10 -0000	1.5
++++ ./ssh/ssh-sk-helper/Makefile	12 Feb 2020 03:08:06 -0000
+@@ -13,8 +13,8 @@ MAN=	ssh-sk-helper.8
+ 
+ .include <bsd.prog.mk>
+ 
+-LDADD+= -lfido2 -lcbor -lusbhid
+-DPADD+=	${LIBFIDO2} ${LIBCBOR} ${LIBUSBHID}
++#LDADD+= -lfido2 -lcbor -lusbhid
++#DPADD+=	${LIBFIDO2} ${LIBCBOR} ${LIBUSBHID}
+ 
+ LDADD+=	-lcrypto -lutil
+ DPADD+=	${LIBCRYPTO} ${LIBUTIL}
