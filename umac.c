@@ -66,7 +66,7 @@
 /* ---------------------------------------------------------------------- */
 
 #include <sys/types.h>
-#include <endian.h>
+#include <sys/endian.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
