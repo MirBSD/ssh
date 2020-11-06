@@ -13,21 +13,7 @@ PROG=	ssh
 BINDIR=	/usr/bin
 MAN=	ssh.1 ssh_config.5
 
-.include <bsd.own.mk>
-
-KERBEROS5=no
-
-.if (${KERBEROS5:L} == "yes")
-CFLAGS+= -DKRB5 -I${DESTDIR}/usr/include/kerberosV -DGSSAPI
-.endif # KERBEROS5
-
 .include <bsd.prog.mk>
-
-.if (${KERBEROS5:L} == "yes")
-DPADD+=  ${LIBGSSAPI} ${LIBKRB5}
-LDADD+=  -lgssapi -lkrb5 -lasn1
-LDADD+=  -lwind -lroken -lcom_err -lpthread -lheimbase
-.endif # KERBEROS5
 
 .if (${OPENSSL:L} == "yes")
 LDADD+=	-lcrypto

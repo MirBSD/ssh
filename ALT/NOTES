@@ -1,0 +1,3 @@
+unifdef:
+-DKRB5
+-DGSSAPI
