@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <openssl/ecdsa.h>
 #include <openssl/rsa.h>
 
 #include "libressl-api-compat.h"

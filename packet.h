@@ -21,15 +21,7 @@
 #include <sys/signal.h>
 #include <sys/queue.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
-#else /* OPENSSL */
-#define BIGNUM		void
-#define EC_GROUP	void
-#define EC_POINT	void
-#endif /* WITH_OPENSSL */
 
 struct kex;
 struct sshkey;

@@ -23,10 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/objects.h>
-#include <openssl/ec.h>
-#endif /* WITH_OPENSSL */
 
 #include "log.h"
 #include "misc.h"

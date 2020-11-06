@@ -30,8 +30,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include <openssl/ecdh.h>
-
 #include "sshkey.h"
 #include "kex.h"
 #include "sshbuf.h"

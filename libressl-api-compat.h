@@ -25,7 +25,6 @@ __RCSID("$MirOS$");
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/dsa.h>
-#include <openssl/ecdsa.h>
 #include <openssl/dh.h>
 
 /* LibreSSL/OpenSSL 1.1x API compat */

@@ -29,17 +29,8 @@
 #include "mac.h"
 #include "crypto_api.h"
 
-#ifdef WITH_OPENSSL
 #include <openssl/bn.h>
 #include <openssl/dh.h>
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
-#else /* OPENSSL */
-#define BIGNUM		void
-#define DH		void
-#define EC_KEY		void
-#define EC_GROUP	void
-#endif /* WITH_OPENSSL */
 
 #define KEX_COOKIE_LEN	16
 

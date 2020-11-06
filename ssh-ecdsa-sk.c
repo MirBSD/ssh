@@ -30,8 +30,6 @@
 #include <sys/types.h>
 
 #include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
 #include <openssl/evp.h>
 
 #include <string.h>

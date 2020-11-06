@@ -151,7 +151,6 @@
 #include <openssl/dsa.h>
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
-#include <openssl/ecdsa.h>
 #include <openssl/dh.h>
 
 #include "libressl-api-compat.h"

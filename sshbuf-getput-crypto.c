@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <openssl/bn.h>
-#include <openssl/ec.h>
 
 #include "ssherr.h"
 #define SSHBUF_INTERNAL

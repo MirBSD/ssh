@@ -28,19 +28,8 @@
 
 #include <sys/types.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/rsa.h>
 #include <openssl/dsa.h>
-#include <openssl/ec.h>
-#include <openssl/ecdsa.h>
-#else /* OPENSSL */
-#define BIGNUM		void
-#define RSA		void
-#define DSA		void
-#define EC_KEY		void
-#define EC_GROUP	void
-#define EC_POINT	void
-#endif /* WITH_OPENSSL */
 
 #define SSH_RSA_MINIMUM_MODULUS_SIZE	1024
 #define SSH_KEY_MAX_SIGN_DATA_SIZE	(1 << 20)

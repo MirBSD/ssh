@@ -25,7 +25,6 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include <openssl/ecdsa.h>
 #include <openssl/x509.h>
 #include <openssl/err.h>
 
