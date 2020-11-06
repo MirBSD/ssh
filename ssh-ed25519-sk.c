@@ -1,4 +1,4 @@
-/* $OpenBSD: ssh-ed25519-sk.c,v 1.4 2019/11/26 03:04:27 djm Exp $ */
+/* $OpenBSD: ssh-ed25519-sk.c,v 1.6 2020/10/18 11:32:02 djm Exp $ */
 /*
  * Copyright (c) 2019 Markus Friedl.  All rights reserved.
  *
@@ -137,8 +137,7 @@ ssh_ed25519_sk_verify(const struct sshkey *key,
 	}
 	if ((ret = crypto_sign_ed25519_open(m, &mlen, sm, smlen,
 	    key->ed25519_pk)) != 0) {
-		debug2("%s: crypto_sign_ed25519_open failed: %d",
-		    __func__, ret);
+		debug2_f("crypto_sign_ed25519_open failed: %d", ret);
 	}
 	if (ret != 0 || mlen != smlen - len) {
 		r = SSH_ERR_SIGNATURE_INVALID;
@@ -152,10 +151,8 @@ ssh_ed25519_sk_verify(const struct sshkey *key,
 		details = NULL;
 	}
  out:
-	if (m != NULL) {
-		explicit_bzero(m, smlen); /* NB mlen may be invalid if r != 0 */
-		free(m);
-	}
+	if (m != NULL)
+		freezero(m, smlen); /* NB mlen may be invalid if r != 0 */
 	sshkey_sig_details_free(details);
 	sshbuf_free(b);
 	sshbuf_free(encoded);
