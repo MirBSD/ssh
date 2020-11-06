@@ -18,10 +18,8 @@ MAN=	sshd.8 sshd_config.5
 
 .include <bsd.prog.mk>
 
-.if (${OPENSSL:L} == "yes")
 LDADD+=	-lcrypto
 DPADD+=	${LIBCRYPTO}
-.endif
 
 LDADD+=	-lutil
 DPADD+=	${LIBUTIL}

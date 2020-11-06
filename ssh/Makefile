@@ -15,10 +15,8 @@ MAN=	ssh.1 ssh_config.5
 
 .include <bsd.prog.mk>
 
-.if (${OPENSSL:L} == "yes")
 LDADD+=	-lcrypto
 DPADD+=	${LIBCRYPTO}
-.endif
 
 LDADD+=	-lutil
 DPADD+=	${LIBUTIL}
