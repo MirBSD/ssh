@@ -1,4 +1,4 @@
-/* $OpenBSD: sftp.c,v 1.197 2020/01/23 07:10:22 dtucker Exp $ */
+/* $OpenBSD: sftp.c,v 1.204 2020/10/29 02:52:43 djm Exp $ */
 /*
  * Copyright (c) 2001-2004 Damien Miller <djm@openbsd.org>
  *
@@ -1144,7 +1144,7 @@ undo_glob_escape(char *s)
  * last argument's quote has been properly terminated or 0 otherwise.
  * This parameter is only of use if "sloppy" is set.
  */
-#define MAXARGS 	128
+#define MAXARGS		128
 #define MAXARGLEN	8192
 static char **
 makeargv(const char *arg, int *argcp, int sloppy, char *lastquote,
@@ -1302,7 +1302,7 @@ parse_args(const char **cpp, int *ignore_errors, int *disable_echo, int *aflag,
 	const char *cmd, *cp = *cpp;
 	char *cp2, **argv;
 	int base = 0;
-	long l;
+	long long ll;
 	int path1_mandatory = 0, i, cmdnum, optidx, argc;
 
 	/* Skip leading whitespace */
@@ -1460,16 +1460,16 @@ parse_args(const char **cpp, int *ignore_errors, int *disable_echo, int *aflag,
 		if (argc - optidx < 1)
 			goto need_num_arg;
 		errno = 0;
-		l = strtol(argv[optidx], &cp2, base);
+		ll = strtoll(argv[optidx], &cp2, base);
 		if (cp2 == argv[optidx] || *cp2 != '\0' ||
-		    ((l == LONG_MIN || l == LONG_MAX) && errno == ERANGE) ||
-		    l < 0) {
+		    ((ll == LLONG_MIN || ll == LLONG_MAX) && errno == ERANGE) ||
+		    ll < 0 || ll > UINT32_MAX) {
  need_num_arg:
 			error("You must supply a numeric argument "
 			    "to the %s command.", cmd);
 			return -1;
 		}
-		*n_arg = l;
+		*n_arg = ll;
 		if (cmdnum == I_LUMASK)
 			break;
 		/* Get pathname (mandatory) */
@@ -2072,7 +2072,7 @@ complete(EditLine *el, int ch)
 
 	lf = el_line(el);
 	if (el_get(el, EL_CLIENTDATA, (void**)&complete_ctx) != 0)
-		fatal("%s: el_get failed", __func__);
+		fatal_f("el_get failed");
 
 	/* Figure out which argument the cursor points to */
 	cursor = lf->cursor - lf->buffer;
@@ -2316,7 +2316,7 @@ usage(void)
 	extern char *__progname;
 
 	fprintf(stderr,
-	    "usage: %s [-46aCfpqrv] [-B buffer_size] [-b batchfile] [-c cipher]\n"
+	    "usage: %s [-46AaCfNpqrv] [-B buffer_size] [-b batchfile] [-c cipher]\n"
 	    "          [-D sftp_server_path] [-F ssh_config] [-i identity_file]\n"
 	    "          [-J destination] [-l limit] [-o ssh_option] [-P port]\n"
 	    "          [-R num_requests] [-S program] [-s subsystem | sftp_server]\n"
@@ -2328,9 +2328,9 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	int in, out, ch, err, tmp, port = -1;
+	int in, out, ch, err, tmp, port = -1, noisy = 0;
 	char *host = NULL, *user, *cp, *file2 = NULL;
-	int debug_level = 0, sshver = 2;
+	int debug_level = 0;
 	char *file1 = NULL, *sftp_server = NULL;
 	char *ssh_program = _PATH_SSH_PROGRAM, *sftp_direct = NULL;
 	const char *errstr;
@@ -2351,7 +2351,6 @@ main(int argc, char **argv)
 	args.list = NULL;
 	addargs(&args, "%s", ssh_program);
 	addargs(&args, "-oForwardX11 no");
-	addargs(&args, "-oForwardAgent no");
 	addargs(&args, "-oPermitLocalCommand no");
 	addargs(&args, "-oClearAllForwardings yes");
 
@@ -2359,9 +2358,10 @@ main(int argc, char **argv)
 	infile = stdin;
 
 	while ((ch = getopt(argc, argv,
-	    "1246afhpqrvCc:D:i:l:o:s:S:b:B:F:J:P:R:")) != -1) {
+	    "1246AafhNpqrvCc:D:i:l:o:s:S:b:B:F:J:P:R:")) != -1) {
 		switch (ch) {
 		/* Passed through to ssh(1) */
+		case 'A':
 		case '4':
 		case '6':
 		case 'C':
@@ -2395,12 +2395,10 @@ main(int argc, char **argv)
 			debug_level++;
 			break;
 		case '1':
-			sshver = 1;
-			if (sftp_server == NULL)
-				sftp_server = _PATH_SFTP_SERVER;
+			fatal("SSH protocol v.1 is no longer supported");
 			break;
 		case '2':
-			sshver = 2;
+			/* accept silently */
 			break;
 		case 'a':
 			global_aflag = 1;
@@ -2424,6 +2422,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			global_fflag = 1;
+			break;
+		case 'N':
+			noisy = 1; /* Used to clear quiet mode after getopt */
 			break;
 		case 'p':
 			global_pflag = 1;
@@ -2460,8 +2461,14 @@ main(int argc, char **argv)
 		}
 	}
 
+	/* Do this last because we want the user to be able to override it */
+	addargs(&args, "-oForwardAgent no");
+
 	if (!isatty(STDERR_FILENO))
 		showprogress = 0;
+
+	if (noisy)
+		quiet = 0;
 
 	log_init(argv[0], ll, SYSLOG_FACILITY_USER, 1);
 
@@ -2505,7 +2512,6 @@ main(int argc, char **argv)
 			addargs(&args, "-l");
 			addargs(&args, "%s", user);
 		}
-		addargs(&args, "-oProtocol %d", sshver);
 
 		/* no subsystem if the server-spec contains a '/' */
 		if (sftp_server == NULL || strchr(sftp_server, '/') == NULL)
