@@ -2,6 +2,10 @@
 
 .include <bsd.own.mk>
 
+.if "${OStype}" == "MirBSD"
+COMPILER_VERSION?=gcc3
+.endif
+
 CFLAGS+=	-I${.CURDIR}/..
 .if ${MACHINE} != "hppa"
 CFLAGS+=	-fstack-protector-all
