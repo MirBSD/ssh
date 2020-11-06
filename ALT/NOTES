@@ -2,8 +2,6 @@
 - use -DNO_BSDAUTH instead of -DBSD_AUTH next time
 
 drop:
-- cipher-aesctr.h
-- rijndael.h
 
 unifdef:
 -UKRB5

@@ -58,7 +58,6 @@ struct sshcipher_ctx {
 	int	encrypt;
 	EVP_CIPHER_CTX *evp;
 	struct chachapoly_ctx *cp_ctx;
-	struct aesctr_ctx ac_ctx; /* XXX union with evp? */
 	const struct sshcipher *cipher;
 };
 
@@ -275,16 +274,6 @@ cipher_init(struct sshcipher_ctx **ccp, const struct sshcipher *cipher,
 		ret = 0;
 		goto out;
 	}
-#ifndef WITH_OPENSSL
-	if ((cc->cipher->flags & CFLAG_AESCTR) != 0) {
-		aesctr_keysetup(&cc->ac_ctx, key, 8 * keylen, 8 * ivlen);
-		aesctr_ivsetup(&cc->ac_ctx, iv);
-		ret = 0;
-		goto out;
-	}
-	ret = SSH_ERR_INVALID_ARGUMENT;
-	goto out;
-#else /* WITH_OPENSSL */
 	type = (*cipher->evptype)();
 	if ((cc->evp = EVP_CIPHER_CTX_new()) == NULL) {
 		ret = SSH_ERR_ALLOC_FAIL;
@@ -313,7 +302,6 @@ cipher_init(struct sshcipher_ctx **ccp, const struct sshcipher *cipher,
 		goto out;
 	}
 	ret = 0;
-#endif /* WITH_OPENSSL */
  out:
 	if (ret == 0) {
 		/* success */
@@ -351,16 +339,6 @@ cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
 		memcpy(dest, src, aadlen + len);
 		return 0;
 	}
-#ifndef WITH_OPENSSL
-	if ((cc->cipher->flags & CFLAG_AESCTR) != 0) {
-		if (aadlen)
-			memcpy(dest, src, aadlen);
-		aesctr_encrypt_bytes(&cc->ac_ctx, src + aadlen,
-		    dest + aadlen, len);
-		return 0;
-	}
-	return SSH_ERR_INVALID_ARGUMENT;
-#else
 	if (authlen) {
 		u_char lastiv[1];
 
@@ -398,7 +376,6 @@ cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
 			return SSH_ERR_LIBCRYPTO_ERROR;
 	}
 	return 0;
-#endif
 }
 
 /* Extract the packet length, including any decryption necessary beforehand */
