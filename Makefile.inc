@@ -136,7 +136,6 @@ SRCS_MODULI+=
 .endif
 
 SRCS_SK=		ssh-sk.c
-SRCS_SK+=		sk-usbhid.c
 SRCS_SK_CLIENT=		ssh-sk-client.c
 SRCS_SK_CLIENT+=	msg.c
 

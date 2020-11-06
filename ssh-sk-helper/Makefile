@@ -13,8 +13,5 @@ MAN=	ssh-sk-helper.8
 
 .include <bsd.prog.mk>
 
-LDADD+= -lfido2 -lcbor -lusbhid
-DPADD+=	${LIBFIDO2} ${LIBCBOR} ${LIBUSBHID}
-
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}

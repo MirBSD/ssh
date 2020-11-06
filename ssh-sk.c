@@ -108,10 +108,14 @@ sshsk_open(const char *path)
 	}
 	/* Skip the rest if we're using the linked in middleware */
 	if (strcasecmp(ret->path, "internal") == 0) {
+#if 0
 		ret->sk_enroll = ssh_sk_enroll;
 		ret->sk_sign = ssh_sk_sign;
 		ret->sk_load_resident_keys = ssh_sk_load_resident_keys;
 		return ret;
+#endif
+		error("Internal provider not available");
+		goto fail;
 	}
 	if ((ret->dlhandle = dlopen(path, RTLD_NOW)) == NULL) {
 		error("Provider \"%s\" dlopen failed: %s", path, dlerror());
