@@ -1,8 +1,3 @@
-Note: EVP_sha256 now exists
-Note: use -DNO_BSDAUTH instead of -DBSD_AUTH next time
-
-Index: src/usr.bin/ssh/LICENCE
-diff -up src/usr.bin/ssh/LICENCE:1.1.1.1 src/usr.bin/ssh/LICENCE:1.8
 --- src/usr.bin/ssh/LICENCE:1.1.1.1	Sat Feb  5 18:29:52 2005
 +++ src/usr.bin/ssh/LICENCE	Sat Jan 15 22:52:39 2011
 @@ -202,5 +202,27 @@ OpenSSH contains no GPL code.

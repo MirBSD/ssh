@@ -1,3 +1,6 @@
+- EVP_sha256 now exists
+- use -DNO_BSDAUTH instead of -DBSD_AUTH next time
+
 unifdef:
--DKRB5
--DGSSAPI
+-UKRB5
+-UGSSAPI
