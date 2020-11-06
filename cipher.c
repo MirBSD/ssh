@@ -41,6 +41,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "libressl-api-compat.h"
+
 #include "cipher.h"
 #include "misc.h"
 #include "sshbuf.h"

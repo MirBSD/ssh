@@ -34,6 +34,8 @@
 #include <limits.h>
 #include <locale.h>
 
+#include "libressl-api-compat.h"
+
 #include "xmalloc.h"
 #include "sshkey.h"
 #include "authfile.h"

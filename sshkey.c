@@ -34,6 +34,8 @@
 #include <openssl/pem.h>
 #endif
 
+#include "libressl-api-compat.h"
+
 #include "crypto_api.h"
 
 #include <errno.h>

@@ -31,6 +31,8 @@
 
 #include <openssl/dh.h>
 
+#include "libressl-api-compat.h"
+
 #include "sshkey.h"
 #include "cipher.h"
 #include "digest.h"

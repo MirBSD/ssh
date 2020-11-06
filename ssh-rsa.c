@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "libressl-api-compat.h"
+
 #include "sshbuf.h"
 #include "compat.h"
 #include "ssherr.h"

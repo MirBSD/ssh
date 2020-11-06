@@ -32,6 +32,8 @@
 #include <string.h>
 #include <signal.h>
 
+#include "libressl-api-compat.h"
+
 #include "sshkey.h"
 #include "cipher.h"
 #include "digest.h"

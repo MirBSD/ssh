@@ -49,6 +49,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libressl-api-compat.h"
+
 #include "atomicio.h"
 #include "xmalloc.h"
 #include "ssh.h"

@@ -32,6 +32,8 @@
 #include <openssl/bn.h>
 #include <openssl/dh.h>
 
+#include "libressl-api-compat.h"
+
 #include "dh.h"
 #include "pathnames.h"
 #include "log.h"

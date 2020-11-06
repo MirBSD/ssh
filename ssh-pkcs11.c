@@ -32,6 +32,8 @@
 #define CRYPTOKI_COMPAT
 #include "pkcs11.h"
 
+#include "libressl-api-compat.h"
+
 #include "log.h"
 #include "misc.h"
 #include "sshkey.h"

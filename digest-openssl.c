@@ -22,6 +22,8 @@
 
 #include <openssl/evp.h>
 
+#include "libressl-api-compat.h"
+
 #include "sshbuf.h"
 #include "digest.h"
 #include "ssherr.h"

@@ -33,6 +33,8 @@
 
 #include <string.h>
 
+#include "libressl-api-compat.h"
+
 #include "sshbuf.h"
 #include "ssherr.h"
 #include "digest.h"

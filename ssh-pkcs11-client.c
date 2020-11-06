@@ -28,6 +28,8 @@
 #include <openssl/ecdsa.h>
 #include <openssl/rsa.h>
 
+#include "libressl-api-compat.h"
+
 #include "pathnames.h"
 #include "xmalloc.h"
 #include "sshbuf.h"
