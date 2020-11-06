@@ -2,14 +2,7 @@
 
 .include <bsd.own.mk>
 
-.if "${OStype}" == "MirBSD"
-COMPILER_VERSION?=gcc3
-.endif
-
 CFLAGS+=	-I${.CURDIR}/..
-.if ${MACHINE} != "hppa"
-CFLAGS+=	-fstack-protector-all
-.endif
 
 CDIAGFLAGS=	-Wall
 CDIAGFLAGS+=	-Wextra
@@ -21,20 +14,6 @@ CDIAGFLAGS+=	-Wshadow
 CDIAGFLAGS+=	-Wstrict-prototypes
 CDIAGFLAGS+=	-Wunused
 CDIAGFLAGS+=	-Wno-unused-parameter # Lots of these in protocol handlers.
-.if ${COMPILER_VERSION:L} == "clang"
-CDIAGFLAGS+=	-Widiomatic-parentheses -Wparentheses
-.endif
-.if ${COMPILER_VERSION:L} != "gcc3"
-CDIAGFLAGS+=	-Wstrict-aliasing=2
-CDIAGFLAGS+=	-Wold-style-definition
-.endif
-
-#CDIAGFLAGS+=	-Werror
-#CDIAGFLAGS+=	-fno-common
-#DEBUG=-g
-#INSTALL_STRIP=
-
-WARNINGS=yes
 
 OPENSSL?=	yes
 ZLIB?=		yes
