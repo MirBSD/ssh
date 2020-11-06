@@ -33,10 +33,6 @@
 #include <unistd.h>
 #include <poll.h>
 
-#ifdef WITH_OPENSSL
-#include <openssl/crypto.h>
-#endif
-
 #include "ssh.h"
 #include "ssh2.h"
 #include "atomicio.h"
@@ -81,7 +77,6 @@ struct kexalg {
 	int hash_alg;
 };
 static const struct kexalg kexalgs[] = {
-#ifdef WITH_OPENSSL
 	{ KEX_DH1, KEX_DH_GRP1_SHA1, 0, SSH_DIGEST_SHA1 },
 	{ KEX_DH14_SHA1, KEX_DH_GRP14_SHA1, 0, SSH_DIGEST_SHA1 },
 	{ KEX_DH14_SHA256, KEX_DH_GRP14_SHA256, 0, SSH_DIGEST_SHA256 },
@@ -95,7 +90,6 @@ static const struct kexalg kexalgs[] = {
 	    SSH_DIGEST_SHA384 },
 	{ KEX_ECDH_SHA2_NISTP521, KEX_ECDH_SHA2, NID_secp521r1,
 	    SSH_DIGEST_SHA512 },
-#endif
 	{ KEX_CURVE25519_SHA256, KEX_C25519_SHA256, 0, SSH_DIGEST_SHA256 },
 	{ KEX_CURVE25519_SHA256_OLD, KEX_C25519_SHA256, 0, SSH_DIGEST_SHA256 },
 	{ KEX_SNTRUP4591761X25519_SHA512, KEX_KEM_SNTRUP4591761X25519_SHA512, 0,
@@ -667,10 +661,8 @@ kex_free(struct kex *kex)
 	if (kex == NULL)
 		return;
 
-#ifdef WITH_OPENSSL
 	DH_free(kex->dh);
 	EC_KEY_free(kex->ec_client_key);
-#endif
 	for (mode = 0; mode < MODE_MAX; mode++) {
 		kex_free_newkeys(kex->newkeys[mode]);
 		kex->newkeys[mode] = NULL;

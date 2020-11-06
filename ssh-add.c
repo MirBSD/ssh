@@ -38,9 +38,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/evp.h>
-#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -663,9 +661,7 @@ main(int argc, char **argv)
 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
 	sanitise_stdfd();
 
-#ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
-#endif
 	log_init(__progname, log_level, log_facility, 1);
 
 	setvbuf(stdout, NULL, _IOLBF, 0);

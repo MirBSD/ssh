@@ -26,8 +26,6 @@
 #ifndef DH_H
 #define DH_H
 
-#ifdef WITH_OPENSSL
-
 struct dhgroup {
 	int size;
 	BIGNUM *g;
@@ -77,7 +75,5 @@ u_int	 dh_estimate(int);
 #define MODULI_TESTS_MILLER_RABIN	(0x04)
 #define MODULI_TESTS_JACOBI		(0x08)
 #define MODULI_TESTS_ELLIPTIC		(0x10)
-
-#endif /* WITH_OPENSSL */
 
 #endif /* DH_H */

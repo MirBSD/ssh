@@ -49,10 +49,6 @@
 #include "ssherr.h"
 #include "digest.h"
 
-#ifndef WITH_OPENSSL
-#define EVP_CIPHER_CTX void
-#endif
-
 struct sshcipher_ctx {
 	int	plaintext;
 	int	encrypt;
@@ -73,15 +69,10 @@ struct sshcipher {
 #define CFLAG_AESCTR		(1<<2)
 #define CFLAG_NONE		(1<<3)
 #define CFLAG_INTERNAL		CFLAG_NONE /* Don't use "none" for packets */
-#ifdef WITH_OPENSSL
 	const EVP_CIPHER	*(*evptype)(void);
-#else
-	void	*ignored;
-#endif
 };
 
 static const struct sshcipher ciphers[] = {
-#ifdef WITH_OPENSSL
 	{ "3des-cbc",		8, 24, 0, 0, CFLAG_CBC, EVP_des_ede3_cbc },
 	{ "aes128-cbc",		16, 16, 0, 0, CFLAG_CBC, EVP_aes_128_cbc },
 	{ "aes192-cbc",		16, 24, 0, 0, CFLAG_CBC, EVP_aes_192_cbc },
@@ -95,11 +86,6 @@ static const struct sshcipher ciphers[] = {
 				16, 16, 12, 16, 0, EVP_aes_128_gcm },
 	{ "aes256-gcm@openssh.com",
 				16, 32, 12, 16, 0, EVP_aes_256_gcm },
-#else
-	{ "aes128-ctr",		16, 16, 0, 0, CFLAG_AESCTR, NULL },
-	{ "aes192-ctr",		16, 24, 0, 0, CFLAG_AESCTR, NULL },
-	{ "aes256-ctr",		16, 32, 0, 0, CFLAG_AESCTR, NULL },
-#endif
 	{ "chacha20-poly1305@openssh.com",
 				8, 64, 0, 16, CFLAG_CHACHAPOLY, NULL },
 	{ "none",		8, 0, 0, 0, CFLAG_NONE, NULL },
@@ -246,10 +232,8 @@ cipher_init(struct sshcipher_ctx **ccp, const struct sshcipher *cipher,
 {
 	struct sshcipher_ctx *cc = NULL;
 	int ret = SSH_ERR_INTERNAL_ERROR;
-#ifdef WITH_OPENSSL
 	const EVP_CIPHER *type;
 	int klen;
-#endif
 
 	*ccp = NULL;
 	if ((cc = calloc(sizeof(*cc), 1)) == NULL)
@@ -308,9 +292,7 @@ cipher_init(struct sshcipher_ctx **ccp, const struct sshcipher *cipher,
 		*ccp = cc;
 	} else {
 		if (cc != NULL) {
-#ifdef WITH_OPENSSL
 			EVP_CIPHER_CTX_free(cc->evp);
-#endif /* WITH_OPENSSL */
 			freezero(cc, sizeof(*cc));
 		}
 	}
@@ -402,10 +384,8 @@ cipher_free(struct sshcipher_ctx *cc)
 		cc->cp_ctx = NULL;
 	} else if ((cc->cipher->flags & CFLAG_AESCTR) != 0)
 		explicit_bzero(&cc->ac_ctx, sizeof(cc->ac_ctx));
-#ifdef WITH_OPENSSL
 	EVP_CIPHER_CTX_free(cc->evp);
 	cc->evp = NULL;
-#endif
 	freezero(cc, sizeof(*cc));
 }
 
@@ -423,20 +403,14 @@ cipher_get_keyiv_len(const struct sshcipher_ctx *cc)
 		return 0;
 	else if ((c->flags & CFLAG_AESCTR) != 0)
 		return sizeof(cc->ac_ctx.ctr);
-#ifdef WITH_OPENSSL
 	return EVP_CIPHER_CTX_iv_length(cc->evp);
-#else
-	return 0;
-#endif
 }
 
 int
 cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 {
-#ifdef WITH_OPENSSL
 	const struct sshcipher *c = cc->cipher;
 	int evplen;
-#endif
 
 	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
 		if (len != 0)
@@ -452,7 +426,6 @@ cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 	if ((cc->cipher->flags & CFLAG_NONE) != 0)
 		return 0;
 
-#ifdef WITH_OPENSSL
 	evplen = EVP_CIPHER_CTX_iv_length(cc->evp);
 	if (evplen == 0)
 		return 0;
@@ -466,24 +439,20 @@ cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 		       return SSH_ERR_LIBCRYPTO_ERROR;
 	} else if (!EVP_CIPHER_CTX_get_iv(cc->evp, iv, len))
 	       return SSH_ERR_LIBCRYPTO_ERROR;
-#endif
 	return 0;
 }
 
 int
 cipher_set_keyiv(struct sshcipher_ctx *cc, const u_char *iv, size_t len)
 {
-#ifdef WITH_OPENSSL
 	const struct sshcipher *c = cc->cipher;
 	int evplen = 0;
-#endif
 
 	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0)
 		return 0;
 	if ((cc->cipher->flags & CFLAG_NONE) != 0)
 		return 0;
 
-#ifdef WITH_OPENSSL
 	evplen = EVP_CIPHER_CTX_iv_length(cc->evp);
 	if (evplen <= 0)
 		return SSH_ERR_LIBCRYPTO_ERROR;
@@ -496,7 +465,6 @@ cipher_set_keyiv(struct sshcipher_ctx *cc, const u_char *iv, size_t len)
 			return SSH_ERR_LIBCRYPTO_ERROR;
 	} else if (!EVP_CIPHER_CTX_set_iv(cc->evp, iv, evplen))
 		return SSH_ERR_LIBCRYPTO_ERROR;
-#endif
 	return 0;
 }
 

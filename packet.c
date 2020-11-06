@@ -2491,7 +2491,6 @@ sshpkt_put_stringb(struct ssh *ssh, const struct sshbuf *v)
 	return sshbuf_put_stringb(ssh->state->outgoing_packet, v);
 }
 
-#ifdef WITH_OPENSSL
 int
 sshpkt_put_ec(struct ssh *ssh, const EC_POINT *v, const EC_GROUP *g)
 {
@@ -2504,7 +2503,6 @@ sshpkt_put_bignum2(struct ssh *ssh, const BIGNUM *v)
 {
 	return sshbuf_put_bignum2(ssh->state->outgoing_packet, v);
 }
-#endif /* WITH_OPENSSL */
 
 /* fetch data from the incoming packet */
 
@@ -2562,7 +2560,6 @@ sshpkt_getb_froms(struct ssh *ssh, struct sshbuf **valp)
 	return sshbuf_froms(ssh->state->incoming_packet, valp);
 }
 
-#ifdef WITH_OPENSSL
 int
 sshpkt_get_ec(struct ssh *ssh, EC_POINT *v, const EC_GROUP *g)
 {
@@ -2574,7 +2571,6 @@ sshpkt_get_bignum2(struct ssh *ssh, BIGNUM **valp)
 {
 	return sshbuf_get_bignum2(ssh->state->incoming_packet, valp);
 }
-#endif /* WITH_OPENSSL */
 
 int
 sshpkt_get_end(struct ssh *ssh)

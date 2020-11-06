@@ -6,3 +6,5 @@ drop:
 unifdef:
 -UKRB5
 -UGSSAPI
+
+maybe -UENABLE_PKCS11

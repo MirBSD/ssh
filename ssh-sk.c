@@ -179,7 +179,6 @@ sshsk_free_sign_response(struct sk_sign_response *r)
 	freezero(r, sizeof(*r));
 }
 
-#ifdef WITH_OPENSSL
 /* Assemble key from response */
 static int
 sshsk_ecdsa_assemble(struct sk_enroll_response *resp, struct sshkey **keyp)
@@ -234,7 +233,6 @@ sshsk_ecdsa_assemble(struct sk_enroll_response *resp, struct sshkey **keyp)
 	sshbuf_free(b);
 	return r;
 }
-#endif /* WITH_OPENSSL */
 
 static int
 sshsk_ed25519_assemble(struct sk_enroll_response *resp, struct sshkey **keyp)
@@ -284,12 +282,10 @@ sshsk_key_from_response(int alg, const char *application, uint8_t flags,
 		goto out;
 	}
 	switch (alg) {
-#ifdef WITH_OPENSSL
 	case SSH_SK_ECDSA:
 		if ((r = sshsk_ecdsa_assemble(resp, &key)) != 0)
 			goto out;
 		break;
-#endif /* WITH_OPENSSL */
 	case SSH_SK_ED25519:
 		if ((r = sshsk_ed25519_assemble(resp, &key)) != 0)
 			goto out;
@@ -466,11 +462,9 @@ sshsk_enroll(int type, const char *provider_path, const char *device,
 		goto out;
 
 	switch (type) {
-#ifdef WITH_OPENSSL
 	case KEY_ECDSA_SK:
 		alg = SSH_SK_ECDSA;
 		break;
-#endif /* WITH_OPENSSL */
 	case KEY_ED25519_SK:
 		alg = SSH_SK_ED25519;
 		break;
@@ -537,7 +531,6 @@ sshsk_enroll(int type, const char *provider_path, const char *device,
 	return r;
 }
 
-#ifdef WITH_OPENSSL
 static int
 sshsk_ecdsa_sig(struct sk_sign_response *resp, struct sshbuf *sig)
 {
@@ -581,7 +574,6 @@ sshsk_ecdsa_sig(struct sk_sign_response *resp, struct sshbuf *sig)
 	sshbuf_free(inner_sig);
 	return r;
 }
-#endif /* WITH_OPENSSL */
 
 static int
 sshsk_ed25519_sig(struct sk_sign_response *resp, struct sshbuf *sig)
@@ -632,11 +624,9 @@ sshsk_sign(const char *provider_path, struct sshkey *key,
 		*lenp = 0;
 	type = sshkey_type_plain(key->type);
 	switch (type) {
-#ifdef WITH_OPENSSL
 	case KEY_ECDSA_SK:
 		alg = SSH_SK_ECDSA;
 		break;
-#endif /* WITH_OPENSSL */
 	case KEY_ED25519_SK:
 		alg = SSH_SK_ED25519;
 		break;
@@ -671,12 +661,10 @@ sshsk_sign(const char *provider_path, struct sshkey *key,
 		goto out;
 	}
 	switch (type) {
-#ifdef WITH_OPENSSL
 	case KEY_ECDSA_SK:
 		if ((r = sshsk_ecdsa_sig(resp, sig)) != 0)
 			goto out;
 		break;
-#endif /* WITH_OPENSSL */
 	case KEY_ED25519_SK:
 		if ((r = sshsk_ed25519_sig(resp, sig)) != 0)
 			goto out;

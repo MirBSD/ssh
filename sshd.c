@@ -64,9 +64,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/bn.h>
-#endif
 
 #include "xmalloc.h"
 #include "ssh.h"
@@ -867,11 +865,7 @@ usage(void)
 {
 	fprintf(stderr, "%s, %s\n",
 	    SSH_VERSION,
-#ifdef WITH_OPENSSL
 	    OpenSSL_version(OPENSSL_VERSION)
-#else
-	    "without OpenSSL"
-#endif
 	);
 	fprintf(stderr,
 "usage: sshd [-46DdeiqTt] [-C connection_spec] [-c host_cert_file]\n"
@@ -1571,9 +1565,7 @@ main(int ac, char **av)
 	else
 		closefrom(REEXEC_DEVCRYPTO_RESERVED_FD);
 
-#ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
-#endif
 
 	/* If requested, redirect the logs to the specified logfile. */
 	if (logfile != NULL)
@@ -1663,11 +1655,7 @@ main(int ac, char **av)
 	}
 
 	debug("sshd version %s, %s", SSH_VERSION,
-#ifdef WITH_OPENSSL
 	    OpenSSL_version(OPENSSL_VERSION)
-#else
-	    "without OpenSSL"
-#endif
 	);
 
 	/* load host keys */
@@ -2201,7 +2189,6 @@ do_ssh2_kex(struct ssh *ssh)
 	if ((r = kex_setup(ssh, myproposal)) != 0)
 		fatal_r(r, "kex_setup");
 	kex = ssh->kex;
-#ifdef WITH_OPENSSL
 	kex->kex[KEX_DH_GRP1_SHA1] = kex_gen_server;
 	kex->kex[KEX_DH_GRP14_SHA1] = kex_gen_server;
 	kex->kex[KEX_DH_GRP14_SHA256] = kex_gen_server;
@@ -2210,7 +2197,6 @@ do_ssh2_kex(struct ssh *ssh)
 	kex->kex[KEX_DH_GEX_SHA1] = kexgex_server;
 	kex->kex[KEX_DH_GEX_SHA256] = kexgex_server;
 	kex->kex[KEX_ECDH_SHA2] = kex_gen_server;
-#endif
 	kex->kex[KEX_C25519_SHA256] = kex_gen_server;
 	kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_server;
 	kex->load_host_public_key=&get_hostkey_public_by_type;

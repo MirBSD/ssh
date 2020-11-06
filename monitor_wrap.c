@@ -37,16 +37,12 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/bn.h>
 #include <openssl/dh.h>
-#endif
 
 #include "xmalloc.h"
 #include "ssh.h"
-#ifdef WITH_OPENSSL
 #include "dh.h"
-#endif
 #include "sshbuf.h"
 #include "sshkey.h"
 #include "cipher.h"
@@ -175,7 +171,6 @@ mm_request_receive_expect(int sock, enum monitor_reqtype type, struct sshbuf *m)
 		fatal_f("read: rtype %d != type %d", rtype, type);
 }
 
-#ifdef WITH_OPENSSL
 DH *
 mm_choose_dh(int min, int nbits, int max)
 {
@@ -210,7 +205,6 @@ mm_choose_dh(int min, int nbits, int max)
 
 	return (dh_new_group(g, p));
 }
-#endif
 
 int
 mm_sshkey_sign(struct ssh *ssh, struct sshkey *key, u_char **sigp, size_t *lenp,

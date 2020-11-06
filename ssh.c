@@ -65,10 +65,8 @@
 #include <limits.h>
 #include <locale.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/evp.h>
 #include <openssl/err.h>
-#endif
 
 #include "xmalloc.h"
 #include "ssh.h"
@@ -868,11 +866,7 @@ main(int ac, char **av)
 		case 'V':
 			fprintf(stderr, "%s, %s\n",
 			    SSH_VERSION,
-#ifdef WITH_OPENSSL
 			    OpenSSL_version(OPENSSL_VERSION)
-#else
-			    "without OpenSSL"
-#endif
 			);
 			if (opt == 'V')
 				exit(0);
@@ -1093,10 +1087,8 @@ main(int ac, char **av)
 
 	host_arg = xstrdup(host);
 
-#ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
 	ERR_load_crypto_strings();
-#endif
 
 	/* Initialize the command to execute on remote host. */
 	if ((command = sshbuf_new()) == NULL)
@@ -1140,11 +1132,7 @@ main(int ac, char **av)
 
 	if (debug_flag)
 		logit("%s, %s", SSH_VERSION,
-#ifdef WITH_OPENSSL
 		    OpenSSL_version(OPENSSL_VERSION)
-#else
-		    "without OpenSSL"
-#endif
 		);
 
 	/* Parse the configuration files */

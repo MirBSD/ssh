@@ -19,8 +19,6 @@
 
 __RCSID("$MirOS$");
 
-#ifdef WITH_OPENSSL
-
 #include <openssl/opensslv.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
@@ -161,5 +159,4 @@ EVP_MD_CTX *EVP_MD_CTX_new(void);
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
 #endif /* HAVE_EVP_MD_CTX_free */
 
-#endif /* WITH_OPENSSL */
 #endif /* _LIBRESSL_API_COMPAT_H */

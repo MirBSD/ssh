@@ -35,8 +35,6 @@
 #include "ssh-pkcs11.h"
 #include "ssherr.h"
 
-#ifdef WITH_OPENSSL
-
 /* borrows code from sftp-server and ssh-agent */
 
 struct pkcs11_keyinfo {
@@ -190,7 +188,6 @@ process_sign(void)
 		fatal_fr(r, "decode key");
 	else {
 		if ((found = lookup_key(key)) != NULL) {
-#ifdef WITH_OPENSSL
 			int ret;
 
 			if (key->type == KEY_RSA) {
@@ -217,7 +214,6 @@ process_sign(void)
 			} else
 				error_f("don't know how to sign with key "
 				    "type %d", (int)key->type);
-#endif /* WITH_OPENSSL */
 		}
 		sshkey_free(key);
 	}
@@ -404,18 +400,3 @@ main(int argc, char **argv)
 			fatal_fr(r, "reserve");
 	}
 }
-
-#else /* WITH_OPENSSL */
-void
-cleanup_exit(int i)
-{
-	_exit(i);
-}
-
-int
-main(int argc, char **argv)
-{
-	fprintf(stderr, "PKCS#11 code is not enabled\n");
-	return 1;
-}
-#endif /* WITH_OPENSSL */

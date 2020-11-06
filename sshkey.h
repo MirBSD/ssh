@@ -296,12 +296,4 @@ int ssh_xmss_verify(const struct sshkey *key,
     const u_char *data, size_t datalen, u_int compat);
 #endif
 
-#ifndef WITH_OPENSSL
-#undef RSA
-#undef DSA
-#undef EC_KEY
-#undef EC_GROUP
-#undef EC_POINT
-#endif /* WITH_OPENSSL */
-
 #endif /* SSHKEY_H */

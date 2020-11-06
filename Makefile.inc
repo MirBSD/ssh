@@ -15,10 +15,7 @@ COPTS+=		-Wstrict-prototypes
 COPTS+=		-Wunused
 COPTS+=		-Wno-unused-parameter # Lots of these in protocol handlers.
 
-OPENSSL?=	yes
 ZLIB?=		yes
-
-CPPFLAGS+=	-DWITH_OPENSSL
 
 .if (${ZLIB:L} == "yes")
 CPPFLAGS+=	-DWITH_ZLIB

@@ -138,8 +138,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef WITH_OPENSSL
-
 #include <sys/types.h>
 
 #include <stdlib.h>
@@ -634,5 +632,3 @@ EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 	free(ctx);
 }
 #endif /* HAVE_EVP_MD_CTX_FREE */
-
-#endif /* WITH_OPENSSL */

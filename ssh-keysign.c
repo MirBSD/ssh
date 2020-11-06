@@ -25,9 +25,7 @@
 
 #include <sys/types.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/evp.h>
-#endif
 
 #include <fcntl.h>
 #include <paths.h>
@@ -212,9 +210,8 @@ main(int argc, char **argv)
 	if (found == 0)
 		fatal("could not open any host key");
 
-#ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
-#endif
+
 	found = 0;
 	for (i = 0; i < NUM_KEYTYPES; i++) {
 		keys[i] = NULL;

@@ -16,10 +16,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#endif
 
 #include <stdint.h>
 #include <errno.h>
@@ -62,11 +60,7 @@
 #include "ssh-pkcs11.h"
 #endif
 
-#ifdef WITH_OPENSSL
 # define DEFAULT_KEY_TYPE_NAME "rsa"
-#else
-# define DEFAULT_KEY_TYPE_NAME "ed25519"
-#endif
 
 /*
  * Default number of bits in the RSA, DSA and ECDSA keys.  These value can be
@@ -166,12 +160,10 @@ extern char *__progname;
 
 static char hostname[NI_MAXHOST];
 
-#ifdef WITH_OPENSSL
 /* moduli.c */
 int gen_candidates(FILE *, u_int32_t, u_int32_t, BIGNUM *);
 int prime_test(FILE *, FILE *, u_int32_t, u_int32_t, char *, unsigned long,
     unsigned long);
-#endif
 
 static void
 type_bits_valid(int type, const char *name, u_int32_t *bitsp)
@@ -179,7 +171,6 @@ type_bits_valid(int type, const char *name, u_int32_t *bitsp)
 	if (type == KEY_UNSPEC)
 		fatal("unknown key type %s", key_type_name);
 	if (*bitsp == 0) {
-#ifdef WITH_OPENSSL
 		int nid;
 
 		switch(type) {
@@ -197,9 +188,7 @@ type_bits_valid(int type, const char *name, u_int32_t *bitsp)
 			*bitsp = DEFAULT_BITS;
 			break;
 		}
-#endif
 	}
-#ifdef WITH_OPENSSL
 	switch (type) {
 	case KEY_DSA:
 		if (*bitsp != 1024)
@@ -218,7 +207,6 @@ type_bits_valid(int type, const char *name, u_int32_t *bitsp)
 			fatal("Invalid ECDSA key length: valid lengths are "
 			    "256, 384 or 521 bits");
 	}
-#endif
 }
 
 /*
@@ -328,7 +316,6 @@ load_identity(const char *filename, char **commentp)
 #define SSH_COM_PRIVATE_BEGIN		"---- BEGIN SSH2 ENCRYPTED PRIVATE KEY ----"
 #define	SSH_COM_PRIVATE_KEY_MAGIC	0x3f6ff9eb
 
-#ifdef WITH_OPENSSL
 static void
 do_convert_to_ssh2(struct passwd *pw, struct sshkey *k)
 {
@@ -779,7 +766,6 @@ do_convert_from(struct passwd *pw)
 	sshkey_free(k);
 	exit(0);
 }
-#endif
 
 static void
 do_print_public(struct passwd *pw)
@@ -1022,11 +1008,9 @@ do_gen_all_hostkeys(struct passwd *pw)
 		char *key_type_display;
 		char *path;
 	} key_types[] = {
-#ifdef WITH_OPENSSL
 		{ "rsa", "RSA" ,_PATH_HOST_RSA_KEY_FILE },
 		{ "dsa", "DSA", _PATH_HOST_DSA_KEY_FILE },
 		{ "ecdsa", "ECDSA",_PATH_HOST_ECDSA_KEY_FILE },
-#endif /* WITH_OPENSSL */
 		{ "ed25519", "ED25519",_PATH_HOST_ED25519_KEY_FILE },
 #ifdef WITH_XMSS
 		{ "xmss", "XMSS",_PATH_HOST_XMSS_KEY_FILE },
@@ -2770,7 +2754,6 @@ done:
 static void
 do_moduli_gen(const char *out_file, char **opts, size_t nopts)
 {
-#ifdef WITH_OPENSSL
 	/* Moduli generation/screening */
 	u_int32_t memory = 0;
 	BIGNUM *start = NULL;
@@ -2815,15 +2798,11 @@ do_moduli_gen(const char *out_file, char **opts, size_t nopts)
 		moduli_bits = DEFAULT_BITS;
 	if (gen_candidates(out, memory, moduli_bits, start) != 0)
 		fatal("modulus candidate generation failed");
-#else /* WITH_OPENSSL */
-	fatal("Moduli generation is not supported");
-#endif /* WITH_OPENSSL */
 }
 
 static void
 do_moduli_screen(const char *out_file, char **opts, size_t nopts)
 {
-#ifdef WITH_OPENSSL
 	/* Moduli generation/screening */
 	char *checkpoint = NULL;
 	u_int32_t generator_wanted = 0;
@@ -2878,9 +2857,6 @@ do_moduli_screen(const char *out_file, char **opts, size_t nopts)
 	    generator_wanted, checkpoint,
 	    start_lineno, lines_to_process) != 0)
 		fatal("modulus screening failed");
-#else /* WITH_OPENSSL */
-	fatal("Moduli screening is not supported");
-#endif /* WITH_OPENSSL */
 }
 
 static char *
@@ -3065,10 +3041,8 @@ usage(void)
 	    "       ssh-keygen -K [-a rounds] [-w provider]\n"
 	    "       ssh-keygen -R hostname [-f known_hosts_file]\n"
 	    "       ssh-keygen -r hostname [-g] [-f input_keyfile]\n"
-#ifdef WITH_OPENSSL
 	    "       ssh-keygen -M generate [-O option] output_file\n"
 	    "       ssh-keygen -M screen [-f input_file] [-O option] output_file\n"
-#endif
 	    "       ssh-keygen -I certificate_identity -s ca_key [-hU] [-D pkcs11_provider]\n"
 	    "                  [-n principals] [-O option] [-V validity_interval]\n"
 	    "                  [-z serial_number] file ...\n"
@@ -3120,9 +3094,7 @@ main(int argc, char **argv)
 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
 	sanitise_stdfd();
 
-#ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
-#endif
 	log_init(argv[0], SYSLOG_LEVEL_INFO, SYSLOG_FACILITY_USER, 1);
 
 	setlocale(LC_CTYPE, "");
@@ -3463,15 +3435,10 @@ main(int argc, char **argv)
 		do_change_passphrase(pw);
 	if (change_comment)
 		do_change_comment(pw, identity_comment);
-#ifdef WITH_OPENSSL
 	if (convert_to)
 		do_convert_to(pw);
 	if (convert_from)
 		do_convert_from(pw);
-#else /* WITH_OPENSSL */
-	if (convert_to || convert_from)
-		fatal("key conversion disabled at compile time");
-#endif /* WITH_OPENSSL */
 	if (print_public)
 		do_print_public(pw);
 	if (rr_hostname != NULL) {

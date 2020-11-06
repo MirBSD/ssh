@@ -43,9 +43,7 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/evp.h>
-#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -1265,9 +1263,7 @@ main(int ac, char **av)
 	if (getrlimit(RLIMIT_NOFILE, &rlim) == -1)
 		fatal("%s: getrlimit: %s", __progname, strerror(errno));
 
-#ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
-#endif
 
 	while ((ch = getopt(ac, av, "cDdksE:a:O:P:t:")) != -1) {
 		switch (ch) {

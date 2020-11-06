@@ -31,9 +31,7 @@
 #include <sys/tree.h>
 #include <sys/queue.h>
 
-#ifdef WITH_OPENSSL
 #include <openssl/dh.h>
-#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -163,9 +161,7 @@ static int monitor_read(struct ssh *, struct monitor *, struct mon_table *,
 static int monitor_read_log(struct monitor *);
 
 struct mon_table mon_dispatch_proto20[] = {
-#ifdef WITH_OPENSSL
     {MONITOR_REQ_MODULI, MON_ONCE, mm_answer_moduli},
-#endif
     {MONITOR_REQ_SIGN, MON_ONCE, mm_answer_sign},
     {MONITOR_REQ_PWNAM, MON_ONCE, mm_answer_pwnamallow},
     {MONITOR_REQ_AUTHSERV, MON_ONCE, mm_answer_authserv},
@@ -185,9 +181,7 @@ struct mon_table mon_dispatch_proto20[] = {
 };
 
 struct mon_table mon_dispatch_postauth20[] = {
-#ifdef WITH_OPENSSL
     {MONITOR_REQ_MODULI, 0, mm_answer_moduli},
-#endif
     {MONITOR_REQ_SIGN, 0, mm_answer_sign},
     {MONITOR_REQ_PTY, 0, mm_answer_pty},
     {MONITOR_REQ_PTYCLEANUP, 0, mm_answer_pty_cleanup},
@@ -504,7 +498,6 @@ monitor_reset_key_state(void)
 	hostbased_chost = NULL;
 }
 
-#ifdef WITH_OPENSSL
 int
 mm_answer_moduli(struct ssh *ssh, int sock, struct sshbuf *m)
 {
@@ -543,7 +536,6 @@ mm_answer_moduli(struct ssh *ssh, int sock, struct sshbuf *m)
 	mm_request_send(sock, MONITOR_ANS_MODULI, m);
 	return (0);
 }
-#endif
 
 int
 mm_answer_sign(struct ssh *ssh, int sock, struct sshbuf *m)
@@ -1410,7 +1402,6 @@ monitor_apply_keystate(struct ssh *ssh, struct monitor *pmonitor)
 
 	if ((kex = ssh->kex) != NULL) {
 		/* XXX set callbacks */
-#ifdef WITH_OPENSSL
 		kex->kex[KEX_DH_GRP1_SHA1] = kex_gen_server;
 		kex->kex[KEX_DH_GRP14_SHA1] = kex_gen_server;
 		kex->kex[KEX_DH_GRP14_SHA256] = kex_gen_server;
@@ -1419,7 +1410,6 @@ monitor_apply_keystate(struct ssh *ssh, struct monitor *pmonitor)
 		kex->kex[KEX_DH_GEX_SHA1] = kexgex_server;
 		kex->kex[KEX_DH_GEX_SHA256] = kexgex_server;
 		kex->kex[KEX_ECDH_SHA2] = kex_gen_server;
-#endif
 		kex->kex[KEX_C25519_SHA256] = kex_gen_server;
 		kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_server;
 		kex->load_host_public_key=&get_hostkey_public_by_type;
