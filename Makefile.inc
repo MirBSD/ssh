@@ -2,31 +2,31 @@
 
 .include <bsd.own.mk>
 
-CFLAGS+=	-I${.CURDIR}/..
+CPPFLAGS+=	-I${.CURDIR:Q}/..
 
-CDIAGFLAGS=	-Wall
-CDIAGFLAGS+=	-Wextra
-CDIAGFLAGS+=	-Wformat-security
-CDIAGFLAGS+=	-Wmissing-declarations
-CDIAGFLAGS+=	-Wmissing-prototypes
-CDIAGFLAGS+=	-Wpointer-arith
-CDIAGFLAGS+=	-Wshadow
-CDIAGFLAGS+=	-Wstrict-prototypes
-CDIAGFLAGS+=	-Wunused
-CDIAGFLAGS+=	-Wno-unused-parameter # Lots of these in protocol handlers.
+COPTS+=		-Wall
+COPTS+=		-Wextra
+COPTS+=		-Wformat-security
+COPTS+=		-Wmissing-declarations
+COPTS+=		-Wmissing-prototypes
+COPTS+=		-Wpointer-arith
+COPTS+=		-Wshadow
+COPTS+=		-Wstrict-prototypes
+COPTS+=		-Wunused
+COPTS+=		-Wno-unused-parameter # Lots of these in protocol handlers.
 
 OPENSSL?=	yes
 ZLIB?=		yes
 
-CFLAGS+=	-DWITH_OPENSSL
+CPPFLAGS+=	-DWITH_OPENSSL
 
 .if (${ZLIB:L} == "yes")
-CFLAGS+=	-DWITH_ZLIB
+CPPFLAGS+=	-DWITH_ZLIB
 .endif
 
-CFLAGS+=	-DENABLE_PKCS11
+CPPFLAGS+=	-DENABLE_PKCS11
 .ifndef NOPIC
-CFLAGS+=	-DHAVE_DLOPEN
+CPPFLAGS+=	-DHAVE_DLOPEN
 .endif
 
 SRCS_BASE+=	sshbuf.c
@@ -104,7 +104,7 @@ SRCS_SK_CLIENT+=	msg.c
 
 WITH_XMSS?=	no
 .if (${WITH_XMSS:L} == "yes")
-CFLAGS+=	-DWITH_XMSS
+CPPFLAGS+=	-DWITH_XMSS
 SRCS_KEY+=	ssh-xmss.c
 SRCS_KEY+=	sshkey-xmss.c
 SRCS_KEY+=	xmss_commons.c
