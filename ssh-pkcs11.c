@@ -68,7 +68,7 @@ struct pkcs11_key {
 
 int pkcs11_interactive = 0;
 
-#ifdef HAVE_DLOPEN
+#if 0
 static void
 ossl_error(const char *msg)
 {
@@ -182,8 +182,10 @@ pkcs11_del_provider(char *provider_id)
 #ifdef HAVE_DLOPEN
 static RSA_METHOD *rsa_method;
 static int rsa_idx = 0;
+#if 0
 static EC_KEY_METHOD *ec_key_method;
 static int ec_key_idx = 0;
+#endif
 
 /* release a wrapped object */
 static void
@@ -497,6 +499,7 @@ pkcs11_rsa_wrap(struct pkcs11_provider *provider, CK_ULONG slotidx,
 	return (0);
 }
 
+#if 0
 /* openssl callback doing the actual signing operation */
 static ECDSA_SIG *
 ecdsa_do_sign(const unsigned char *dgst, int dgst_len, const BIGNUM *inv,
@@ -608,6 +611,7 @@ pkcs11_ecdsa_wrap(struct pkcs11_provider *provider, CK_ULONG slotidx,
 
 	return (0);
 }
+#endif
 
 /* remove trailing spaces */
 static void
@@ -682,6 +686,7 @@ pkcs11_key_included(struct sshkey ***keysp, int *nkeys, struct sshkey *key)
 	return (0);
 }
 
+#if 0
 static struct sshkey *
 pkcs11_fetch_ecdsa_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
     CK_OBJECT_HANDLE *obj)
@@ -804,6 +809,7 @@ fail:
 
 	return (key);
 }
+#endif
 
 static struct sshkey *
 pkcs11_fetch_rsa_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
@@ -909,7 +915,9 @@ pkcs11_fetch_x509_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
 	EC_KEY			*ec = NULL;
 	struct sshkey		*key = NULL;
 	int			 i;
+#if 0
 	int			 nid;
+#endif
 	const u_char		*cp;
 	char			*subject = NULL;
 
@@ -996,6 +1004,7 @@ pkcs11_fetch_x509_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
 		key->type = KEY_RSA;
 		key->flags |= SSHKEY_FLAG_EXT;
 		rsa = NULL;	/* now owned by key */
+#if 0
 	} else if (EVP_PKEY_base_id(evp) == EVP_PKEY_EC) {
 		if (EVP_PKEY_get0_EC_KEY(evp) == NULL) {
 			error("invalid x509; no ec key");
@@ -1026,6 +1035,7 @@ pkcs11_fetch_x509_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
 		key->type = KEY_ECDSA;
 		key->flags |= SSHKEY_FLAG_EXT;
 		ec = NULL;	/* now owned by key */
+#endif
 	} else {
 		error("unknown certificate key type");
 		goto out;
@@ -1230,9 +1240,11 @@ pkcs11_fetch_keys(struct pkcs11_provider *p, CK_ULONG slotidx,
 		case CKK_RSA:
 			key = pkcs11_fetch_rsa_pubkey(p, slotidx, &obj);
 			break;
+#if 0
 		case CKK_ECDSA:
 			key = pkcs11_fetch_ecdsa_pubkey(p, slotidx, &obj);
 			break;
+#endif
 		default:
 			/* XXX print key type? */
 			key = NULL;
