@@ -3062,7 +3062,7 @@ sshkey_private_to_blob2(struct sshkey *prv, struct sshbuf *blob,
 	u_char *cp, *key = NULL, *pubkeyblob = NULL;
 	u_char salt[SALT_LEN];
 	char *b64 = NULL;
-	size_t i, pubkeylen, keylen, ivlen, blocksize, authlen;
+	size_t i, pubkeylen, keylen = 0, ivlen = 0, blocksize, authlen;
 	u_int check;
 	int r = SSH_ERR_INTERNAL_ERROR;
 	struct sshcipher_ctx *ciphercontext = NULL;
