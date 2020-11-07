@@ -1316,7 +1316,9 @@ static int
 rsa_generate_private_key(u_int bits, RSA **rsap)
 {
 	RSA *private = NULL;
+#ifdef OPENSSL_API_COMPAT
 	BIGNUM *f4 = NULL;
+#endif
 	int ret = SSH_ERR_INTERNAL_ERROR;
 
 	if (rsap == NULL)
@@ -1325,6 +1327,7 @@ rsa_generate_private_key(u_int bits, RSA **rsap)
 	    bits > SSHBUF_MAX_BIGNUM * 8)
 		return SSH_ERR_KEY_LENGTH;
 	*rsap = NULL;
+#ifdef OPENSSL_API_COMPAT
 	if ((private = RSA_new()) == NULL || (f4 = BN_new()) == NULL) {
 		ret = SSH_ERR_ALLOC_FAIL;
 		goto out;
@@ -1334,12 +1337,20 @@ rsa_generate_private_key(u_int bits, RSA **rsap)
 		ret = SSH_ERR_LIBCRYPTO_ERROR;
 		goto out;
 	}
+#else
+	if (!(private = RSA_generate_key(bits, RSA_F4, NULL, NULL))) {
+		ret = SSH_ERR_LIBCRYPTO_ERROR;
+		goto out;
+	}
+#endif
 	*rsap = private;
 	private = NULL;
 	ret = 0;
  out:
 	RSA_free(private);
+#ifdef OPENSSL_API_COMPAT
 	BN_free(f4);
+#endif
 	return ret;
 }
 
@@ -1353,16 +1364,26 @@ dsa_generate_private_key(u_int bits, DSA **dsap)
 		return SSH_ERR_INVALID_ARGUMENT;
 	if (bits != 1024)
 		return SSH_ERR_KEY_LENGTH;
+#ifdef OPENSSL_API_COMPAT
 	if ((private = DSA_new()) == NULL) {
 		ret = SSH_ERR_ALLOC_FAIL;
 		goto out;
 	}
+#endif
 	*dsap = NULL;
+#ifndef OPENSSL_API_COMPAT
+#define DSA_generate_parameters_ex(dst,bits,n1,n2,n3,n4,n5) \
+	((dst) = DSA_generate_parameters((bits), NULL, 0, NULL, \
+	    NULL, NULL, NULL))
+#endif
 	if (!DSA_generate_parameters_ex(private, bits, NULL, 0, NULL,
 	    NULL, NULL) || !DSA_generate_key(private)) {
 		ret = SSH_ERR_LIBCRYPTO_ERROR;
 		goto out;
 	}
+#ifndef OPENSSL_API_COMPAT
+#undef DSA_generate_parameters_ex
+#endif
 	*dsap = private;
 	private = NULL;
 	ret = 0;

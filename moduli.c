@@ -56,6 +56,10 @@
 #include "log.h"
 #include "misc.h"
 
+#ifndef OPENSSL_API_COMPAT
+#define BN_is_prime_ex(a,b,d,e) BN_is_prime((a), (b), NULL, (d), (e))
+#endif
+
 /*
  * File output defines
  */
