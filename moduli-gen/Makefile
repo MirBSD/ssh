@@ -5,7 +5,8 @@
 # The larger ones will take many days, so if you're going to regen them run
 # it in a tmux session or something.  The checkpoints should make it safe
 # to stop and restart.
-DHSIZE=2048 3072 4096 5120 6144 7168 8192
+DHSIZE=2048 3072 4096 5120 6144 7680 8192
+# see ../dh.c:dh_estimate() if wondering about the 7680
 
 .for bits in ${DHSIZE}
 MODULI_PARTS+=moduli.${bits}
