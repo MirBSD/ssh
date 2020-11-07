@@ -79,6 +79,7 @@ static const struct sshcipher ciphers[] = {
 	{ "aes256-cbc",		16, 32, 0, 0, CFLAG_CBC, EVP_aes_256_cbc },
 	{ "rijndael-cbc@lysator.liu.se",
 				16, 32, 0, 0, CFLAG_CBC, EVP_aes_256_cbc },
+#ifdef OPENSSL_API_COMPAT
 	{ "aes128-ctr",		16, 16, 0, 0, 0, EVP_aes_128_ctr },
 	{ "aes192-ctr",		16, 24, 0, 0, 0, EVP_aes_192_ctr },
 	{ "aes256-ctr",		16, 32, 0, 0, 0, EVP_aes_256_ctr },
@@ -86,6 +87,7 @@ static const struct sshcipher ciphers[] = {
 				16, 16, 12, 16, 0, EVP_aes_128_gcm },
 	{ "aes256-gcm@openssh.com",
 				16, 32, 12, 16, 0, EVP_aes_256_gcm },
+#endif
 	{ "chacha20-poly1305@openssh.com",
 				8, 64, 0, 16, CFLAG_CHACHAPOLY, NULL },
 	{ "none",		8, 0, 0, 0, CFLAG_NONE, NULL },
@@ -268,12 +270,14 @@ cipher_init(struct sshcipher_ctx **ccp, const struct sshcipher *cipher,
 		ret = SSH_ERR_LIBCRYPTO_ERROR;
 		goto out;
 	}
+#ifdef OPENSSL_API_COMPAT
 	if (cipher_authlen(cipher) &&
 	    !EVP_CIPHER_CTX_ctrl(cc->evp, EVP_CTRL_GCM_SET_IV_FIXED,
 	    -1, (u_char *)iv)) {
 		ret = SSH_ERR_LIBCRYPTO_ERROR;
 		goto out;
 	}
+#endif
 	klen = EVP_CIPHER_CTX_key_length(cc->evp);
 	if (klen > 0 && keylen != (u_int)klen) {
 		if (EVP_CIPHER_CTX_set_key_length(cc->evp, keylen) == 0) {
@@ -321,6 +325,7 @@ cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
 		memcpy(dest, src, aadlen + len);
 		return 0;
 	}
+#ifdef OPENSSL_API_COMPAT
 	if (authlen) {
 		u_char lastiv[1];
 
@@ -336,6 +341,7 @@ cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
 		    authlen, (u_char *)src + aadlen + len))
 			return SSH_ERR_LIBCRYPTO_ERROR;
 	}
+#endif
 	if (aadlen) {
 		if (authlen &&
 		    EVP_Cipher(cc->evp, NULL, (u_char *)src, aadlen) < 0)
@@ -347,6 +353,7 @@ cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
 	if (EVP_Cipher(cc->evp, dest + aadlen, (u_char *)src + aadlen,
 	    len) < 0)
 		return SSH_ERR_LIBCRYPTO_ERROR;
+#ifdef OPENSSL_API_COMPAT
 	if (authlen) {
 		/* compute tag (on encrypt) or verify tag (on decrypt) */
 		if (EVP_Cipher(cc->evp, NULL, NULL, 0) < 0)
@@ -357,6 +364,7 @@ cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
 		    authlen, dest + aadlen + len))
 			return SSH_ERR_LIBCRYPTO_ERROR;
 	}
+#endif
 	return 0;
 }
 
@@ -433,11 +441,14 @@ cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 		return SSH_ERR_LIBCRYPTO_ERROR;
 	if ((size_t)evplen != len)
 		return SSH_ERR_INVALID_ARGUMENT;
+#ifdef OPENSSL_API_COMPAT
 	if (cipher_authlen(c)) {
 		if (!EVP_CIPHER_CTX_ctrl(cc->evp, EVP_CTRL_GCM_IV_GEN,
 		   len, iv))
 		       return SSH_ERR_LIBCRYPTO_ERROR;
-	} else if (!EVP_CIPHER_CTX_get_iv(cc->evp, iv, len))
+	} else
+#endif
+	  if (!EVP_CIPHER_CTX_get_iv(cc->evp, iv, len))
 	       return SSH_ERR_LIBCRYPTO_ERROR;
 	return 0;
 }
@@ -458,12 +469,15 @@ cipher_set_keyiv(struct sshcipher_ctx *cc, const u_char *iv, size_t len)
 		return SSH_ERR_LIBCRYPTO_ERROR;
 	if ((size_t)evplen != len)
 		return SSH_ERR_INVALID_ARGUMENT;
+#ifdef OPENSSL_API_COMPAT
 	if (cipher_authlen(c)) {
 		/* XXX iv arg is const, but EVP_CIPHER_CTX_ctrl isn't */
 		if (!EVP_CIPHER_CTX_ctrl(cc->evp,
 		    EVP_CTRL_GCM_SET_IV_FIXED, -1, (void *)iv))
 			return SSH_ERR_LIBCRYPTO_ERROR;
-	} else if (!EVP_CIPHER_CTX_set_iv(cc->evp, iv, evplen))
+	} else
+#endif
+	  if (!EVP_CIPHER_CTX_set_iv(cc->evp, iv, evplen))
 		return SSH_ERR_LIBCRYPTO_ERROR;
 	return 0;
 }
