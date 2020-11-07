@@ -66,7 +66,6 @@ struct sshcipher {
 	u_int	flags;
 #define CFLAG_CBC		(1<<0)
 #define CFLAG_CHACHAPOLY	(1<<1)
-#define CFLAG_AESCTR		(1<<2)
 #define CFLAG_NONE		(1<<3)
 #define CFLAG_INTERNAL		CFLAG_NONE /* Don't use "none" for packets */
 	const EVP_CIPHER	*(*evptype)(void);
@@ -390,8 +389,7 @@ cipher_free(struct sshcipher_ctx *cc)
 	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
 		chachapoly_free(cc->cp_ctx);
 		cc->cp_ctx = NULL;
-	} else if ((cc->cipher->flags & CFLAG_AESCTR) != 0)
-		explicit_bzero(&cc->ac_ctx, sizeof(cc->ac_ctx));
+	}
 	EVP_CIPHER_CTX_free(cc->evp);
 	cc->evp = NULL;
 	freezero(cc, sizeof(*cc));
@@ -409,8 +407,6 @@ cipher_get_keyiv_len(const struct sshcipher_ctx *cc)
 
 	if ((c->flags & CFLAG_CHACHAPOLY) != 0)
 		return 0;
-	else if ((c->flags & CFLAG_AESCTR) != 0)
-		return sizeof(cc->ac_ctx.ctr);
 	return EVP_CIPHER_CTX_iv_length(cc->evp);
 }
 
@@ -423,12 +419,6 @@ cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
 		if (len != 0)
 			return SSH_ERR_INVALID_ARGUMENT;
-		return 0;
-	}
-	if ((cc->cipher->flags & CFLAG_AESCTR) != 0) {
-		if (len != sizeof(cc->ac_ctx.ctr))
-			return SSH_ERR_INVALID_ARGUMENT;
-		memcpy(iv, cc->ac_ctx.ctr, len);
 		return 0;
 	}
 	if ((cc->cipher->flags & CFLAG_NONE) != 0)
