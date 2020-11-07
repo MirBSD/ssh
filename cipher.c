@@ -383,8 +383,6 @@ cipher_free(struct sshcipher_ctx *cc)
 int
 cipher_get_keyiv_len(const struct sshcipher_ctx *cc)
 {
-	const struct sshcipher *c = cc->cipher;
-
 	return EVP_CIPHER_CTX_iv_length(cc->evp);
 }
 
