@@ -167,6 +167,7 @@ set_reuseaddr(int fd)
 char *
 get_rdomain(int fd)
 {
+#ifdef SO_RTABLE
 	int rtable;
 	char *ret;
 	socklen_t len = sizeof(rtable);
@@ -178,17 +179,23 @@ get_rdomain(int fd)
 	}
 	xasprintf(&ret, "%d", rtable);
 	return ret;
+#else
+	return (NULL);
+#endif
 }
 
 int
 set_rdomain(int fd, const char *name)
 {
+#ifdef SO_RTABLE
 	int rtable;
 	const char *errstr;
+#endif
 
 	if (name == NULL)
 		return 0; /* default table */
 
+#ifdef SO_RTABLE
 	rtable = (int)strtonum(name, 0, 255, &errstr);
 	if (errstr != NULL) {
 		/* Shouldn't happen */
@@ -202,6 +209,12 @@ set_rdomain(int fd, const char *name)
 		return -1;
 	}
 	return 0;
+#else
+#ifndef SMALL
+	error("Setting the routing domain is not supported on this OS");
+#endif
+	return (-1);
+#endif
 }
 
 /*
