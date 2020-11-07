@@ -98,7 +98,6 @@ vasnmprintf(char **str, size_t maxsz, int *wp, const char *fmt, va_list ap)
 	char	*sp;	/* Pointer into src. */
 	char	*dst;	/* Destination string to be returned. */
 	char	*dp;	/* Pointer into dst. */
-	char	*tp;	/* Temporary pointer for dst. */
 	size_t	 sz;	/* Number of bytes allocated for dst. */
 	wchar_t	 wc;	/* Wide character at sp. */
 	int	 len;	/* Number of bytes in the character at sp. */
@@ -178,15 +177,20 @@ vasnmprintf(char **str, size_t maxsz, int *wp, const char *fmt, va_list ap)
 			    total_width > max_width - 4))
 				print = 0;
 			if (print) {
+				unsigned char tp;
+
 				if (grow_dst(&dst, &sz, maxsz,
 				    &dp, 4) == -1) {
 					ret = -1;
 					break;
 				}
-				tp = vis(dp, *sp, VIS_OCTAL | VIS_ALL, 0);
-				width = tp - dp;
+				tp = *sp;
+				*dp++ = '\\';
+				*dp++ = (tp >> 6 & 07) + '0';
+				*dp++ = (tp >> 3 & 07) + '0';
+				*dp++ = (tp & 07) + '0';
+				width = 4;
 				total_width += width;
-				dp = tp;
 			} else
 				width = 4;
 			len--;
