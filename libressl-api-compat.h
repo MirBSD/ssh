@@ -151,4 +151,9 @@ EVP_MD_CTX *EVP_MD_CTX_new(void);
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
 #endif /* HAVE_EVP_MD_CTX_free */
 
+#ifndef OPENSSL_API_COMPAT
+/* 0.9.7-MirBSD, we presume */
+#define EVP_PKEY_base_id(pkey) EVP_PKEY_type((pkey)->type)
+#endif
+
 #endif /* _LIBRESSL_API_COMPAT_H */
