@@ -214,6 +214,13 @@ choose_dh(int min, int wantbits, int max)
 
 /* diffie-hellman-groupN-sha1 */
 
+#ifndef OPENSSL_API_COMPAT
+static int BN_is_negative(const BIGNUM *a)
+{
+	return (a->neg != 0);
+}
+#endif
+
 int
 dh_pub_is_valid(const DH *dh, const BIGNUM *dh_pub)
 {
