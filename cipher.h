@@ -39,7 +39,6 @@
 
 #include <sys/types.h>
 #include <openssl/evp.h>
-#include "cipher-chachapoly.h"
 
 #define CIPHER_ENCRYPT		1
 #define CIPHER_DECRYPT		0

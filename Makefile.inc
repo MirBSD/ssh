@@ -56,7 +56,6 @@ SRCS_KEY+=	ssh-dss.c
 SRCS_KEY+=	ssh-rsa.c
 SRCS_KEY+=	sshbuf-getput-crypto.c
 SRCS_KEY+=	digest-openssl.c
-SRCS_KEY+=	cipher-chachapoly-libcrypto.c
 SRCS_KEY+=	ssh-ed25519.c
 SRCS_KEY+=	ssh-ed25519-sk.c
 # ed25519, from supercop

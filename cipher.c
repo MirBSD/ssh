@@ -53,7 +53,6 @@ struct sshcipher_ctx {
 	int	plaintext;
 	int	encrypt;
 	EVP_CIPHER_CTX *evp;
-	struct chachapoly_ctx *cp_ctx;
 	const struct sshcipher *cipher;
 };
 
@@ -65,7 +64,6 @@ struct sshcipher {
 	u_int	auth_len;
 	u_int	flags;
 #define CFLAG_CBC		(1<<0)
-#define CFLAG_CHACHAPOLY	(1<<1)
 #define CFLAG_NONE		(1<<3)
 #define CFLAG_INTERNAL		CFLAG_NONE /* Don't use "none" for packets */
 	const EVP_CIPHER	*(*evptype)(void);
@@ -87,8 +85,6 @@ static const struct sshcipher ciphers[] = {
 	{ "aes256-gcm@openssh.com",
 				16, 32, 12, 16, 0, EVP_aes_256_gcm },
 #endif
-	{ "chacha20-poly1305@openssh.com",
-				8, 64, 0, 16, CFLAG_CHACHAPOLY, NULL },
 	{ "none",		8, 0, 0, 0, CFLAG_NONE, NULL },
 
 	{ NULL,			0, 0, 0, 0, 0, NULL }
@@ -167,7 +163,7 @@ cipher_ivlen(const struct sshcipher *c)
 	 * Default is cipher block size, except for chacha20+poly1305 that
 	 * needs no IV. XXX make iv_len == -1 default?
 	 */
-	return (c->iv_len != 0 || (c->flags & CFLAG_CHACHAPOLY) != 0) ?
+	return (c->iv_len != 0) ?
 	    c->iv_len : c->block_size;
 }
 
@@ -250,11 +246,6 @@ cipher_init(struct sshcipher_ctx **ccp, const struct sshcipher *cipher,
 	}
 
 	cc->cipher = cipher;
-	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
-		cc->cp_ctx = chachapoly_new(key, keylen);
-		ret = cc->cp_ctx != NULL ? 0 : SSH_ERR_INVALID_ARGUMENT;
-		goto out;
-	}
 	if ((cc->cipher->flags & CFLAG_NONE) != 0) {
 		ret = 0;
 		goto out;
@@ -316,10 +307,6 @@ int
 cipher_crypt(struct sshcipher_ctx *cc, u_int seqnr, u_char *dest,
    const u_char *src, u_int len, u_int aadlen, u_int authlen)
 {
-	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
-		return chachapoly_crypt(cc->cp_ctx, seqnr, dest, src,
-		    len, aadlen, authlen, cc->encrypt);
-	}
 	if ((cc->cipher->flags & CFLAG_NONE) != 0) {
 		memcpy(dest, src, aadlen + len);
 		return 0;
@@ -372,9 +359,6 @@ int
 cipher_get_length(struct sshcipher_ctx *cc, u_int *plenp, u_int seqnr,
     const u_char *cp, u_int len)
 {
-	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0)
-		return chachapoly_get_length(cc->cp_ctx, plenp, seqnr,
-		    cp, len);
 	if (len < 4)
 		return SSH_ERR_MESSAGE_INCOMPLETE;
 	*plenp = PEEK_U32(cp);
@@ -386,10 +370,6 @@ cipher_free(struct sshcipher_ctx *cc)
 {
 	if (cc == NULL)
 		return;
-	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
-		chachapoly_free(cc->cp_ctx);
-		cc->cp_ctx = NULL;
-	}
 	EVP_CIPHER_CTX_free(cc->evp);
 	cc->evp = NULL;
 	freezero(cc, sizeof(*cc));
@@ -405,8 +385,6 @@ cipher_get_keyiv_len(const struct sshcipher_ctx *cc)
 {
 	const struct sshcipher *c = cc->cipher;
 
-	if ((c->flags & CFLAG_CHACHAPOLY) != 0)
-		return 0;
 	return EVP_CIPHER_CTX_iv_length(cc->evp);
 }
 
@@ -415,11 +393,6 @@ cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 {
 	int evplen;
 
-	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
-		if (len != 0)
-			return SSH_ERR_INVALID_ARGUMENT;
-		return 0;
-	}
 	if ((cc->cipher->flags & CFLAG_NONE) != 0)
 		return 0;
 
@@ -447,8 +420,6 @@ cipher_set_keyiv(struct sshcipher_ctx *cc, const u_char *iv, size_t len)
 {
 	int evplen = 0;
 
-	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0)
-		return 0;
 	if ((cc->cipher->flags & CFLAG_NONE) != 0)
 		return 0;
 
