@@ -23,6 +23,9 @@
 #include <string.h>
 
 #include "libressl-api-compat.h"
+#ifndef BN_FLG_CONSTTIME
+#define BN_FLG_CONSTTIME BN_FLG_EXP_CONSTTIME
+#endif
 
 #include "sshbuf.h"
 #include "compat.h"
