@@ -154,6 +154,13 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
 #ifndef OPENSSL_API_COMPAT
 /* 0.9.7-MirBSD, we presume */
 #define EVP_PKEY_base_id(pkey) EVP_PKEY_type((pkey)->type)
+#define EVP_CIPHER_CTX_new() ((EVP_CIPHER_CTX *)calloc(1, sizeof(EVP_CIPHER_CTX)))
+#define EVP_CIPHER_CTX_free(ctx) do {		\
+	if (ctx) {				\
+		EVP_CIPHER_CTX_cleanup(ctx);	\
+		free(ctx);			\
+	}					\
+} while (/* CONSTCOND */ 0);
 #endif
 
 #endif /* _LIBRESSL_API_COMPAT_H */

@@ -23,6 +23,8 @@
 
 #include <openssl/evp.h>
 
+#include "libressl-api-compat.h"
+
 #include "log.h"
 #include "sshbuf.h"
 #include "ssherr.h"

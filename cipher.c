@@ -413,7 +413,6 @@ cipher_get_keyiv_len(const struct sshcipher_ctx *cc)
 int
 cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 {
-	const struct sshcipher *c = cc->cipher;
 	int evplen;
 
 	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0) {
@@ -446,7 +445,6 @@ cipher_get_keyiv(struct sshcipher_ctx *cc, u_char *iv, size_t len)
 int
 cipher_set_keyiv(struct sshcipher_ctx *cc, const u_char *iv, size_t len)
 {
-	const struct sshcipher *c = cc->cipher;
 	int evplen = 0;
 
 	if ((cc->cipher->flags & CFLAG_CHACHAPOLY) != 0)
