@@ -88,14 +88,6 @@ void DSA_SIG_get0(const DSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);
 int DSA_SIG_set0(DSA_SIG *sig, BIGNUM *r, BIGNUM *s);
 #endif /* DSA_SIG_SET0 */
 
-#ifndef HAVE_ECDSA_SIG_GET0
-void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);
-#endif /* HAVE_ECDSA_SIG_GET0 */
-
-#ifndef HAVE_ECDSA_SIG_SET0
-int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
-#endif /* HAVE_ECDSA_SIG_SET0 */
-
 #ifndef HAVE_DH_GET0_PQG
 void DH_get0_pqg(const DH *dh, const BIGNUM **p, const BIGNUM **q,
     const BIGNUM **g);

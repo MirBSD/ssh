@@ -417,32 +417,6 @@ DSA_SIG_set0(DSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 }
 #endif /* HAVE_DSA_SIG_SET0 */
 
-#ifndef HAVE_ECDSA_SIG_GET0
-void
-ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
-{
-	if (pr != NULL)
-		*pr = sig->r;
-	if (ps != NULL)
-		*ps = sig->s;
-}
-#endif /* HAVE_ECDSA_SIG_GET0 */
-
-#ifndef HAVE_ECDSA_SIG_SET0
-int
-ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
-{
-	if (r == NULL || s == NULL)
-		return 0;
-
-	BN_clear_free(sig->r);
-	BN_clear_free(sig->s);
-	sig->r = r;
-	sig->s = s;
-	return 1;
-}
-#endif /* HAVE_ECDSA_SIG_SET0 */
-
 #ifndef HAVE_DH_GET0_PQG
 void
 DH_get0_pqg(const DH *dh, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
