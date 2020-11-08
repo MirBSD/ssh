@@ -2249,6 +2249,8 @@ fill_default_options(Options * options)
 	def_kex = match_filter_allowlist(KEX_CLIENT_KEX, all_kex);
 	def_key = match_filter_allowlist(KEX_DEFAULT_PK_ALG, all_key);
 	def_sig = match_filter_allowlist(SSH_ALLOWED_CA_SIGALGS, all_sig);
+debug3("all_cipher <%s>", all_cipher);
+debug3("def_cipher <%s>", def_cipher);
 #define ASSEMBLE(what, defaults, all) \
 	do { \
 		if ((r = kex_assemble_names(&options->what, \
