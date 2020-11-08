@@ -65,7 +65,6 @@
 #include "ssherr.h"
 #include "channels.h" /* XXX for session.h */
 #include "session.h" /* XXX for child_set_env(); refactor? */
-#include "sk-api.h"
 
 /* import */
 extern ServerOptions options;
@@ -94,9 +93,8 @@ userauth_pubkey(struct ssh *ssh)
 	u_char *pkblob = NULL, *sig = NULL, have_sig;
 	size_t blen, slen;
 	int r, pktype;
-	int req_presence = 0, req_verify = 0, authenticated = 0;
+	int authenticated = 0;
 	struct sshauthopt *authopts = NULL;
-	struct sshkey_sig_details *sig_details = NULL;
 
 	if ((r = sshpkt_get_u8(ssh, &have_sig)) != 0 ||
 	    (r = sshpkt_get_cstring(ssh, &pkalg, NULL)) != 0 ||
@@ -204,43 +202,8 @@ userauth_pubkey(struct ssh *ssh)
 		    PRIVSEP(sshkey_verify(key, sig, slen,
 		    sshbuf_ptr(b), sshbuf_len(b),
 		    (ssh->compat & SSH_BUG_SIGTYPE) == 0 ? pkalg : NULL,
-		    ssh->compat, &sig_details)) == 0) {
+		    ssh->compat)) == 0) {
 			authenticated = 1;
-		}
-		if (authenticated == 1 && sig_details != NULL) {
-			auth2_record_info(authctxt, "signature count = %u",
-			    sig_details->sk_counter);
-			debug_f("sk_counter = %u, sk_flags = 0x%02x",
-			    sig_details->sk_counter, sig_details->sk_flags);
-			req_presence = (options.pubkey_auth_options &
-			    PUBKEYAUTH_TOUCH_REQUIRED) ||
-			    !authopts->no_require_user_presence;
-			if (req_presence && (sig_details->sk_flags &
-			    SSH_SK_USER_PRESENCE_REQD) == 0) {
-				error("public key %s signature for %s%s from "
-				    "%.128s port %d rejected: user presence "
-				    "(authenticator touch) requirement "
-				    "not met ", key_s,
-				    authctxt->valid ? "" : "invalid user ",
-				    authctxt->user, ssh_remote_ipaddr(ssh),
-				    ssh_remote_port(ssh));
-				authenticated = 0;
-				goto done;
-			}
-			req_verify = (options.pubkey_auth_options &
-			    PUBKEYAUTH_VERIFY_REQUIRED) ||
-			    authopts->require_verify;
-			if (req_verify && (sig_details->sk_flags &
-			    SSH_SK_USER_VERIFICATION_REQD) == 0) {
-				error("public key %s signature for %s%s from "
-				    "%.128s port %d rejected: user "
-				    "verification requirement not met ", key_s,
-				    authctxt->valid ? "" : "invalid user ",
-				    authctxt->user, ssh_remote_ipaddr(ssh),
-				    ssh_remote_port(ssh));
-				authenticated = 0;
-				goto done;
-			}
 		}
 		auth2_record_key(authctxt, authenticated, key);
 	} else {
@@ -289,7 +252,6 @@ done:
 	free(key_s);
 	free(ca_s);
 	free(sig);
-	sshkey_sig_details_free(sig_details);
 	return authenticated;
 }
 

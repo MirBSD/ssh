@@ -4,7 +4,7 @@
 
 SRCS=	ssh-pkcs11-helper.c ${SRCS_PKCS11}
 SRCS+=	atomicio.c compat.c fatal.c readpass.c
-SRCS+=	${SRCS_KEY} ${SRCS_UTL} ${SRCS_BASE} ${SRCS_SK_CLIENT}
+SRCS+=	${SRCS_KEY} ${SRCS_UTL} ${SRCS_BASE}
 SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-pkcs11-helper

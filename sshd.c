@@ -104,7 +104,6 @@
 #include "auth-options.h"
 #include "version.h"
 #include "ssherr.h"
-#include "sk-api.h"
 
 /* Re-exec fds */
 #define REEXEC_DEVCRYPTO_RESERVED_FD	(STDERR_FILENO + 1)
@@ -1679,12 +1678,6 @@ main(int ac, char **av)
 		    &key, NULL)) != 0 && r != SSH_ERR_SYSTEM_ERROR)
 			do_log2_r(r, ll, "Unable to load host key \"%s\"",
 			    options.host_key_files[i]);
-		if (sshkey_is_sk(key) &&
-		    key->sk_flags & SSH_SK_USER_PRESENCE_REQD) {
-			debug("host key %s requires user presence, ignoring",
-			    options.host_key_files[i]);
-			key->sk_flags &= ~SSH_SK_USER_PRESENCE_REQD;
-		}
 		if (r == 0 && key != NULL &&
 		    (r = sshkey_shield_private(key)) != 0) {
 			do_log2_r(r, ll, "Unable to shield host key \"%s\"",
@@ -2128,19 +2121,19 @@ sshd_hostkey_sign(struct ssh *ssh, struct sshkey *privkey,
 	if (use_privsep) {
 		if (privkey) {
 			if (mm_sshkey_sign(ssh, privkey, signature, slenp,
-			    data, dlen, alg, options.sk_provider, NULL,
+			    data, dlen, alg,
 			    ssh->compat) < 0)
 				fatal_f("privkey sign failed");
 		} else {
 			if (mm_sshkey_sign(ssh, pubkey, signature, slenp,
-			    data, dlen, alg, options.sk_provider, NULL,
+			    data, dlen, alg,
 			    ssh->compat) < 0)
 				fatal_f("pubkey sign failed");
 		}
 	} else {
 		if (privkey) {
 			if (sshkey_sign(privkey, signature, slenp, data, dlen,
-			    alg, options.sk_provider, NULL, ssh->compat) < 0)
+			    alg, ssh->compat) < 0)
 				fatal_f("privkey sign failed");
 		} else {
 			if ((r = ssh_agent_sign(auth_sock, pubkey,

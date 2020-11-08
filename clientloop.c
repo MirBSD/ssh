@@ -2145,8 +2145,7 @@ client_global_hostkeys_private_confirm(struct ssh *ssh, int type,
 		    sshkey_type_plain(ctx->keys[i]->type) == KEY_RSA;
 		if ((r = sshkey_verify(ctx->keys[i], sig, siglen,
 		    sshbuf_ptr(signdata), sshbuf_len(signdata),
-		    use_kexsigtype ? ssh->kex->hostkey_alg : NULL, 0,
-		    NULL)) != 0) {
+		    use_kexsigtype ? ssh->kex->hostkey_alg : NULL, 0)) != 0) {
 			error_f("server gave bad signature for %s key %zu",
 			    sshkey_type(ctx->keys[i]), i);
 			goto out;

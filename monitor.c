@@ -80,7 +80,6 @@
 #include "authfd.h"
 #include "match.h"
 #include "ssherr.h"
-#include "sk-api.h"
 
 #ifdef GSSAPI
 static Gssctxt *gsscontext = NULL;
@@ -604,7 +603,7 @@ mm_answer_sign(struct ssh *ssh, int sock, struct sshbuf *m)
 
 	if ((key = get_hostkey_by_index(keyid)) != NULL) {
 		if ((r = sshkey_sign(key, &signature, &siglen, p, datlen, alg,
-		    options.sk_provider, NULL, compat)) != 0)
+		    compat)) != 0)
 			fatal_fr(r, "sign");
 	} else if ((key = get_hostkey_public_by_index(keyid, ssh)) != NULL &&
 	    auth_sock > 0) {
@@ -1127,9 +1126,8 @@ mm_answer_keyverify(struct ssh *ssh, int sock, struct sshbuf *m)
 	const u_char *signature, *data, *blob;
 	char *sigalg = NULL, *fp = NULL;
 	size_t signaturelen, datalen, bloblen;
-	int r, ret, req_presence = 0, req_verify = 0, valid_data = 0;
+	int r, ret, valid_data = 0;
 	int encoded_ret;
-	struct sshkey_sig_details *sig_details = NULL;
 
 	if ((r = sshbuf_get_string_direct(m, &blob, &bloblen)) != 0 ||
 	    (r = sshbuf_get_string_direct(m, &signature, &signaturelen)) != 0 ||
@@ -1173,39 +1171,11 @@ mm_answer_keyverify(struct ssh *ssh, int sock, struct sshbuf *m)
 		fatal_f("sshkey_fingerprint failed");
 
 	ret = sshkey_verify(key, signature, signaturelen, data, datalen,
-	    sigalg, ssh->compat, &sig_details);
+	    sigalg, ssh->compat);
 	debug3_f("%s %p signature %s%s%s", auth_method, key,
 	    (ret == 0) ? "verified" : "unverified",
 	    (ret != 0) ? ": " : "", (ret != 0) ? ssh_err(ret) : "");
 
-	if (ret == 0 && key_blobtype == MM_USERKEY && sig_details != NULL) {
-		req_presence = (options.pubkey_auth_options &
-		    PUBKEYAUTH_TOUCH_REQUIRED) ||
-		    !key_opts->no_require_user_presence;
-		if (req_presence &&
-		    (sig_details->sk_flags & SSH_SK_USER_PRESENCE_REQD) == 0) {
-			error("public key %s %s signature for %s%s from %.128s "
-			    "port %d rejected: user presence "
-			    "(authenticator touch) requirement not met ",
-			    sshkey_type(key), fp,
-			    authctxt->valid ? "" : "invalid user ",
-			    authctxt->user, ssh_remote_ipaddr(ssh),
-			    ssh_remote_port(ssh));
-			ret = SSH_ERR_SIGNATURE_INVALID;
-		}
-		req_verify = (options.pubkey_auth_options &
-		    PUBKEYAUTH_VERIFY_REQUIRED) || key_opts->require_verify;
-		if (req_verify &&
-		    (sig_details->sk_flags & SSH_SK_USER_VERIFICATION_REQD) == 0) {
-			error("public key %s %s signature for %s%s from %.128s "
-			    "port %d rejected: user verification requirement "
-			    "not met ", sshkey_type(key), fp,
-			    authctxt->valid ? "" : "invalid user ",
-			    authctxt->user, ssh_remote_ipaddr(ssh),
-			    ssh_remote_port(ssh));
-			ret = SSH_ERR_SIGNATURE_INVALID;
-		}
-	}
 	auth2_record_key(authctxt, ret == 0, key);
 
 	if (key_blobtype == MM_USERKEY)
@@ -1216,15 +1186,8 @@ mm_answer_keyverify(struct ssh *ssh, int sock, struct sshbuf *m)
 
 	/* encode ret != 0 as positive integer, since we're sending u32 */
 	encoded_ret = (ret != 0);
-	if ((r = sshbuf_put_u32(m, encoded_ret)) != 0 ||
-	    (r = sshbuf_put_u8(m, sig_details != NULL)) != 0)
+	if ((r = sshbuf_put_u32(m, encoded_ret)) != 0)
 		fatal_fr(r, "assemble");
-	if (sig_details != NULL) {
-		if ((r = sshbuf_put_u32(m, sig_details->sk_counter)) != 0 ||
-		    (r = sshbuf_put_u8(m, sig_details->sk_flags)) != 0)
-			fatal_fr(r, "assemble sk");
-	}
-	sshkey_sig_details_free(sig_details);
 	mm_request_send(sock, MONITOR_ANS_KEYVERIFY, m);
 
 	free(sigalg);

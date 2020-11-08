@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,8 +62,6 @@
 #include "misc.h"
 #include "ssherr.h"
 #include "digest.h"
-#include "ssh-sk.h"
-#include "sk-api.h"
 
 /* argv0 */
 extern char *__progname;
@@ -221,8 +220,7 @@ delete_all(int agent_fd, int qflag)
 }
 
 static int
-add_file(int agent_fd, const char *filename, int key_only, int qflag,
-    const char *skprovider)
+add_file(int agent_fd, const char *filename, int key_only, int qflag)
 {
 	struct sshkey *private, *cert;
 	char *comment = NULL;
@@ -339,24 +337,8 @@ add_file(int agent_fd, const char *filename, int key_only, int qflag,
 		ssh_free_identitylist(idlist);
 	}
 
-	if (sshkey_is_sk(private)) {
-		if (skprovider == NULL) {
-			fprintf(stderr, "Cannot load FIDO key %s "
-			    "without provider\n", filename);
-			goto out;
-		}
-		if ((private->sk_flags & SSH_SK_USER_VERIFICATION_REQD) != 0) {
-			fprintf(stderr, "FIDO verify-required key %s is not "
-			    "currently supported by ssh-agent\n", filename);
-			goto out;
-		}
-	} else {
-		/* Don't send provider constraint for other keys */
-		skprovider = NULL;
-	}
-
 	if ((r = ssh_add_identity_constrained(agent_fd, private, comment,
-	    lifetime, confirm, maxsign, skprovider)) == 0) {
+	    lifetime, confirm, maxsign)) == 0) {
 		ret = 0;
 		if (!qflag) {
 			fprintf(stderr, "Identity added: %s (%s)\n",
@@ -408,7 +390,7 @@ add_file(int agent_fd, const char *filename, int key_only, int qflag,
 	sshkey_free(cert);
 
 	if ((r = ssh_add_identity_constrained(agent_fd, private, comment,
-	    lifetime, confirm, maxsign, skprovider)) != 0) {
+	    lifetime, confirm, maxsign)) != 0) {
 		error_r(r, "Certificate %s (%s) add failed", certpath,
 		    private->cert->key_id);
 		goto out;
@@ -483,7 +465,7 @@ test_key(int agent_fd, const char *filename)
 		goto done;
 	}
 	if ((r = sshkey_verify(key, sig, slen, data, sizeof(data),
-	    NULL, 0, NULL)) != 0) {
+	    NULL, 0)) != 0) {
 		error_r(r, "Signature verification failed for %s", filename);
 		goto done;
 	}
@@ -569,63 +551,13 @@ lock_agent(int agent_fd, int lock)
 }
 
 static int
-load_resident_keys(int agent_fd, const char *skprovider, int qflag)
-{
-	struct sshkey **keys;
-	size_t nkeys, i;
-	int r, ok = 0;
-	char *fp;
-
-	pass = read_passphrase("Enter PIN for authenticator: ", RP_ALLOW_STDIN);
-	if ((r = sshsk_load_resident(skprovider, NULL, pass,
-	    &keys, &nkeys)) != 0) {
-		error_r(r, "Unable to load resident keys");
-		return r;
-	}
-	for (i = 0; i < nkeys; i++) {
-		if ((fp = sshkey_fingerprint(keys[i],
-		    fingerprint_hash, SSH_FP_DEFAULT)) == NULL)
-			fatal_f("sshkey_fingerprint failed");
-		if ((r = ssh_add_identity_constrained(agent_fd, keys[i], "",
-		    lifetime, confirm, maxsign, skprovider)) != 0) {
-			error("Unable to add key %s %s",
-			    sshkey_type(keys[i]), fp);
-			free(fp);
-			ok = r;
-			continue;
-		}
-		if (ok == 0)
-			ok = 1;
-		if (!qflag) {
-			fprintf(stderr, "Resident identity added: %s %s\n",
-			    sshkey_type(keys[i]), fp);
-			if (lifetime != 0) {
-				fprintf(stderr,
-				    "Lifetime set to %ld seconds\n", lifetime);
-			}
-			if (confirm != 0) {
-				fprintf(stderr, "The user must confirm "
-				    "each use of the key\n");
-			}
-		}
-		free(fp);
-		sshkey_free(keys[i]);
-	}
-	free(keys);
-	if (nkeys == 0)
-		return SSH_ERR_KEY_NOT_FOUND;
-	return ok == 1 ? 0 : ok;
-}
-
-static int
-do_file(int agent_fd, int deleting, int key_only, char *file, int qflag,
-    const char *skprovider)
+do_file(int agent_fd, int deleting, int key_only, char *file, int qflag)
 {
 	if (deleting) {
 		if (delete_file(agent_fd, file, key_only, qflag) == -1)
 			return -1;
 	} else {
-		if (add_file(agent_fd, file, key_only, qflag, skprovider) == -1)
+		if (add_file(agent_fd, file, key_only, qflag) == -1)
 			return -1;
 	}
 	return 0;
@@ -635,7 +567,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: ssh-add [-cDdKkLlqvXx] [-E fingerprint_hash] [-S provider] [-t life]\n"
+"usage: ssh-add [-cDdkLlqvXx] [-E fingerprint_hash] [-t life]\n"
 #ifdef WITH_XMSS
 "               [-M maxsign] [-m minleft]\n"
 #endif
@@ -652,8 +584,8 @@ main(int argc, char **argv)
 	extern char *optarg;
 	extern int optind;
 	int agent_fd;
-	char *pkcs11provider = NULL, *skprovider = NULL;
-	int r, i, ch, deleting = 0, ret = 0, key_only = 0, do_download = 0;
+	char *pkcs11provider = NULL;
+	int r, i, ch, deleting = 0, ret = 0, key_only = 0;
 	int xflag = 0, lflag = 0, Dflag = 0, qflag = 0, Tflag = 0;
 	SyslogFacility log_facility = SYSLOG_FACILITY_AUTH;
 	LogLevel log_level = SYSLOG_LEVEL_INFO;
@@ -679,9 +611,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
-	skprovider = getenv("SSH_SK_PROVIDER");
-
-	while ((ch = getopt(argc, argv, "vkKlLcdDTxXE:e:M:m:qs:S:t:")) != -1) {
+	while ((ch = getopt(argc, argv, "vklLcdDTxXE:e:M:m:qs:t:")) != -1) {
 		switch (ch) {
 		case 'v':
 			if (log_level == SYSLOG_LEVEL_INFO)
@@ -696,9 +626,6 @@ main(int argc, char **argv)
 			break;
 		case 'k':
 			key_only = 1;
-			break;
-		case 'K':
-			do_download = 1;
 			break;
 		case 'l':
 		case 'L':
@@ -739,9 +666,6 @@ main(int argc, char **argv)
 			break;
 		case 's':
 			pkcs11provider = optarg;
-			break;
-		case 'S':
-			skprovider = optarg;
 			break;
 		case 'e':
 			deleting = 1;
@@ -785,9 +709,6 @@ main(int argc, char **argv)
 		goto done;
 	}
 
-	if (skprovider == NULL)
-		skprovider = "internal";
-
 	argc -= optind;
 	argv += optind;
 	if (Tflag) {
@@ -801,13 +722,6 @@ main(int argc, char **argv)
 	if (pkcs11provider != NULL) {
 		if (update_card(agent_fd, !deleting, pkcs11provider,
 		    qflag) == -1)
-			ret = 1;
-		goto done;
-	}
-	if (do_download) {
-		if (skprovider == NULL)
-			fatal("Cannot download keys without provider");
-		if (load_resident_keys(agent_fd, skprovider, qflag) != 0)
 			ret = 1;
 		goto done;
 	}
@@ -830,7 +744,7 @@ main(int argc, char **argv)
 			if (stat(buf, &st) == -1)
 				continue;
 			if (do_file(agent_fd, deleting, key_only, buf,
-			    qflag, skprovider) == -1)
+			    qflag) == -1)
 				ret = 1;
 			else
 				count++;
@@ -840,7 +754,7 @@ main(int argc, char **argv)
 	} else {
 		for (i = 0; i < argc; i++) {
 			if (do_file(agent_fd, deleting, key_only,
-			    argv[i], qflag, skprovider) == -1)
+			    argv[i], qflag) == -1)
 				ret = 1;
 		}
 	}

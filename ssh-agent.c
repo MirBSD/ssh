@@ -75,7 +75,6 @@
 #include "ssherr.h"
 #include "pathnames.h"
 #include "ssh-pkcs11.h"
-#include "sk-api.h"
 
 #ifndef DEFAULT_ALLOWED_PROVIDERS
 # define DEFAULT_ALLOWED_PROVIDERS "/usr/lib*/*,/usr/local/lib*/*"
@@ -110,7 +109,6 @@ typedef struct identity {
 	char *provider;
 	time_t death;
 	u_int confirm;
-	char *sk_provider;
 } Identity;
 
 struct idtable {
@@ -180,7 +178,6 @@ free_identity(Identity *id)
 	sshkey_free(id->key);
 	free(id->provider);
 	free(id->comment);
-	free(id->sk_provider);
 	free(id);
 }
 
@@ -269,80 +266,6 @@ agent_decode_alg(struct sshkey *key, u_int flags)
 	return NULL;
 }
 
-/*
- * This function inspects a message to be signed by a FIDO key that has a
- * web-like application string (i.e. one that does not begin with "ssh:".
- * It checks that the message is one of those expected for SSH operations
- * (pubkey userauth, sshsig, CA key signing) to exclude signing challenges
- * for the web.
- */
-static int
-check_websafe_message_contents(struct sshkey *key,
-    const u_char *msg, size_t len)
-{
-	int matched = 0;
-	struct sshbuf *b;
-	u_char m, n;
-	char *cp1 = NULL, *cp2 = NULL;
-	int r;
-	struct sshkey *mkey = NULL;
-
-	if ((b = sshbuf_from(msg, len)) == NULL)
-		fatal_f("sshbuf_new");
-
-	/* SSH userauth request */
-	if ((r = sshbuf_get_string_direct(b, NULL, NULL)) == 0 && /* sess_id */
-	    (r = sshbuf_get_u8(b, &m)) == 0 && /* SSH2_MSG_USERAUTH_REQUEST */
-	    (r = sshbuf_get_cstring(b, NULL, NULL)) == 0 && /* server user */
-	    (r = sshbuf_get_cstring(b, &cp1, NULL)) == 0 && /* service */
-	    (r = sshbuf_get_cstring(b, &cp2, NULL)) == 0 && /* method */
-	    (r = sshbuf_get_u8(b, &n)) == 0 && /* sig-follows */
-	    (r = sshbuf_get_cstring(b, NULL, NULL)) == 0 && /* alg */
-	    (r = sshkey_froms(b, &mkey)) == 0 && /* key */
-	    sshbuf_len(b) == 0) {
-		debug_f("parsed userauth");
-		if (m == SSH2_MSG_USERAUTH_REQUEST && n == 1 &&
-		    strcmp(cp1, "ssh-connection") == 0 &&
-		    strcmp(cp2, "publickey") == 0 &&
-		    sshkey_equal(key, mkey)) {
-			debug_f("well formed userauth");
-			matched = 1;
-		}
-	}
-	free(cp1);
-	free(cp2);
-	sshkey_free(mkey);
-	sshbuf_free(b);
-	if (matched)
-		return 1;
-
-	if ((b = sshbuf_from(msg, len)) == NULL)
-		fatal_f("sshbuf_new");
-	cp1 = cp2 = NULL;
-	mkey = NULL;
-
-	/* SSHSIG */
-	if ((r = sshbuf_cmp(b, 0, "SSHSIG", 6)) == 0 &&
-	    (r = sshbuf_consume(b, 6)) == 0 &&
-	    (r = sshbuf_get_cstring(b, NULL, NULL)) == 0 && /* namespace */
-	    (r = sshbuf_get_string_direct(b, NULL, NULL)) == 0 && /* reserved */
-	    (r = sshbuf_get_cstring(b, NULL, NULL)) == 0 && /* hashalg */
-	    (r = sshbuf_get_string_direct(b, NULL, NULL)) == 0 && /* H(msg) */
-	    sshbuf_len(b) == 0) {
-		debug_f("parsed sshsig");
-		matched = 1;
-	}
-
-	sshbuf_free(b);
-	if (matched)
-		return 1;
-
-	/* XXX CA signature operation */
-
-	error("web-origin key attempting to sign non-SSH message");
-	return 0;
-}
-
 /* ssh2 only */
 static void
 process_sign_request2(SocketEntry *e)
@@ -375,25 +298,10 @@ process_sign_request2(SocketEntry *e)
 		verbose_f("user refused key");
 		goto send;
 	}
-	if (sshkey_is_sk(id->key)) {
-		if (strncmp(id->key->sk_application, "ssh:", 4) != 0 &&
-		    !check_websafe_message_contents(key, data, dlen)) {
-			/* error already logged */
-			goto send;
-		}
-		if ((id->key->sk_flags & SSH_SK_USER_PRESENCE_REQD)) {
-			if ((fp = sshkey_fingerprint(key, SSH_FP_HASH_DEFAULT,
-			    SSH_FP_DEFAULT)) == NULL)
-				fatal_f("fingerprint failed");
-			notifier = notify_start(0,
-			    "Confirm user presence for key %s %s",
-			    sshkey_type(id->key), fp);
-		}
-	}
 	/* XXX support PIN required FIDO keys */
 	if ((r = sshkey_sign(id->key, &signature, &slen,
 	    data, dlen, agent_decode_alg(key, flags),
-	    id->sk_provider, NULL, compat)) != 0) {
+	    compat)) != 0) {
 		error_fr(r, "sshkey_sign");
 		goto send;
 	}
@@ -496,8 +404,7 @@ process_add_identity(SocketEntry *e)
 	Identity *id;
 	int success = 0, confirm = 0;
 	u_int seconds = 0, maxsign;
-	char *fp, *comment = NULL, *ext_name = NULL, *sk_provider = NULL;
-	char canonical_provider[PATH_MAX];
+	char *fp, *comment = NULL, *ext_name = NULL;
 	time_t death = 0;
 	struct sshkey *k = NULL;
 	u_char ctype;
@@ -535,67 +442,14 @@ process_add_identity(SocketEntry *e)
 				goto err;
 			}
 			break;
-		case SSH_AGENT_CONSTRAIN_EXTENSION:
-			if ((r = sshbuf_get_cstring(e->request,
-			    &ext_name, NULL)) != 0) {
-				error_fr(r, "parse constraint extension");
-				goto err;
-			}
-			debug_f("constraint ext %s", ext_name);
-			if (strcmp(ext_name, "sk-provider@openssh.com") == 0) {
-				if (sk_provider != NULL) {
-					error("%s already set", ext_name);
-					goto err;
-				}
-				if ((r = sshbuf_get_cstring(e->request,
-				    &sk_provider, NULL)) != 0) {
-					error_fr(r, "parse %s", ext_name);
-					goto err;
-				}
-			} else {
-				error_f("unsupported constraint \"%s\"",
-				    ext_name);
-				goto err;
-			}
-			free(ext_name);
-			break;
 		default:
 			error_f("Unknown constraint %d", ctype);
  err:
-			free(sk_provider);
 			free(ext_name);
 			sshbuf_reset(e->request);
 			free(comment);
 			sshkey_free(k);
 			goto send;
-		}
-	}
-	if (sk_provider != NULL) {
-		if (!sshkey_is_sk(k)) {
-			error("Cannot add provider: %s is not an "
-			    "authenticator-hosted key", sshkey_type(k));
-			free(sk_provider);
-			goto send;
-		}
-		if (strcasecmp(sk_provider, "internal") == 0) {
-			debug_f("internal provider");
-		} else {
-			if (realpath(sk_provider, canonical_provider) == NULL) {
-				verbose("failed provider \"%.100s\": "
-				    "realpath: %s", sk_provider,
-				    strerror(errno));
-				free(sk_provider);
-				goto send;
-			}
-			free(sk_provider);
-			sk_provider = xstrdup(canonical_provider);
-			if (match_pattern_list(sk_provider,
-			    allowed_providers, 0) != 1) {
-				error("Refusing add key: "
-				    "provider %s not allowed", sk_provider);
-				free(sk_provider);
-				goto send;
-			}
 		}
 	}
 	if ((r = sshkey_shield_private(k)) != 0) {
@@ -615,20 +469,18 @@ process_add_identity(SocketEntry *e)
 		/* key state might have been updated */
 		sshkey_free(id->key);
 		free(id->comment);
-		free(id->sk_provider);
 	}
 	id->key = k;
 	id->comment = comment;
 	id->death = death;
 	id->confirm = confirm;
-	id->sk_provider = sk_provider;
 
 	if ((fp = sshkey_fingerprint(k, SSH_FP_HASH_DEFAULT,
 	    SSH_FP_DEFAULT)) == NULL)
 		fatal_f("sshkey_fingerprint failed");
 	debug_f("add %s %s \"%.100s\" (life: %u) (confirm: %u) "
-	    "(provider: %s)", sshkey_ssh_name(k), fp, comment,
-	    seconds, confirm, sk_provider == NULL ? "none" : sk_provider);
+	    , sshkey_ssh_name(k), fp, comment,
+	    seconds, confirm);
 	free(fp);
 send:
 	send_status(e, success);

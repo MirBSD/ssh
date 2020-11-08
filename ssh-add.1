@@ -43,9 +43,8 @@
 .Nd adds private key identities to the OpenSSH authentication agent
 .Sh SYNOPSIS
 .Nm ssh-add
-.Op Fl cDdKkLlqvXx
+.Op Fl cDdkLlqvXx
 .Op Fl E Ar fingerprint_hash
-.Op Fl S Ar provider
 .Op Fl t Ar life
 .Op Ar
 .Nm ssh-add
@@ -129,8 +128,6 @@ The default is
 .It Fl e Ar pkcs11
 Remove keys provided by the PKCS#11 shared library
 .Ar pkcs11 .
-.It Fl K
-Load resident keys from a FIDO authenticator.
 .It Fl k
 When loading keys into or deleting keys from the agent, process plain private
 keys only and skip certificates.
@@ -141,10 +138,6 @@ by the agent.
 Lists fingerprints of all identities currently represented by the agent.
 .It Fl q
 Be quiet after a successful operation.
-.It Fl S Ar provider
-Specifies a path to a library that will be used when adding
-FIDO authenticator-hosted keys, overriding the default of using the
-internal USB HID support.
 .It Fl s Ar pkcs11
 Add keys provided by the PKCS#11 shared library
 .Ar pkcs11 .
@@ -219,10 +212,6 @@ is set.
 Identifies the path of a
 .Ux Ns -domain
 socket used to communicate with the agent.
-.It Ev SSH_SK_PROVIDER
-Specifies a path to a library that will be used when loading any
-FIDO authenticator-hosted keys, overriding the default of using
-the built-in USB HID support.
 .El
 .Sh FILES
 .Bl -tag -width Ds -compact

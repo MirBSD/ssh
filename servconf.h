@@ -223,7 +223,6 @@ typedef struct {
 	int	fingerprint_hash;
 	int	expose_userauth_info;
 	u_int64_t timing_secret;
-	char   *sk_provider;
 
 	int	mask_remote;
 }       ServerOptions;

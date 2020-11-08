@@ -5,7 +5,6 @@
 SRCS=	ssh-add.c
 SRCS+=	authfd.c cleanup.c fatal.c readpass.c utf8.c
 SRCS+=	${SRCS_BASE} ${SRCS_KEY} ${SRCS_KEYP} ${SRCS_KRL} ${SRCS_UTL}
-SRCS+=	${SRCS_SK_CLIENT}
 SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-add

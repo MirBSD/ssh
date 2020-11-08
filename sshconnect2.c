@@ -67,8 +67,6 @@
 #include "hostfile.h"
 #include "ssherr.h"
 #include "utf8.h"
-#include "ssh-sk.h"
-#include "sk-api.h"
 
 #ifdef GSSAPI
 #include "ssh-gss.h"
@@ -662,8 +660,6 @@ format_identity(Identity *id)
 	if (id->key) {
 		if ((id->key->flags & SSHKEY_FLAG_EXT) != 0)
 			note = " token";
-		else if (sshkey_is_sk(id->key))
-			note = " authenticator";
 	}
 	xasprintf(&ret, "%s %s%s%s%s%s%s",
 	    id->filename,
@@ -1204,7 +1200,7 @@ identity_sign(struct identity *id, u_char **sigp, size_t *lenp,
 	struct sshkey *sign_key = NULL, *prv = NULL;
 	int r = SSH_ERR_INTERNAL_ERROR;
 	struct notifier_ctx *notifier = NULL;
-	char *fp = NULL, *pin = NULL, *prompt = NULL;
+	char *prompt = NULL;
 
 	*sigp = NULL;
 	*lenp = 0;
@@ -1233,28 +1229,9 @@ identity_sign(struct identity *id, u_char **sigp, size_t *lenp,
 			goto out;
 		}
 		sign_key = prv;
-		if (sshkey_is_sk(sign_key)) {
-			if ((sign_key->sk_flags &
-			    SSH_SK_USER_VERIFICATION_REQD)) {
-				xasprintf(&prompt, "Enter PIN for %s key %s: ",
-				    sshkey_type(sign_key), id->filename);
-				pin = read_passphrase(prompt, 0);
-			}
-			if ((sign_key->sk_flags & SSH_SK_USER_PRESENCE_REQD)) {
-				/* XXX should batch mode just skip these? */
-				if ((fp = sshkey_fingerprint(sign_key,
-				    options.fingerprint_hash,
-				    SSH_FP_DEFAULT)) == NULL)
-					fatal_f("fingerprint failed");
-				notifier = notify_start(options.batch_mode,
-				    "Confirm user presence for key %s %s",
-				    sshkey_type(sign_key), fp);
-				free(fp);
-			}
-		}
 	}
 	if ((r = sshkey_sign(sign_key, sigp, lenp, data, datalen,
-	    alg, options.sk_provider, pin, compat)) != 0) {
+	    alg, compat)) != 0) {
 		debug_fr(r, "sshkey_sign");
 		goto out;
 	}
@@ -1270,8 +1247,6 @@ identity_sign(struct identity *id, u_char **sigp, size_t *lenp,
 	r = 0;
  out:
 	free(prompt);
-	if (pin != NULL)
-		freezero(pin, strlen(pin));
 	notify_complete(notifier);
 	sshkey_free(prv);
 	return r;
@@ -1544,14 +1519,6 @@ load_identity_file(Identity *id)
 			quit = 1;
 			break;
 		}
-		if (private != NULL && sshkey_is_sk(private) &&
-		    options.sk_provider == NULL) {
-			debug("key \"%s\" is an authenticator-hosted key, "
-			    "but no provider specified", id->filename);
-			sshkey_free(private);
-			private = NULL;
-			quit = 1;
-		}
 		if (!quit && private != NULL && id->agent_fd == -1 &&
 		    !(id->key && id->isprivate))
 			maybe_add_key_to_agent(id->filename, private, comment,
@@ -1628,12 +1595,6 @@ pubkey_prepare(Authctxt *authctxt)
 			    "certificate", options.identity_files[i]);
 			continue;
 		}
-		if (key && sshkey_is_sk(key) && options.sk_provider == NULL) {
-			debug_f("ignoring authenticator-hosted key %s as no "
-			    "SecurityKeyProvider has been specified",
-			    options.identity_files[i]);
-			continue;
-		}
 		options.identity_keys[i] = NULL;
 		id = xcalloc(1, sizeof(*id));
 		id->agent_fd = -1;
@@ -1649,13 +1610,6 @@ pubkey_prepare(Authctxt *authctxt)
 		    key->cert->type != SSH2_CERT_TYPE_USER) {
 			debug_f("ignoring certificate %s: not a user "
 			    "certificate", options.identity_files[i]);
-			continue;
-		}
-		if (key && sshkey_is_sk(key) && options.sk_provider == NULL) {
-			debug_f("ignoring authenticator-hosted key "
-			    "certificate %s as no "
-			    "SecurityKeyProvider has been specified",
-			    options.identity_files[i]);
 			continue;
 		}
 		id = xcalloc(1, sizeof(*id));

@@ -164,7 +164,6 @@ initialize_server_options(ServerOptions *options)
 	options->authorized_keys_command = NULL;
 	options->authorized_keys_command_user = NULL;
 	options->revoked_keys_file = NULL;
-	options->sk_provider = NULL;
 	options->trusted_user_ca_keys = NULL;
 	options->authorized_principals_file = NULL;
 	options->authorized_principals_command = NULL;
@@ -433,8 +432,6 @@ fill_default_server_options(ServerOptions *options)
 		options->disable_forwarding = 0;
 	if (options->expose_userauth_info == -1)
 		options->expose_userauth_info = 0;
-	if (options->sk_provider == NULL)
-		options->sk_provider = xstrdup("internal");
 	if (options->mask_remote == -1)
 		options->mask_remote = 0;
 
@@ -456,7 +453,6 @@ fill_default_server_options(ServerOptions *options)
 	CLEAR_ON_NONE(options->banner);
 	CLEAR_ON_NONE(options->trusted_user_ca_keys);
 	CLEAR_ON_NONE(options->revoked_keys_file);
-	CLEAR_ON_NONE(options->sk_provider);
 	CLEAR_ON_NONE(options->authorized_principals_file);
 	CLEAR_ON_NONE(options->adm_forced_command);
 	CLEAR_ON_NONE(options->chroot_directory);
@@ -510,7 +506,7 @@ typedef enum {
 	sAuthenticationMethods, sHostKeyAgent, sPermitUserRC,
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
-	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions, sSecurityKeyProvider,
+	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions,
 	sMaskRemote,
 	sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
@@ -653,7 +649,6 @@ static struct {
 	{ "rdomain", sUnsupported, SSHCFG_ALL },
 #endif
 	{ "casignaturealgorithms", sCASignatureAlgorithms, SSHCFG_ALL },
-	{ "securitykeyprovider", sSecurityKeyProvider, SSHCFG_GLOBAL },
 	{ "maskremoteaddress", sMaskRemote, SSHCFG_ALL },
 	{ NULL, sBadOption, 0 }
 };
@@ -2138,21 +2133,6 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		charptr = &options->revoked_keys_file;
 		goto parse_filename;
 
-	case sSecurityKeyProvider:
-		charptr = &options->sk_provider;
-		arg = strdelim(&cp);
-		if (!arg || *arg == '\0')
-			fatal("%s line %d: missing file name.",
-			    filename, linenum);
-		if (*activep && *charptr == NULL) {
-			*charptr = strcasecmp(arg, "internal") == 0 ?
-			    xstrdup(arg) : derelativise_path(arg);
-			/* increase optional counter */
-			if (intptr != NULL)
-				*intptr = *intptr + 1;
-		}
-		break;
-
 	case sIPQoS:
 		arg = strdelim(&cp);
 		if ((value = parse_ipqos(arg)) == -1)
@@ -2812,7 +2792,6 @@ dump_config(ServerOptions *o)
 	dump_cfg_string(sChrootDirectory, o->chroot_directory);
 	dump_cfg_string(sTrustedUserCAKeys, o->trusted_user_ca_keys);
 	dump_cfg_string(sRevokedKeys, o->revoked_keys_file);
-	dump_cfg_string(sSecurityKeyProvider, o->sk_provider);
 	dump_cfg_string(sAuthorizedPrincipalsFile,
 	    o->authorized_principals_file);
 	dump_cfg_string(sVersionAddendum, *o->version_addendum == '\0'

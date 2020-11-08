@@ -149,7 +149,7 @@ done:
 
 static int
 sshsig_wrap_sign(struct sshkey *key, const char *hashalg,
-    const char *sk_provider, const char *sk_pin, const struct sshbuf *h_message,
+    const struct sshbuf *h_message,
     const char *sig_namespace, struct sshbuf **out,
     sshsig_signer *signer, void *signer_ctx)
 {
@@ -183,14 +183,14 @@ sshsig_wrap_sign(struct sshkey *key, const char *hashalg,
 	if (signer != NULL) {
 		if ((r = signer(key, &sig, &slen,
 		    sshbuf_ptr(tosign), sshbuf_len(tosign),
-		    sign_alg, sk_provider, sk_pin, 0, signer_ctx)) != 0) {
+		    sign_alg, 0, signer_ctx)) != 0) {
 			error_r(r, "Couldn't sign message (signer)");
 			goto done;
 		}
 	} else {
 		if ((r = sshkey_sign(key, &sig, &slen,
 		    sshbuf_ptr(tosign), sshbuf_len(tosign),
-		    sign_alg, sk_provider, sk_pin, 0)) != 0) {
+		    sign_alg, 0)) != 0) {
 			error_r(r, "Couldn't sign message");
 			goto done;
 		}
@@ -286,7 +286,7 @@ sshsig_peek_hashalg(struct sshbuf *signature, char **hashalgp)
 static int
 sshsig_wrap_verify(struct sshbuf *signature, const char *hashalg,
     const struct sshbuf *h_message, const char *expect_namespace,
-    struct sshkey **sign_keyp, struct sshkey_sig_details **sig_details)
+    struct sshkey **sign_keyp)
 {
 	int r = SSH_ERR_INTERNAL_ERROR;
 	struct sshbuf *buf = NULL, *toverify = NULL;
@@ -296,8 +296,6 @@ sshsig_wrap_verify(struct sshbuf *signature, const char *hashalg,
 	size_t siglen;
 
 	debug_f("verify message length %zu", sshbuf_len(h_message));
-	if (sig_details != NULL)
-		*sig_details = NULL;
 	if (sign_keyp != NULL)
 		*sign_keyp = NULL;
 
@@ -363,7 +361,7 @@ sshsig_wrap_verify(struct sshbuf *signature, const char *hashalg,
 		}
 	}
 	if ((r = sshkey_verify(key, sig, siglen, sshbuf_ptr(toverify),
-	    sshbuf_len(toverify), NULL, 0, sig_details)) != 0) {
+	    sshbuf_len(toverify), NULL, 0)) != 0) {
 		error_r(r, "Signature verification failed");
 		goto done;
 	}
@@ -381,106 +379,6 @@ done:
 	sshbuf_free(buf);
 	sshbuf_free(toverify);
 	sshkey_free(key);
-	return r;
-}
-
-static int
-hash_buffer(const struct sshbuf *m, const char *hashalg, struct sshbuf **bp)
-{
-	char *hex, hash[SSH_DIGEST_MAX_LENGTH];
-	int alg, r = SSH_ERR_INTERNAL_ERROR;
-	struct sshbuf *b = NULL;
-
-	*bp = NULL;
-	memset(hash, 0, sizeof(hash));
-
-	if ((r = sshsig_check_hashalg(hashalg)) != 0)
-		return r;
-	if ((alg = ssh_digest_alg_by_name(hashalg)) == -1) {
-		error_f("can't look up hash algorithm %s", hashalg);
-		return SSH_ERR_INTERNAL_ERROR;
-	}
-	if ((r = ssh_digest_buffer(alg, m, hash, sizeof(hash))) != 0) {
-		error_fr(r, "ssh_digest_buffer");
-		return r;
-	}
-	if ((hex = tohex(hash, ssh_digest_bytes(alg))) != NULL) {
-		debug3_f("final hash: %s", hex);
-		freezero(hex, strlen(hex));
-	}
-	if ((b = sshbuf_new()) == NULL) {
-		r = SSH_ERR_ALLOC_FAIL;
-		goto out;
-	}
-	if ((r = sshbuf_put(b, hash, ssh_digest_bytes(alg))) != 0) {
-		error_fr(r, "sshbuf_put");
-		goto out;
-	}
-	*bp = b;
-	b = NULL; /* transferred */
-	/* success */
-	r = 0;
- out:
-	sshbuf_free(b);
-	explicit_bzero(hash, sizeof(hash));
-	return r;
-}
-
-int
-sshsig_signb(struct sshkey *key, const char *hashalg,
-    const char *sk_provider, const char *sk_pin,
-    const struct sshbuf *message, const char *sig_namespace,
-    struct sshbuf **out, sshsig_signer *signer, void *signer_ctx)
-{
-	struct sshbuf *b = NULL;
-	int r = SSH_ERR_INTERNAL_ERROR;
-
-	if (hashalg == NULL)
-		hashalg = HASHALG_DEFAULT;
-	if (out != NULL)
-		*out = NULL;
-	if ((r = hash_buffer(message, hashalg, &b)) != 0) {
-		error_fr(r, "hash buffer");
-		goto out;
-	}
-	if ((r = sshsig_wrap_sign(key, hashalg, sk_provider, sk_pin, b,
-	    sig_namespace, out, signer, signer_ctx)) != 0)
-		goto out;
-	/* success */
-	r = 0;
- out:
-	sshbuf_free(b);
-	return r;
-}
-
-int
-sshsig_verifyb(struct sshbuf *signature, const struct sshbuf *message,
-    const char *expect_namespace, struct sshkey **sign_keyp,
-    struct sshkey_sig_details **sig_details)
-{
-	struct sshbuf *b = NULL;
-	int r = SSH_ERR_INTERNAL_ERROR;
-	char *hashalg = NULL;
-
-	if (sig_details != NULL)
-		*sig_details = NULL;
-	if (sign_keyp != NULL)
-		*sign_keyp = NULL;
-	if ((r = sshsig_peek_hashalg(signature, &hashalg)) != 0)
-		return r;
-	debug_f("signature made with hash \"%s\"", hashalg);
-	if ((r = hash_buffer(message, hashalg, &b)) != 0) {
-		error_fr(r, "hash buffer");
-		goto out;
-	}
-	if ((r = sshsig_wrap_verify(signature, hashalg, b, expect_namespace,
-	    sign_keyp, sig_details)) != 0)
-		goto out;
-	/* success */
-	r = 0;
- out:
-	sshbuf_free(b);
-	free(hashalg);
 	return r;
 }
 
@@ -555,7 +453,6 @@ hash_file(int fd, const char *hashalg, struct sshbuf **bp)
 
 int
 sshsig_sign_fd(struct sshkey *key, const char *hashalg,
-    const char *sk_provider, const char *sk_pin,
     int fd, const char *sig_namespace, struct sshbuf **out,
     sshsig_signer *signer, void *signer_ctx)
 {
@@ -570,7 +467,7 @@ sshsig_sign_fd(struct sshkey *key, const char *hashalg,
 		error_fr(r, "hash_file");
 		return r;
 	}
-	if ((r = sshsig_wrap_sign(key, hashalg, sk_provider, sk_pin, b,
+	if ((r = sshsig_wrap_sign(key, hashalg, b,
 	    sig_namespace, out, signer, signer_ctx)) != 0)
 		goto out;
 	/* success */
@@ -582,15 +479,12 @@ sshsig_sign_fd(struct sshkey *key, const char *hashalg,
 
 int
 sshsig_verify_fd(struct sshbuf *signature, int fd,
-    const char *expect_namespace, struct sshkey **sign_keyp,
-    struct sshkey_sig_details **sig_details)
+    const char *expect_namespace, struct sshkey **sign_keyp)
 {
 	struct sshbuf *b = NULL;
 	int r = SSH_ERR_INTERNAL_ERROR;
 	char *hashalg = NULL;
 
-	if (sig_details != NULL)
-		*sig_details = NULL;
 	if (sign_keyp != NULL)
 		*sign_keyp = NULL;
 	if ((r = sshsig_peek_hashalg(signature, &hashalg)) != 0)
@@ -601,7 +495,7 @@ sshsig_verify_fd(struct sshbuf *signature, int fd,
 		goto out;
 	}
 	if ((r = sshsig_wrap_verify(signature, hashalg, b, expect_namespace,
-	    sign_keyp, sig_details)) != 0)
+	    sign_keyp)) != 0)
 		goto out;
 	/* success */
 	r = 0;

@@ -150,7 +150,7 @@ userauth_hostbased(struct ssh *ssh)
 	if (PRIVSEP(hostbased_key_allowed(ssh, authctxt->pw, cuser,
 	    chost, key)) &&
 	    PRIVSEP(sshkey_verify(key, sig, slen,
-	    sshbuf_ptr(b), sshbuf_len(b), pkalg, ssh->compat, NULL)) == 0)
+	    sshbuf_ptr(b), sshbuf_len(b), pkalg, ssh->compat)) == 0)
 		authenticated = 1;
 
 	auth2_record_key(authctxt, authenticated, key);

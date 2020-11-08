@@ -53,7 +53,6 @@
 .Op Fl N Ar new_passphrase
 .Op Fl O Ar option
 .Op Fl t Cm dsa | rsa
-.Op Fl w Ar provider
 .Nm ssh-keygen
 .Fl p
 .Op Fl a Ar rounds
@@ -95,10 +94,6 @@
 .Nm ssh-keygen
 .Fl H
 .Op Fl f Ar known_hosts_file
-.Nm ssh-keygen
-.Fl K
-.Op Fl a Ar rounds
-.Op Fl w Ar provider
 .Nm ssh-keygen
 .Fl R Ar hostname
 .Op Fl f Ar known_hosts_file
@@ -380,12 +375,6 @@ This option allows importing keys from other software, including several
 commercial SSH implementations.
 The default import format is
 .Dq RFC4716 .
-.It Fl K
-Download resident keys from a FIDO authenticator.
-Public and private key files will be written to the current directory for
-each downloaded key.
-If multiple FIDO authenticators are attached, keys will be downloaded from
-the first touched authenticator.
 .It Fl k
 Generate a KRL file.
 In this mode,
@@ -476,57 +465,6 @@ When performing moduli generation or screening, one of the options
 listed in the
 .Sx MODULI GENERATION
 section may be specified.
-.Pp
-When generating a key that will be hosted on a FIDO authenticator,
-this flag may be used to specify key-specific options.
-Those supported at present are:
-.Bl -tag -width Ds
-.It Cm application
-Override the default FIDO application/origin string of
-.Dq ssh: .
-This may be useful when generating host or domain-specific resident keys.
-The specified application string must begin with
-.Dq ssh: .
-.It Cm challenge Ns = Ns Ar path
-Specifies a path to a challenge string that will be passed to the
-FIDO token during key generation.
-The challenge string may be used as part of an out-of-band
-protocol for key enrollment
-(a random challenge is used by default).
-.It Cm device
-Explicitly specify a
-.Xr fido 4
-device to use, rather than letting the token middleware select one.
-.It Cm no-touch-required
-Indicate that the generated private key should not require touch
-events (user presence) when making signatures.
-Note that
-.Xr sshd 8
-will refuse such signatures by default, unless overridden via
-an authorized_keys option.
-.It Cm resident
-Indicate that the key should be stored on the FIDO authenticator itself.
-Resident keys may be supported on FIDO2 tokens and typically require that
-a PIN be set on the token prior to generation.
-Resident keys may be loaded off the token using
-.Xr ssh-add 1 .
-.It Cm user
-A username to be associated with a resident key,
-overriding the empty default username.
-Specifying a username may be useful when generating multiple resident keys
-for the same application name.
-.It Cm verify-required
-Indicate that this private key should require user verification for
-each signature.
-Not all FIDO tokens support this option.
-Currently PIN authentication is the only supported verification method,
-but other methods may be supported in the future.
-.It Cm write-attestation Ns = Ns Ar path
-May be used at key generation time to record the attestation data
-returned from FIDO tokens during key generation.
-Please note that this information is potentially sensitive.
-By default, this information is discarded.
-.El
 .Pp
 The
 .Fl O
@@ -649,10 +587,6 @@ Multiple
 .Fl v
 options increase the verbosity.
 The maximum is 3.
-.It Fl w Ar provider
-Specifies a path to a library that will be used when creating
-FIDO authenticator-hosted keys, overriding the default of using
-the internal USB HID support.
 .It Fl Y Cm find-principals
 Find the principal(s) associated with the public key of a signature,
 provided using the
@@ -977,30 +911,12 @@ by
 .It Ic permit-X11-forwarding
 Allows X11 forwarding.
 .Pp
-.It Ic no-touch-required
-Do not require signatures made using this key include demonstration
-of user presence (e.g. by having the user touch the authenticator).
-This option only makes sense for the FIDO authenticator algorithms
-.Cm ecdsa-sk
-and
-.Cm ed25519-sk .
-.Pp
 .It Ic source-address Ns = Ns Ar address_list
 Restrict the source addresses from which the certificate is considered valid.
 The
 .Ar address_list
 is a comma-separated list of one or more address/netmask pairs in CIDR
 format.
-.Pp
-.It Ic verify-required
-Require signatures made using this key indicate that the user was first
-verified.
-This option only makes sense for the FIDO authenticator algorithms
-.Cm ecdsa-sk
-and
-.Cm ed25519-sk .
-Currently PIN authentication is the only supported verification method,
-but other methods may be supported in the future.
 .El
 .Pp
 At present, no standard options are valid for host keys.
@@ -1155,13 +1071,6 @@ user1@example.com,user2@example.com ssh-rsa AAAAX1...
 # A key that is accepted only for file signing.
 user2@example.com namespaces="file" ssh-ed25519 AAA41...
 .Ed
-.Sh ENVIRONMENT
-.Bl -tag -width Ds
-.It Ev SSH_SK_PROVIDER
-Specifies a path to a library that will be used when loading any
-FIDO authenticator-hosted keys, overriding the default of using
-the built-in USB HID support.
-.El
 .Sh FILES
 .Bl -tag -width Ds -compact
 .It Pa ~/.ssh/id_dsa

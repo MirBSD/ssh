@@ -806,8 +806,8 @@ ssh_krl_to_blob(struct ssh_krl *krl, struct sshbuf *buf,
 			goto out;
 		/* XXX support sk-* keys */
 		if ((r = sshkey_sign(sign_keys[i], &sblob, &slen,
-		    sshbuf_ptr(buf), sshbuf_len(buf), NULL, NULL,
-		    NULL, 0)) != 0)
+		    sshbuf_ptr(buf), sshbuf_len(buf), NULL,
+		    0)) != 0)
 			goto out;
 		KRL_DBG(("signature sig len %zu", slen));
 		if ((r = sshbuf_put_string(buf, sblob, slen)) != 0)
@@ -1073,7 +1073,7 @@ ssh_krl_from_blob(struct sshbuf *buf, struct ssh_krl **krlp,
 		}
 		/* Check signature over entire KRL up to this point */
 		if ((r = sshkey_verify(key, blob, blen,
-		    sshbuf_ptr(buf), sig_off, NULL, 0, NULL)) != 0)
+		    sshbuf_ptr(buf), sig_off, NULL, 0)) != 0)
 			goto out;
 		/* Check if this key has already signed this KRL */
 		for (i = 0; i < nca_used; i++) {

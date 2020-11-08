@@ -199,7 +199,7 @@ input_kex_gen_reply(int type, u_int32_t seq, struct ssh *ssh)
 		goto out;
 
 	if ((r = sshkey_verify(server_host_key, signature, slen, hash, hashlen,
-	    kex->hostkey_alg, ssh->compat, NULL)) != 0)
+	    kex->hostkey_alg, ssh->compat)) != 0)
 		goto out;
 
 	if ((r = kex_derive_keys(ssh, hash, hashlen, shared_secret)) == 0)
