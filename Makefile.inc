@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 CPPFLAGS+=	-I${.CURDIR:Q}/..
-CPPFLAGS+=	-DDEBUG_MATCHING
+#CPPFLAGS+=	-DDEBUG_MATCHING
 
 COPTS+=		-Wall
 COPTS+=		-Wextra
