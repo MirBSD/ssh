@@ -8,12 +8,13 @@ SRCS+=	uidswap.c utf8.c
 SRCS+=	${SRCS_BASE} ${SRCS_KEY} ${SRCS_KEYP} ${SRCS_KRL} ${SRCS_PKT} \
 	${SRCS_UTL} ${SRCS_SK_CLIENT}
 SRCS+=	libressl-api-compat.c
+
 PROG=	ssh-keysign
+MAN=	ssh-keysign.8
+
 BINOWN=	root
 BINMODE=4555
-
 BINDIR=	/usr/libexec
-MAN=	ssh-keysign.8
 
 .include <bsd.prog.mk>
 

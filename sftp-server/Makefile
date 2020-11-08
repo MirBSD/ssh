@@ -7,9 +7,9 @@ SRCS+=	fatal.c
 SRCS+=	${SRCS_BASE} ${SRCS_UTL}
 
 PROG=	sftp-server
+MAN=	sftp-server.8
 
 BINDIR=	/usr/libexec
-MAN=	sftp-server.8
 
 LDADD+=	-lutil
 DPADD+= ${LIBUTIL}

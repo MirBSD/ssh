@@ -14,8 +14,9 @@ SRCS+=	${SRCS_BASE} ${SRCS_KEX} ${SRCS_KEXS} ${SRCS_KEY} ${SRCS_KEYP} \
 SRCS+=	libressl-api-compat.c
 
 PROG=	sshd
-BINDIR=	/usr/sbin
 MAN=	sshd.8 sshd_config.5
+
+BINDIR=	/usr/sbin
 
 .include <bsd.prog.mk>
 

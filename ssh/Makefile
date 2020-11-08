@@ -10,9 +10,9 @@ SRCS+=	${SRCS_BASE} ${SRCS_KEX} ${SRCS_KEXC} ${SRCS_KEY} ${SRCS_KEYP} \
 SRCS+=	libressl-api-compat.c
 
 PROG=	ssh
+MAN=	ssh.1 ssh_config.5
 
 BINDIR=	/usr/bin
-MAN=	ssh.1 ssh_config.5
 
 .include <bsd.prog.mk>
 

@@ -8,9 +8,9 @@ SRCS+=	${SRCS_KEY} ${SRCS_UTL} ${SRCS_BASE} ${SRCS_SK}
 SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-sk-helper
+MAN=	ssh-sk-helper.8
 
 BINDIR=	/usr/libexec
-MAN=	ssh-sk-helper.8
 
 .include <bsd.prog.mk>
 

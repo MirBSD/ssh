@@ -9,10 +9,10 @@ SRCS+=	${SRCS_SK_CLIENT}
 SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-agent
+
 BINOWN=	root
 BINGRP=	_sshagnt
 BINMODE=2555
-
 BINDIR=	/usr/bin
 
 .include <bsd.prog.mk>

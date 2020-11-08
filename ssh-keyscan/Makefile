@@ -7,6 +7,7 @@ SRCS+=	atomicio.c cleanup.c compat.c hostfile.c ssh_api.c dns.c
 SRCS+=	${SRCS_BASE} ${SRCS_KEX} ${SRCS_KEXC} ${SRCS_KEXS} ${SRCS_KEY} \
 	${SRCS_PKT} ${SRCS_UTL} ${SRCS_SK_CLIENT}
 SRCS+=	libressl-api-compat.c
+
 PROG=	ssh-keyscan
 
 BINDIR=	/usr/bin
