@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/mount.h>
@@ -1379,10 +1379,24 @@ process_extended_lsetstat(u_int32_t id)
 	}
 	if (a.flags & SSH2_FILEXFER_ATTR_PERMISSIONS) {
 		logit("set \"%s\" mode %04o", name, a.perm);
+#ifdef __MirBSD__ /* for now */
+		{
+			int fd;
+
+			if ((fd = open(name, O_WRONLY | O_NOFOLLOW)) == -1)
+				status = errno_to_portable(errno);
+			else {
+				if (fchmod(fd, a.perm & 07777) == -1)
+					status = errno_to_portable(errno);
+				close(fd);
+			}
+		}
+#else
 		r = fchmodat(AT_FDCWD, name,
 		    a.perm & 07777, AT_SYMLINK_NOFOLLOW);
 		if (r == -1)
 			status = errno_to_portable(errno);
+#endif
 	}
 	if (a.flags & SSH2_FILEXFER_ATTR_ACMODTIME) {
 		char buf[64];
@@ -1391,18 +1405,53 @@ process_extended_lsetstat(u_int32_t id)
 		strftime(buf, sizeof(buf), "%Y%m%d-%H:%M:%S",
 		    localtime(&t));
 		logit("set \"%s\" modtime %s", name, buf);
+#ifdef __MirBSD__ /* for now */
+		{
+			struct timespec *times = attrib_to_ts(&a);
+			struct timeval tv[2];
+			int fd;
+
+			tv[0].tv_sec = times[0].tv_sec;
+			tv[0].tv_usec = times[0].tv_nsec / 1000;
+			tv[1].tv_sec = times[1].tv_sec;
+			tv[1].tv_usec = times[1].tv_nsec / 1000;
+
+			if ((fd = open(name, O_WRONLY | O_NOFOLLOW)) == -1)
+				status = errno_to_portable(errno);
+			else {
+				if (futimes(fd, tv) == -1)
+					status = errno_to_portable(errno);
+				close(fd);
+			}
+		}
+#else
 		r = utimensat(AT_FDCWD, name,
 		    attrib_to_ts(&a), AT_SYMLINK_NOFOLLOW);
 		if (r == -1)
 			status = errno_to_portable(errno);
+#endif
 	}
 	if (a.flags & SSH2_FILEXFER_ATTR_UIDGID) {
 		logit("set \"%s\" owner %lu group %lu", name,
 		    (u_long)a.uid, (u_long)a.gid);
+#ifdef __MirBSD__ /* for now */
+		{
+			int fd;
+
+			if ((fd = open(name, O_WRONLY | O_NOFOLLOW)) == -1)
+				status = errno_to_portable(errno);
+			else {
+				if (fchown(fd, a.uid, a.gid) == -1)
+					status = errno_to_portable(errno);
+				close(fd);
+			}
+		}
+#else
 		r = fchownat(AT_FDCWD, name, a.uid, a.gid,
 		    AT_SYMLINK_NOFOLLOW);
 		if (r == -1)
 			status = errno_to_portable(errno);
+#endif
 	}
  out:
 	send_status(id, status);
