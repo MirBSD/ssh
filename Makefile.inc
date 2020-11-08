@@ -50,6 +50,7 @@ SRCS_KEX+=	sntrup4591761.c
 
 SRCS_KEY+=	sshkey.c
 SRCS_KEY+=	cipher.c
+SRCS_KEY+=	cipher-ctr.c
 SRCS_KEY+=	chacha.c
 SRCS_KEY+=	poly1305.c
 SRCS_KEY+=	ssh-dss.c

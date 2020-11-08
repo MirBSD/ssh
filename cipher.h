@@ -71,4 +71,10 @@ int	 cipher_get_keyiv(struct sshcipher_ctx *, u_char *, size_t);
 int	 cipher_set_keyiv(struct sshcipher_ctx *, const u_char *, size_t);
 int	 cipher_get_keyiv_len(const struct sshcipher_ctx *);
 
+#ifndef OPENSSL_API_COMPAT
+const EVP_CIPHER *evp_aes_128_ctr(void);
+void ssh_aes_ctr_get_iv(EVP_CIPHER_CTX *, u_char *, size_t);
+void ssh_aes_ctr_set_iv(EVP_CIPHER_CTX *, const u_char *, size_t);
+#endif
+
 #endif				/* CIPHER_H */
