@@ -5,6 +5,7 @@
 SRCS=	ssh-pkcs11-helper.c ${SRCS_PKCS11}
 SRCS+=	atomicio.c compat.c fatal.c readpass.c
 SRCS+=	${SRCS_KEY} ${SRCS_UTL} ${SRCS_BASE} ${SRCS_SK_CLIENT}
+SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-pkcs11-helper
 
@@ -13,6 +14,5 @@ MAN=	ssh-pkcs11-helper.8
 
 .include <bsd.prog.mk>
 
-SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}

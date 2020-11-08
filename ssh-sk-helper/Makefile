@@ -5,6 +5,7 @@
 SRCS=	ssh-sk-helper.c
 SRCS+=	atomicio.c fatal.c cleanup.c msg.c
 SRCS+=	${SRCS_KEY} ${SRCS_UTL} ${SRCS_BASE} ${SRCS_SK}
+SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-sk-helper
 
@@ -13,6 +14,5 @@ MAN=	ssh-sk-helper.8
 
 .include <bsd.prog.mk>
 
-SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}

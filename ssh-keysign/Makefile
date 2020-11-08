@@ -7,6 +7,7 @@ SRCS+=	cleanup.c fatal.c
 SRCS+=	uidswap.c utf8.c
 SRCS+=	${SRCS_BASE} ${SRCS_KEY} ${SRCS_KEYP} ${SRCS_KRL} ${SRCS_PKT} \
 	${SRCS_UTL} ${SRCS_SK_CLIENT}
+SRCS+=	libressl-api-compat.c
 PROG=	ssh-keysign
 BINOWN=	root
 BINMODE=4555
@@ -16,7 +17,6 @@ MAN=	ssh-keysign.8
 
 .include <bsd.prog.mk>
 
-SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}
 

@@ -7,6 +7,7 @@ SRCS+=	authfd.c cleanup.c dns.c fatal.c hmac.c hostfile.c \
 	readpass.c utf8.c sshsig.c
 SRCS+=	${SRCS_BASE} ${SRCS_KEY} ${SRCS_KEYP} ${SRCS_KRL} ${SRCS_UTL} \
 	${SRCS_PKCS11} ${SRCS_SK_CLIENT}
+SRCS+=	libressl-api-compat.c
 
 PROG=	ssh-keygen
 
@@ -14,6 +15,5 @@ BINDIR=	/usr/bin
 
 .include <bsd.prog.mk>
 
-SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}

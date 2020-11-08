@@ -7,6 +7,7 @@ SRCS+=	authfd.c compat.c dns.c fatal.c hostfile.c readpass.c utf8.c
 SRCS+=	${SRCS_BASE} ${SRCS_KEX} ${SRCS_KEXC} ${SRCS_KEY} ${SRCS_KEYP} \
 	${SRCS_KRL} ${SRCS_PROT} ${SRCS_PKT} ${SRCS_UTL} ${SRCS_PKCS11} \
 	${SRCS_SK_CLIENT}
+SRCS+=	libressl-api-compat.c
 
 PROG=	ssh
 
@@ -15,7 +16,6 @@ MAN=	ssh.1 ssh_config.5
 
 .include <bsd.prog.mk>
 
-SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto
 DPADD+=	${LIBCRYPTO}
 
