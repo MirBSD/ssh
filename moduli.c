@@ -160,8 +160,8 @@ qfileout(FILE * ofile, u_int32_t otype, u_int32_t otests, u_int32_t otries,
 	if (gtm == NULL)
 		return -1;
 
-	res = fprintf(ofile, "%04d%02d%02d%02d%02d%02d %u %u %u %u %x ",
-	    gtm->tm_year + 1900, gtm->tm_mon + 1, gtm->tm_mday,
+	res = fprintf(ofile, "%04lld%02d%02d%02d%02d%02d %u %u %u %u %x ",
+	    (long long)gtm->tm_year + 1900LL, gtm->tm_mon + 1, gtm->tm_mday,
 	    gtm->tm_hour, gtm->tm_min, gtm->tm_sec,
 	    otype, otests, otries, osize, ogenerator);
 
