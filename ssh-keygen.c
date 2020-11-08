@@ -171,18 +171,9 @@ type_bits_valid(int type, const char *name, u_int32_t *bitsp)
 	if (type == KEY_UNSPEC)
 		fatal("unknown key type %s", key_type_name);
 	if (*bitsp == 0) {
-		int nid;
-
 		switch(type) {
 		case KEY_DSA:
 			*bitsp = DEFAULT_BITS_DSA;
-			break;
-		case KEY_ECDSA:
-			if (name != NULL &&
-			    (nid = sshkey_ecdsa_nid_from_name(name)) > 0)
-				*bitsp = sshkey_curve_nid_to_bits(nid);
-			if (*bitsp == 0)
-				*bitsp = DEFAULT_BITS_ECDSA;
 			break;
 		case KEY_RSA:
 			*bitsp = DEFAULT_BITS;
@@ -202,10 +193,6 @@ type_bits_valid(int type, const char *name, u_int32_t *bitsp)
 			fatal("Invalid RSA key length: maximum is %d bits",
 			    OPENSSL_RSA_MAX_MODULUS_BITS);
 		break;
-	case KEY_ECDSA:
-		if (sshkey_ecdsa_bits_to_nid(*bitsp) == -1)
-			fatal("Invalid ECDSA key length: valid lengths are "
-			    "256, 384 or 521 bits");
 	}
 }
 
@@ -246,14 +233,6 @@ ask_filename(struct passwd *pw, const char *prompt)
 		case KEY_DSA_CERT:
 		case KEY_DSA:
 			name = _PATH_SSH_CLIENT_ID_DSA;
-			break;
-		case KEY_ECDSA_CERT:
-		case KEY_ECDSA:
-			name = _PATH_SSH_CLIENT_ID_ECDSA;
-			break;
-		case KEY_ECDSA_SK_CERT:
-		case KEY_ECDSA_SK:
-			name = _PATH_SSH_CLIENT_ID_ECDSA_SK;
 			break;
 		case KEY_RSA_CERT:
 		case KEY_RSA:
@@ -358,10 +337,6 @@ do_convert_to_pkcs8(struct sshkey *k)
 		if (!PEM_write_DSA_PUBKEY(stdout, k->dsa))
 			fatal("PEM_write_DSA_PUBKEY failed");
 		break;
-	case KEY_ECDSA:
-		if (!PEM_write_EC_PUBKEY(stdout, k->ecdsa))
-			fatal("PEM_write_EC_PUBKEY failed");
-		break;
 	default:
 		fatal_f("unsupported key type %s", sshkey_type(k));
 	}
@@ -379,10 +354,6 @@ do_convert_to_pem(struct sshkey *k)
 	case KEY_DSA:
 		if (!PEM_write_DSA_PUBKEY(stdout, k->dsa))
 			fatal("PEM_write_DSA_PUBKEY failed");
-		break;
-	case KEY_ECDSA:
-		if (!PEM_write_EC_PUBKEY(stdout, k->ecdsa))
-			fatal("PEM_write_EC_PUBKEY failed");
 		break;
 	default:
 		fatal_f("unsupported key type %s", sshkey_type(k));
@@ -677,13 +648,6 @@ do_convert_from_pkcs8(struct sshkey **k, int *private)
 		(*k)->type = KEY_DSA;
 		(*k)->dsa = EVP_PKEY_get1_DSA(pubkey);
 		break;
-	case EVP_PKEY_EC:
-		if ((*k = sshkey_new(KEY_UNSPEC)) == NULL)
-			fatal("sshkey_new failed");
-		(*k)->type = KEY_ECDSA;
-		(*k)->ecdsa = EVP_PKEY_get1_EC_KEY(pubkey);
-		(*k)->ecdsa_nid = sshkey_ecdsa_key_to_nid((*k)->ecdsa);
-		break;
 	default:
 		fatal_f("unsupported pubkey type %d",
 		    EVP_PKEY_base_id(pubkey));
@@ -746,10 +710,6 @@ do_convert_from(struct passwd *pw)
 		switch (k->type) {
 		case KEY_DSA:
 			ok = PEM_write_DSAPrivateKey(stdout, k->dsa, NULL,
-			    NULL, 0, NULL, NULL);
-			break;
-		case KEY_ECDSA:
-			ok = PEM_write_ECPrivateKey(stdout, k->ecdsa, NULL,
 			    NULL, 0, NULL, NULL);
 			break;
 		case KEY_RSA:
@@ -2932,7 +2892,7 @@ do_download_sk(const char *skprovider, const char *device)
 		freezero(pin, strlen(pin));
 
 	for (i = 0; i < nkeys; i++) {
-		if (keys[i]->type != KEY_ECDSA_SK &&
+		if (
 		    keys[i]->type != KEY_ED25519_SK) {
 			error("Unsupported key type %s (%d)",
 			    sshkey_type(keys[i]), keys[i]->type);
@@ -3503,7 +3463,6 @@ main(int argc, char **argv)
 		printf("Generating public/private %s key pair.\n",
 		    key_type_name);
 	switch (type) {
-	case KEY_ECDSA_SK:
 	case KEY_ED25519_SK:
 		for (i = 0; i < nopts; i++) {
 			if (strcasecmp(opts[i], "no-touch-required") == 0) {
