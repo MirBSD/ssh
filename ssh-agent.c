@@ -1478,8 +1478,10 @@ skip:
 	ssh_signal(SIGHUP, cleanup_handler);
 	ssh_signal(SIGTERM, cleanup_handler);
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (pledge("stdio rpath cpath unix id proc exec", NULL) == -1)
 		fatal("%s: pledge: %s", __progname, strerror(errno));
+#endif
 
 	while (1) {
 		prepare_poll(&pfd, &npfd, &timeout, maxfds);

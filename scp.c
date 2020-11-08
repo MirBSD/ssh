@@ -505,6 +505,7 @@ main(int argc, char **argv)
 	if (!isatty(STDOUT_FILENO))
 		showprogress = 0;
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (pflag) {
 		/* Cannot pledge: -p allows setuid/setgid files... */
 	} else {
@@ -514,6 +515,7 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
+#endif
 
 	remin = STDIN_FILENO;
 	remout = STDOUT_FILENO;

@@ -1216,6 +1216,7 @@ client_loop(struct ssh *ssh, int have_pty, int escape_char_arg,
 
 	debug("Entering interactive session.");
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (options.control_master &&
 	    !option_clear_or_none(options.control_path)) {
 		debug("pledge: id");
@@ -1246,6 +1247,7 @@ client_loop(struct ssh *ssh, int have_pty, int escape_char_arg,
 		if (pledge("stdio unix inet dns proc tty", NULL) == -1)
 			fatal_f("pledge(): %s", strerror(errno));
 	}
+#endif
 
 	start_time = monotime_double();
 

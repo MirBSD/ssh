@@ -1962,8 +1962,10 @@ mux_client_request_session(int fd)
 	}
 	muxclient_request_id++;
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (pledge("stdio proc tty", NULL) == -1)
 		fatal_f("pledge(): %s", strerror(errno));
+#endif
 
 	ssh_signal(SIGHUP, control_client_sighandler);
 	ssh_signal(SIGINT, control_client_sighandler);
@@ -2114,8 +2116,10 @@ mux_client_request_stdio_fwd(int fd)
 	    mm_send_fd(fd, STDOUT_FILENO) == -1)
 		fatal_f("send fds failed");
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (pledge("stdio proc tty", NULL) == -1)
 		fatal_f("pledge(): %s", strerror(errno));
+#endif
 
 	debug3_f("stdio forward request sent");
 

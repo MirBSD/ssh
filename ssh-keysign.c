@@ -166,8 +166,10 @@ main(int argc, char **argv)
 	char *host, *fp;
 	size_t slen, dlen;
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (pledge("stdio rpath getpw dns id", NULL) != 0)
 		fatal("%s: pledge: %s", __progname, strerror(errno));
+#endif
 
 	/* Ensure that stdin and stdout are connected */
 	if ((fd = open(_PATH_DEVNULL, O_RDWR)) < 2)
@@ -230,8 +232,10 @@ main(int argc, char **argv)
 	if (!found)
 		fatal("no hostkey found");
 
+#ifndef __MirBSD__ /* no pledge for now */
 	if (pledge("stdio dns", NULL) != 0)
 		fatal("%s: pledge: %s", __progname, strerror(errno));
+#endif
 
 	if ((b = sshbuf_new()) == NULL)
 		fatal("%s: sshbuf_new failed", __progname);
