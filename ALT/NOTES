@@ -8,3 +8,9 @@ unifdef:
 -UGSSAPI
 
 maybe -UENABLE_PKCS11
+
+drop the whole sk shit, it uses ecc only anyway
+
+.Bk -words
+
+.It Fl … doesn’t warn about too many arguments

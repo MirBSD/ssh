@@ -42,6 +42,7 @@
 .Nm ssh-keygen
 .Nd OpenSSH authentication key utility
 .Sh SYNOPSIS
+.Bk -words
 .Nm ssh-keygen
 .Op Fl q
 .Op Fl a Ar rounds
@@ -51,7 +52,7 @@
 .Op Fl m Ar format
 .Op Fl N Ar new_passphrase
 .Op Fl O Ar option
-.Op Fl t Cm dsa | ecdsa | ecdsa-sk | ed25519 | ed25519-sk | rsa
+.Op Fl t Cm dsa | rsa
 .Op Fl w Ar provider
 .Nm ssh-keygen
 .Fl p
@@ -163,6 +164,7 @@
 .Fl n Ar namespace
 .Fl s Ar signature_file
 .Op Fl r Ar revocation_file
+.Ek
 .Sh DESCRIPTION
 .Nm
 generates, manages and converts authentication keys for
@@ -572,7 +574,7 @@ by key ID or serial number.
 See the
 .Sx KEY REVOCATION LISTS
 section for details.
-.It Fl t Cm dsa | ecdsa | ecdsa-sk | ed25519 | ed25519-sk | rsa
+.It Fl t Cm dsa | rsa
 Specifies the type of key to create.
 The possible values are
 .Dq dsa ,
@@ -907,8 +909,14 @@ Clear all enabled permissions.
 This is useful for clearing the default set of permissions so permissions may
 be added individually.
 .Pp
-.It Ic critical : Ns Ar name Ns Op Ns = Ns Ar contents
-.It Ic extension : Ns Ar name Ns Op Ns = Ns Ar contents
+.Sm off
+.It Xo
+.Ic critical : Ar name Op = Ar contents
+.Xc
+.It Xo
+.Ic extension : Ar name Op = Ar contents
+.Xc
+.Sm on
 Includes an arbitrary certificate critical option or extension.
 The specified
 .Ar name
@@ -1038,7 +1046,10 @@ certificate on hand.
 A KRL specification consists of lines containing one of the following directives
 followed by a colon and some directive-specific information.
 .Bl -tag -width Ds
-.It Cm serial : Ar serial_number Ns Op - Ns Ar serial_number
+.It Xo
+.Cm serial :
+.Ar serial_number Ns Op - Ns Ar serial_number
+.Xc
 Revokes a certificate with the specified serial number.
 Serial numbers are 64-bit values, not including zero and may be expressed
 in decimal, hex or octal.
