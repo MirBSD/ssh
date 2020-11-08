@@ -61,7 +61,7 @@ sftp_realpath(const char *path, char *resolved)
 	size_t left_len, resolved_len;
 	unsigned symlinks;
 	int serrno, slen, mem_allocated;
-	char left[PATH_MAX], next_token[PATH_MAX], symlink[PATH_MAX];
+	char left[PATH_MAX], next_token[PATH_MAX], symlinkp[PATH_MAX];
 
 	if (path[0] == '\0') {
 		errno = ENOENT;
@@ -169,11 +169,11 @@ sftp_realpath(const char *path, char *resolved)
 				errno = ELOOP;
 				goto err;
 			}
-			slen = readlink(resolved, symlink, sizeof(symlink) - 1);
+			slen = readlink(resolved, symlinkp, sizeof(symlinkp) - 1);
 			if (slen < 0)
 				goto err;
-			symlink[slen] = '\0';
-			if (symlink[0] == '/') {
+			symlinkp[slen] = '\0';
+			if (symlinkp[0] == '/') {
 				resolved[1] = 0;
 				resolved_len = 1;
 			} else if (resolved_len > 1) {
@@ -186,26 +186,26 @@ sftp_realpath(const char *path, char *resolved)
 
 			/*
 			 * If there are any path components left, then
-			 * append them to symlink. The result is placed
+			 * append them to symlinkp. The result is placed
 			 * in `left'.
 			 */
 			if (p != NULL) {
-				if (symlink[slen - 1] != '/') {
+				if (symlinkp[slen - 1] != '/') {
 					if (slen + 1 >=
-					    (ptrdiff_t)sizeof(symlink)) {
+					    (ptrdiff_t)sizeof(symlinkp)) {
 						errno = ENAMETOOLONG;
 						goto err;
 					}
-					symlink[slen] = '/';
-					symlink[slen + 1] = 0;
+					symlinkp[slen] = '/';
+					symlinkp[slen + 1] = 0;
 				}
-				left_len = strlcat(symlink, left, sizeof(symlink));
-				if (left_len >= sizeof(symlink)) {
+				left_len = strlcat(symlinkp, left, sizeof(symlinkp));
+				if (left_len >= sizeof(symlinkp)) {
 					errno = ENAMETOOLONG;
 					goto err;
 				}
 			}
-			left_len = strlcpy(left, symlink, sizeof(left));
+			left_len = strlcpy(left, symlinkp, sizeof(left));
 		}
 	}
 

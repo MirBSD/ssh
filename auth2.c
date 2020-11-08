@@ -680,26 +680,26 @@ void
 auth2_record_key(Authctxt *authctxt, int authenticated,
     const struct sshkey *key)
 {
-	struct sshkey **tmp, *dup;
+	struct sshkey **tmp, *dupkey;
 	int r;
 
-	if ((r = sshkey_from_private(key, &dup)) != 0)
+	if ((r = sshkey_from_private(key, &dupkey)) != 0)
 		fatal_fr(r, "copy key");
 	sshkey_free(authctxt->auth_method_key);
-	authctxt->auth_method_key = dup;
+	authctxt->auth_method_key = dupkey;
 
 	if (!authenticated)
 		return;
 
 	/* If authenticated, make sure we don't accept this key again */
-	if ((r = sshkey_from_private(key, &dup)) != 0)
+	if ((r = sshkey_from_private(key, &dupkey)) != 0)
 		fatal_fr(r, "copy key");
 	if (authctxt->nprev_keys >= INT_MAX ||
 	    (tmp = recallocarray(authctxt->prev_keys, authctxt->nprev_keys,
 	    authctxt->nprev_keys + 1, sizeof(*authctxt->prev_keys))) == NULL)
 		fatal_f("reallocarray failed");
 	authctxt->prev_keys = tmp;
-	authctxt->prev_keys[authctxt->nprev_keys] = dup;
+	authctxt->prev_keys[authctxt->nprev_keys] = dupkey;
 	authctxt->nprev_keys++;
 
 }
