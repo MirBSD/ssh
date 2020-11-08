@@ -1,6 +1,6 @@
 #	$OpenBSD: Makefile,v 1.38 2020/04/03 02:26:56 djm Exp $
 
-.PATH:		${.CURDIR}/..
+.PATH:	${.CURDIR}/..
 
 SRCS=	ssh-agent.c ${SRCS_PKCS11_CLIENT}
 SRCS+=	compat.c fatal.c readpass.c utf8.c

@@ -1,6 +1,6 @@
 #	$OpenBSD: Makefile,v 1.21 2020/04/03 02:26:56 djm Exp $
 
-.PATH:		${.CURDIR}/..
+.PATH:	${.CURDIR}/..
 
 SRCS=	ssh-keysign.c readconf.c compat.c
 SRCS+=	cleanup.c fatal.c

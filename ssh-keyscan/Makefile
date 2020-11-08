@@ -1,6 +1,6 @@
 #	$OpenBSD: Makefile,v 1.16 2020/01/23 10:24:30 dtucker Exp $
 
-.PATH:		${.CURDIR}/..
+.PATH:	${.CURDIR}/..
 
 SRCS=	ssh-keyscan.c
 SRCS+=	atomicio.c cleanup.c compat.c hostfile.c ssh_api.c dns.c

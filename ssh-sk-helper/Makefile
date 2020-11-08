@@ -1,6 +1,6 @@
 #	$OpenBSD: Makefile,v 1.5 2019/12/13 19:09:10 djm Exp $
 
-.PATH:		${.CURDIR}/..
+.PATH:	${.CURDIR}/..
 
 SRCS=	ssh-sk-helper.c
 SRCS+=	atomicio.c fatal.c cleanup.c msg.c

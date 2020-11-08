@@ -1,6 +1,6 @@
 #	$OpenBSD: Makefile,v 1.81 2020/01/25 23:02:14 djm Exp $
 
-.PATH:		${.CURDIR}/..
+.PATH:	${.CURDIR}/..
 
 SRCS=	ssh.c readconf.c clientloop.c sshtty.c sshconnect.c sshconnect2.c mux.c
 SRCS+=	authfd.c compat.c dns.c fatal.c hostfile.c readpass.c utf8.c
