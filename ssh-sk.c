@@ -180,59 +180,6 @@ sshsk_free_sign_response(struct sk_sign_response *r)
 }
 
 /* Assemble key from response */
-static int
-sshsk_ecdsa_assemble(struct sk_enroll_response *resp, struct sshkey **keyp)
-{
-	struct sshkey *key = NULL;
-	struct sshbuf *b = NULL;
-	EC_POINT *q = NULL;
-	int r;
-
-	*keyp = NULL;
-	if ((key = sshkey_new(KEY_ECDSA_SK)) == NULL) {
-		error_f("sshkey_new failed");
-		r = SSH_ERR_ALLOC_FAIL;
-		goto out;
-	}
-	key->ecdsa_nid = NID_X9_62_prime256v1;
-	if ((key->ecdsa = EC_KEY_new_by_curve_name(key->ecdsa_nid)) == NULL ||
-	    (q = EC_POINT_new(EC_KEY_get0_group(key->ecdsa))) == NULL ||
-	    (b = sshbuf_new()) == NULL) {
-		error_f("allocation failed");
-		r = SSH_ERR_ALLOC_FAIL;
-		goto out;
-	}
-	if ((r = sshbuf_put_string(b,
-	    resp->public_key, resp->public_key_len)) != 0) {
-		error_fr(r, "sshbuf_put_string");
-		goto out;
-	}
-	if ((r = sshbuf_get_ec(b, q, EC_KEY_get0_group(key->ecdsa))) != 0) {
-		error_fr(r, "parse");
-		r = SSH_ERR_INVALID_FORMAT;
-		goto out;
-	}
-	if (sshkey_ec_validate_public(EC_KEY_get0_group(key->ecdsa), q) != 0) {
-		error("Authenticator returned invalid ECDSA key");
-		r = SSH_ERR_KEY_INVALID_EC_VALUE;
-		goto out;
-	}
-	if (EC_KEY_set_public_key(key->ecdsa, q) != 1) {
-		/* XXX assume it is a allocation error */
-		error_f("allocation failed");
-		r = SSH_ERR_ALLOC_FAIL;
-		goto out;
-	}
-	/* success */
-	*keyp = key;
-	key = NULL; /* transferred */
-	r = 0;
- out:
-	EC_POINT_free(q);
-	sshkey_free(key);
-	sshbuf_free(b);
-	return r;
-}
 
 static int
 sshsk_ed25519_assemble(struct sk_enroll_response *resp, struct sshkey **keyp)
@@ -282,10 +229,6 @@ sshsk_key_from_response(int alg, const char *application, uint8_t flags,
 		goto out;
 	}
 	switch (alg) {
-	case SSH_SK_ECDSA:
-		if ((r = sshsk_ecdsa_assemble(resp, &key)) != 0)
-			goto out;
-		break;
 	case SSH_SK_ED25519:
 		if ((r = sshsk_ed25519_assemble(resp, &key)) != 0)
 			goto out;
@@ -462,9 +405,6 @@ sshsk_enroll(int type, const char *provider_path, const char *device,
 		goto out;
 
 	switch (type) {
-	case KEY_ECDSA_SK:
-		alg = SSH_SK_ECDSA;
-		break;
 	case KEY_ED25519_SK:
 		alg = SSH_SK_ED25519;
 		break;
@@ -532,50 +472,6 @@ sshsk_enroll(int type, const char *provider_path, const char *device,
 }
 
 static int
-sshsk_ecdsa_sig(struct sk_sign_response *resp, struct sshbuf *sig)
-{
-	struct sshbuf *inner_sig = NULL;
-	int r = SSH_ERR_INTERNAL_ERROR;
-
-	/* Check response validity */
-	if (resp->sig_r == NULL || resp->sig_s == NULL) {
-		error_f("sk_sign response invalid");
-		r = SSH_ERR_INVALID_FORMAT;
-		goto out;
-	}
-	if ((inner_sig = sshbuf_new()) == NULL) {
-		r = SSH_ERR_ALLOC_FAIL;
-		goto out;
-	}
-	/* Prepare and append inner signature object */
-	if ((r = sshbuf_put_bignum2_bytes(inner_sig,
-	    resp->sig_r, resp->sig_r_len)) != 0 ||
-	    (r = sshbuf_put_bignum2_bytes(inner_sig,
-	    resp->sig_s, resp->sig_s_len)) != 0) {
-		error_fr(r, "compose inner");
-		goto out;
-	}
-	if ((r = sshbuf_put_stringb(sig, inner_sig)) != 0 ||
-	    (r = sshbuf_put_u8(sig, resp->flags)) != 0 ||
-	    (r = sshbuf_put_u32(sig, resp->counter)) != 0) {
-		error_fr(r, "compose");
-		goto out;
-	}
-#ifdef DEBUG_SK
-	fprintf(stderr, "%s: sig_r:\n", __func__);
-	sshbuf_dump_data(resp->sig_r, resp->sig_r_len, stderr);
-	fprintf(stderr, "%s: sig_s:\n", __func__);
-	sshbuf_dump_data(resp->sig_s, resp->sig_s_len, stderr);
-	fprintf(stderr, "%s: inner:\n", __func__);
-	sshbuf_dump(inner_sig, stderr);
-#endif
-	r = 0;
- out:
-	sshbuf_free(inner_sig);
-	return r;
-}
-
-static int
 sshsk_ed25519_sig(struct sk_sign_response *resp, struct sshbuf *sig)
 {
 	int r = SSH_ERR_INTERNAL_ERROR;
@@ -624,9 +520,6 @@ sshsk_sign(const char *provider_path, struct sshkey *key,
 		*lenp = 0;
 	type = sshkey_type_plain(key->type);
 	switch (type) {
-	case KEY_ECDSA_SK:
-		alg = SSH_SK_ECDSA;
-		break;
 	case KEY_ED25519_SK:
 		alg = SSH_SK_ED25519;
 		break;
@@ -661,10 +554,6 @@ sshsk_sign(const char *provider_path, struct sshkey *key,
 		goto out;
 	}
 	switch (type) {
-	case KEY_ECDSA_SK:
-		if ((r = sshsk_ecdsa_sig(resp, sig)) != 0)
-			goto out;
-		break;
 	case KEY_ED25519_SK:
 		if ((r = sshsk_ed25519_sig(resp, sig)) != 0)
 			goto out;

@@ -199,18 +199,6 @@ process_sign(void)
 					slen = ret;
 					ok = 0;
 				}
-			} else if (key->type == KEY_ECDSA) {
-				u_int xslen = ECDSA_size(key->ecdsa);
-
-				signature = xmalloc(xslen);
-				/* "The parameter type is ignored." */
-				ret = ECDSA_sign(-1, data, dlen, signature,
-				    &xslen, found->ecdsa);
-				if (ret != 0)
-					ok = 0;
-				else
-					error_f("ECDSA_sign returned %d", ret);
-				slen = xslen;
 			} else
 				error_f("don't know how to sign with key "
 				    "type %d", (int)key->type);
