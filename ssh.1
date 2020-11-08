@@ -33,6 +33,7 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
+.\" $MirOS$
 .\" $OpenBSD: ssh.1,v 1.414 2020/07/15 05:40:05 jmc Exp $
 .Dd $Mdocdate: July 15 2020 $
 .Dt SSH 1
@@ -41,12 +42,16 @@
 .Nm ssh
 .Nd OpenSSH remote login client
 .Sh SYNOPSIS
+.Bk -words
 .Nm ssh
 .Op Fl 46AaCfGgKkMNnqsTtVvXxYy
 .Op Fl B Ar bind_interface
 .Op Fl b Ar bind_address
 .Op Fl c Ar cipher_spec
-.Op Fl D Oo Ar bind_address : Oc Ns Ar port
+.Oo
+.Fl D
+.Oo Ar bind_address : Oc Ns Ar port
+.Oc
 .Op Fl E Ar log_file
 .Op Fl e Ar escape_char
 .Op Fl F Ar configfile
@@ -63,9 +68,12 @@
 .Op Fl R Ar address
 .Op Fl S Ar ctl_path
 .Op Fl W Ar host : Ns Ar port
-.Op Fl w Ar local_tun Ns Op : Ns Ar remote_tun
+.Oo Fl w Ar local_tun Ns Oo
+.Pf : Ar remote_tun Oc
+.Oc
 .Ar destination
 .Op Ar command
+.Ek
 .Sh DESCRIPTION
 .Nm
 (SSH client) is a program for logging into a remote machine and for
@@ -85,7 +93,10 @@ which may be specified as either
 .Sm on
 or a URI of the form
 .Sm off
-.No ssh:// Oo user @ Oc hostname Op : port .
+.No ssh:// Xo
+.Op user @
+.Ns hostname Op : port .
+.Xc
 .Sm on
 The user must prove
 his/her identity to the remote machine using one of several methods
