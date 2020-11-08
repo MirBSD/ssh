@@ -46,6 +46,7 @@
 #include "xmalloc.h"
 #include "match.h"
 #include "misc.h"
+#include "log.h"
 
 /*
  * Returns true if the given string matches the pattern (which may contain ?
@@ -261,11 +262,17 @@ match_user(const char *user, const char *host, const char *ipaddr,
 #define	MAX_PROP	40
 #define	SEP	","
 char *
-match_list(const char *client, const char *server, u_int *next)
+match_list_impl(MATCH_LIST_DBG const char *client, const char *server, u_int *next)
 {
 	char *sproposals[MAX_PROP];
 	char *c, *s, *p, *ret, *cp, *sp;
 	int i, j, nproposals;
+
+#ifdef DEBUG_MATCHING
+	debug3("{{{ match_list for <%s>", dbg);
+	debug3("  client proposal <%s>", client);
+	debug3("  server proposal <%s>", server);
+#endif
 
 	c = cp = xstrdup(client);
 	s = sp = xstrdup(server);
@@ -281,6 +288,9 @@ match_list(const char *client, const char *server, u_int *next)
 
 	for ((p = strsep(&cp, SEP)), i=0; p && *p != '\0';
 	    (p = strsep(&cp, SEP)), i++) {
+#ifdef DEBUG_MATCHING
+		debug3("  checking client proposal <%s>", p);
+#endif
 		for (j = 0; j < nproposals; j++) {
 			if (strcmp(p, sproposals[j]) == 0) {
 				ret = xstrdup(p);
@@ -289,6 +299,9 @@ match_list(const char *client, const char *server, u_int *next)
 					    strlen(c) : (u_int)(cp - c);
 				free(c);
 				free(s);
+#ifdef DEBUG_MATCHING
+				debug3("}}} found in server proposal");
+#endif
 				return ret;
 			}
 		}
@@ -297,6 +310,9 @@ match_list(const char *client, const char *server, u_int *next)
 		*next = strlen(c);
 	free(c);
 	free(s);
+#ifdef DEBUG_MATCHING
+	debug3("}}} *NOT* found in server proposal");
+#endif
 	return NULL;
 }
 

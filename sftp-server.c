@@ -157,13 +157,15 @@ request_permitted(const struct sftp_handler *h)
 		return 0;
 	}
 	if (request_denylist != NULL &&
-	    ((result = match_list(h->name, request_denylist, NULL))) != NULL) {
+	    ((result = match_list("denylist",
+	    h->name, request_denylist, NULL))) != NULL) {
 		free(result);
 		verbose("Refusing denylisted %s request", h->name);
 		return 0;
 	}
 	if (request_allowlist != NULL &&
-	    ((result = match_list(h->name, request_allowlist, NULL))) != NULL) {
+	    ((result = match_list("allowlist",
+	    h->name, request_allowlist, NULL))) != NULL) {
 		free(result);
 		debug2("Permitting allowlisted %s request", h->name);
 		return 1;

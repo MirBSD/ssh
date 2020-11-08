@@ -172,7 +172,8 @@ kex_names_cat(const char *a, const char *b)
 	}
 	strlcpy(ret, a, len);
 	for ((p = strsep(&cp, ",")); p && *p != '\0'; (p = strsep(&cp, ","))) {
-		if ((m = match_list(ret, p, NULL)) != NULL) {
+		if ((m = match_list("duplicate kex names",
+		    ret, p, NULL)) != NULL) {
 			free(m);
 			continue; /* Algorithm already present */
 		}
@@ -722,7 +723,7 @@ kex_start_rekex(struct ssh *ssh)
 static int
 choose_enc(struct sshenc *enc, char *client, char *server)
 {
-	char *name = match_list(client, server, NULL);
+	char *name = match_list("cipher", client, server, NULL);
 
 	if (name == NULL)
 		return SSH_ERR_NO_CIPHER_ALG_MATCH;
@@ -744,7 +745,7 @@ choose_enc(struct sshenc *enc, char *client, char *server)
 static int
 choose_mac(struct ssh *ssh, struct sshmac *mac, char *client, char *server)
 {
-	char *name = match_list(client, server, NULL);
+	char *name = match_list("mac", client, server, NULL);
 
 	if (name == NULL)
 		return SSH_ERR_NO_MAC_ALG_MATCH;
@@ -762,7 +763,7 @@ choose_mac(struct ssh *ssh, struct sshmac *mac, char *client, char *server)
 static int
 choose_comp(struct sshcomp *comp, char *client, char *server)
 {
-	char *name = match_list(client, server, NULL);
+	char *name = match_list("compression", client, server, NULL);
 
 	if (name == NULL)
 		return SSH_ERR_NO_COMPRESS_ALG_MATCH;
@@ -789,7 +790,7 @@ choose_kex(struct kex *k, char *client, char *server)
 {
 	const struct kexalg *kexalg;
 
-	k->name = match_list(client, server, NULL);
+	k->name = match_list("kex alg", client, server, NULL);
 
 	debug("kex: algorithm: %s", k->name ? k->name : "(no match)");
 	if (k->name == NULL)
@@ -807,7 +808,7 @@ choose_kex(struct kex *k, char *client, char *server)
 static int
 choose_hostkeyalg(struct kex *k, char *client, char *server)
 {
-	k->hostkey_alg = match_list(client, server, NULL);
+	k->hostkey_alg = match_list("hostkey alg", client, server, NULL);
 
 	debug("kex: host key algorithm: %s",
 	    k->hostkey_alg ? k->hostkey_alg : "(no match)");
@@ -876,7 +877,8 @@ kex_choose_conf(struct ssh *ssh)
 	if (kex->server && (kex->flags & KEX_INITIAL)) {
 		char *ext;
 
-		ext = match_list("ext-info-c", peer[PROPOSAL_KEX_ALGS], NULL);
+		ext = match_list("ext_info_c",
+		    "ext-info-c", peer[PROPOSAL_KEX_ALGS], NULL);
 		kex->ext_info_c = (ext != NULL);
 		free(ext);
 	}

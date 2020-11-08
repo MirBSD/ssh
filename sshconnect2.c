@@ -1169,7 +1169,8 @@ key_sig_algorithm(struct ssh *ssh, const struct sshkey *key)
 	    (key->type != KEY_RSA && key->type != KEY_RSA_CERT) ||
 	    (key->type == KEY_RSA_CERT && (datafellows & SSH_BUG_SIGTYPE))) {
 		/* Filter base key signature alg against our configuration */
-		return match_list(sshkey_ssh_name(key),
+		return match_list("base key signature alg",
+		    sshkey_ssh_name(key),
 		    options.pubkey_key_types, NULL);
 	}
 
@@ -1183,7 +1184,8 @@ key_sig_algorithm(struct ssh *ssh, const struct sshkey *key)
 	while ((cp = strsep(&allowed, ",")) != NULL) {
 		if (sshkey_type_from_name(cp) != key->type)
 			continue;
-		tmp = match_list(sshkey_sigalg_by_name(cp),
+		tmp = match_list("RSA key signature alg",
+		    sshkey_sigalg_by_name(cp),
 		    ssh->kex->server_sig_algs, NULL);
 		if (tmp != NULL)
 			alg = xstrdup(cp);
@@ -2249,7 +2251,8 @@ authmethod_get(char *authlist)
 		return current;
 
 	for (;;) {
-		if ((name = match_list(preferred, supported, &next)) == NULL) {
+		if ((name = match_list("authentication methods",
+		    preferred, supported, &next)) == NULL) {
 			debug("No more authentication methods to try.");
 			current = NULL;
 			return NULL;
