@@ -1,3 +1,19 @@
+This release of OpenSSH is for MirBSD systems.
+
+• Due to legal reasons (lack of licence or being covered by patents) or
+  unavailability in the system crypto library (NSA-influenced), no ECC
+  is contained in this release. This affects ECDSA as well as *25519.
+
+• Any “sk” (U2F/FIDO security keys) use ECC and are thus not supported.
+
+• Some code for OpenBSD features not yet available in MirBSD, such as
+  the pledge sandbox, has been removed or disabled, so using this on
+  OpenBSD probably isn’t a good idea.
+
+$MirOS$
+
+------------------------------------------------------------------------
+
 This release of OpenSSH is for OpenBSD systems only.
 
 Please read
