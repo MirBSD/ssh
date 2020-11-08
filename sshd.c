@@ -50,6 +50,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/queue.h>
+#include <netinet/in.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -1341,6 +1342,7 @@ check_ip_options(struct ssh *ssh)
 	return;
 }
 
+#ifdef SO_RTABLE
 /* Set the routing domain for this process */
 static void
 set_process_rdomain(struct ssh *ssh, const char *name)
@@ -1365,6 +1367,7 @@ set_process_rdomain(struct ssh *ssh, const char *name)
 		    rtable, strerror(errno));
 	debug_f("set routing domain %d (was %d)", rtable, ortable);
 }
+#endif
 
 static void
 accumulate_host_timing_secret(struct sshbuf *server_cfg,
@@ -2086,8 +2089,10 @@ main(int ac, char **av)
 		startup_pipe = -1;
 	}
 
+#ifdef SO_RTABLE
 	if (options.routing_domain != NULL)
 		set_process_rdomain(ssh, options.routing_domain);
+#endif
 
 	/*
 	 * In privilege separation, we fork another child and prepare

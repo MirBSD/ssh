@@ -2051,6 +2051,7 @@ ssh_packet_set_tos(struct ssh *ssh, int tos)
 			error("setsockopt IP_TOS %d: %.100s:",
 			    tos, strerror(errno));
 		break;
+#ifdef IPV6_TCLASS
 	case AF_INET6:
 		debug3_f("set IPV6_TCLASS 0x%02x", tos);
 		if (setsockopt(ssh->state->connection_in,
@@ -2058,6 +2059,7 @@ ssh_packet_set_tos(struct ssh *ssh, int tos)
 			error("setsockopt IPV6_TCLASS %d: %.100s:",
 			    tos, strerror(errno));
 		break;
+#endif
 	}
 }
 
