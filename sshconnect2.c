@@ -230,6 +230,8 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 	if ((s = kex_names_cat(options.kex_algorithms, "ext-info-c")) == NULL)
 		fatal_f("kex_names_cat");
 	myproposal[PROPOSAL_KEX_ALGS] = compat_kex_proposal(s);
+debug3(">>>>> options.ciphers <%s>",options.ciphers);
+debug3(">>>>> compat_cipher_p <%s>", compat_cipher_proposal(options.ciphers));
 	myproposal[PROPOSAL_ENC_ALGS_CTOS] =
 	    compat_cipher_proposal(options.ciphers);
 	myproposal[PROPOSAL_ENC_ALGS_STOC] =
