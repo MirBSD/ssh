@@ -429,7 +429,6 @@ diff -up src/usr.bin/ssh/auth.c:1.1.1.9 src/usr.bin/ssh/auth.c:1.14
  /* import */
  extern ServerOptions options;
 -extern int use_privsep;
-+static char need_maskremote = 0;
  
  /* Debugging messages */
  Buffer auth_debug;
@@ -442,29 +441,6 @@ diff -up src/usr.bin/ssh/auth.c:1.1.1.9 src/usr.bin/ssh/auth.c:1.14
  	u_int i;
  
  	/* Shouldn't be called if pw is NULL, but better safe than sorry... */
-@@ -173,14 +174,20 @@ allowed_user(struct passwd * pw)
- }
- 
- void
--auth_log(Authctxt *authctxt, int authenticated, char *method, char *info)
-+auth_log(Authctxt *authctxt, int authenticated, const char *method,
-+    const char *info)
- {
- 	void (*authlog) (const char *fmt,...) = verbose;
--	char *authmsg;
-+	const char *authmsg;
- 
- 	if (use_privsep && !mm_is_monitor() && !authctxt->postponed)
- 		return;
- 
-+	if (authenticated && need_maskremote) {
-+		process_config_mask_remote(&options);
-+		need_maskremote = 0;
-+	}
-+
- 	/* Raise logging level */
- 	if (authenticated == 1 ||
- 	    !authctxt->valid ||
 @@ -207,7 +214,7 @@ auth_log(Authctxt *authctxt, int authent
   * Check whether root logins are disallowed.
   */
@@ -552,14 +528,6 @@ diff -up src/usr.bin/ssh/auth.c:1.1.1.9 src/usr.bin/ssh/auth.c:1.14
  
  	parse_server_match_config(&options, user,
  	    get_canonical_hostname(options.use_dns), get_remote_ipaddr());
-+	if (options.mask_remote == 1 && !mask_remote_identity)
-+		/* postpone until user is actually auth’d successfully */
-+		need_maskremote = 1;
-+	else
-+		process_config_mask_remote(&options);
- 
- 	pw = getpwnam(user);
- 	if (pw == NULL) {
 @@ -443,13 +461,15 @@ getpwnamallow(const char *user)
  		debug("unable to get login class: %s", user);
  		return (NULL);
@@ -1062,110 +1030,6 @@ diff -up src/usr.bin/ssh/bufbn.c:1.1.1.5 src/usr.bin/ssh/bufbn.c:1.2
  
  #include <openssl/bn.h>
  
-@@ -49,6 +50,8 @@
- #include "log.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/bufbn.c,v 1.2 2008/12/16 22:13:27 tg Exp $");
-+
- /*
-  * Stores an BIGNUM in the buffer with a 2-byte msb first bit count, followed
-  * by (bits+7)/8 bytes of binary data, msb first.
-Index: src/usr.bin/ssh/canohost.c
-diff -up src/usr.bin/ssh/canohost.c:1.1.1.11 src/usr.bin/ssh/canohost.c:1.9
---- src/usr.bin/ssh/canohost.c:1.1.1.11	Sun Oct  4 15:25:44 2009
-+++ src/usr.bin/ssh/canohost.c	Thu May  3 03:32:45 2018
-@@ -31,6 +31,10 @@
- #include "canohost.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/canohost.c,v 1.9 2018/05/03 01:32:45 tg Exp $");
-+
-+unsigned char mask_remote_identity = 0;
-+
- static void check_ip_options(int, char *);
- static char *canonical_host_ip = NULL;
- static int cached_port = -1;
-@@ -180,9 +184,13 @@ check_ip_options(int sock, char *ipaddr)
- const char *
- get_canonical_hostname(int use_dns)
- {
--	char *host;
--	static char *canonical_host_name = NULL;
--	static char *remote_ip = NULL;
-+	const char *host;
-+	static const char *canonical_host_name = NULL;
-+	static const char *remote_ip = NULL;
-+
-+	if (mask_remote_identity)
-+		return (!packet_connection_is_on_socket() ? "UNKNOWN" :
-+		    use_dns ? "masked.invalid" : "256.256.256.256");
- 
- 	/* Check if we have previously retrieved name with same option. */
- 	if (use_dns && canonical_host_name != NULL)
-@@ -243,9 +251,12 @@ get_peer_ipaddr(int sock)
- {
- 	char *p;
- 
--	if ((p = get_socket_address(sock, 1, NI_NUMERICHOST)) != NULL)
--		return p;
--	return xstrdup("UNKNOWN");
-+	if ((p = get_socket_address(sock, 1, NI_NUMERICHOST)) == NULL)
-+		return (xstrdup("UNKNOWN"));
-+	if (!mask_remote_identity)
-+		return (p);
-+	free(p);
-+	return (xstrdup("256.256.256.256"));
- }
- 
- char *
-@@ -282,6 +293,10 @@ clear_cached_addr(void)
- const char *
- get_remote_ipaddr(void)
- {
-+	if (mask_remote_identity)
-+		return (!packet_connection_is_on_socket() ? "UNKNOWN" :
-+		    "256.256.256.256");
-+
- 	/* Check whether we have cached the ipaddr. */
- 	if (canonical_host_ip == NULL) {
- 		if (packet_connection_is_on_socket()) {
-@@ -359,12 +374,17 @@ get_port(int local)
- int
- get_peer_port(int sock)
- {
-+	if (mask_remote_identity)
-+		return (!packet_connection_is_on_socket() ? 65535 : -666);
- 	return get_sock_port(sock, 0);
- }
- 
- int
- get_remote_port(void)
- {
-+	if (mask_remote_identity)
-+		return (!packet_connection_is_on_socket() ? 65535 : -666);
-+
- 	/* Cache to avoid getpeername() on a dead connection */
- 	if (cached_port == -1)
- 		cached_port = get_port(0);
-Index: src/usr.bin/ssh/canohost.h
-diff -up src/usr.bin/ssh/canohost.h:1.1.1.4 src/usr.bin/ssh/canohost.h:1.2
---- src/usr.bin/ssh/canohost.h:1.1.1.4	Sun Oct  4 15:25:44 2009
-+++ src/usr.bin/ssh/canohost.h	Thu May  3 03:32:45 2018
-@@ -1,3 +1,4 @@
-+/* $MirOS: src/usr.bin/ssh/canohost.h,v 1.2 2018/05/03 01:32:45 tg Exp $ */
- /* $OpenBSD: canohost.h,v 1.11 2009/05/27 06:31:25 andreas Exp $ */
- 
- /*
-@@ -25,3 +26,6 @@ int		 get_remote_port(void);
- int		 get_local_port(void);
- int		 get_sock_port(int, int);
- void		 clear_cached_addr(void);
-+
-+/* EU-DSGVO helper */
-+extern unsigned char mask_remote_identity;
-Index: src/usr.bin/ssh/channels.c
-diff -up src/usr.bin/ssh/channels.c:1.1.1.17 src/usr.bin/ssh/channels.c:1.16
 --- src/usr.bin/ssh/channels.c:1.1.1.17	Sun Oct  4 15:25:44 2009
 +++ src/usr.bin/ssh/channels.c	Tue Sep 21 23:24:35 2010
 @@ -51,6 +51,7 @@
@@ -2981,15 +2845,6 @@ diff -up src/usr.bin/ssh/monitor_wrap.c:1.1.1.11 src/usr.bin/ssh/monitor_wrap.c:
  
  /* Imports */
  extern int compat20;
-@@ -240,6 +236,8 @@ out:
- 
- 	buffer_free(&m);
- 
-+	process_config_mask_remote(&options);
-+
- 	return (pw);
- }
- 
 @@ -446,7 +444,7 @@ mm_newkeys_from_blob(u_char *blob, int b
  	buffer_init(&b);
  	buffer_append(&b, blob, blen);
@@ -4012,14 +3867,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
 +	options->authorised_keys_file2 = NULL;
  	options->num_accept_env = 0;
  	options->permit_tun = -1;
- 	options->num_permitted_opens = -1;
- 	options->adm_forced_command = NULL;
- 	options->chroot_directory = NULL;
--	options->zero_knowledge_password_authentication = -1;
-+	options->mask_remote = -1;
- }
- 
- void
 @@ -153,7 +150,7 @@ fill_default_server_options(ServerOption
  	if (options->key_regeneration_time == -1)
  		options->key_regeneration_time = 3600;
@@ -4070,18 +3917,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
 +		options->authorised_keys_file1 = (char *)_PATH_SSH_USER_PERMITTED_KEYS;
  	if (options->permit_tun == -1)
  		options->permit_tun = SSH_TUNMODE_NO;
--	if (options->zero_knowledge_password_authentication == -1)
--		options->zero_knowledge_password_authentication = 0;
- 
- 	/* Turn privilege separation on by default */
- 	if (use_privsep == -1)
- 		use_privsep = 1;
-+
-+	if (options->mask_remote == -1)
-+		options->mask_remote = 0;
- }
- 
- /* Keyword tokens. */
 @@ -261,9 +247,7 @@ typedef enum {
  	sPort, sHostKeyFile, sServerKeyBits, sLoginGraceTime, sKeyRegenerationTime,
  	sPermitRootLogin, sLogFacility, sLogLevel,
@@ -4103,11 +3938,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
 +	sAcceptEnv, sPermitTunnel,
  	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
  	sUsePrivilegeSeparation, sAllowAgentForwarding,
--	sZeroKnowledgePasswordAuthentication,
-+	sMaskRemote,
- 	sDeprecated, sUnsupported
- } ServerOpCodes;
- 
 @@ -311,35 +295,18 @@ static struct {
  	{ "rsaauthentication", sRSAAuthentication, SSHCFG_ALL },
  	{ "pubkeyauthentication", sPubkeyAuthentication, SSHCFG_ALL },
@@ -4158,12 +3988,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  	{ "acceptenv", sAcceptEnv, SSHCFG_GLOBAL },
  	{ "permittunnel", sPermitTunnel, SSHCFG_GLOBAL },
 @@ -387,12 +356,13 @@ static struct {
- 	{ "permitopen", sPermitOpen, SSHCFG_ALL },
- 	{ "forcecommand", sForceCommand, SSHCFG_ALL },
- 	{ "chrootdirectory", sChrootDirectory, SSHCFG_ALL },
-+	{ "maskremoteaddress", sMaskRemote, SSHCFG_ALL },
- 	{ NULL, sBadOption, 0 }
- };
  
  static struct {
  	int val;
@@ -4231,17 +4055,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  		goto parse_filename;
  
  	case sClientAliveInterval:
-@@ -1251,6 +1193,10 @@ process_server_config_line(ServerOptions
- 			*charptr = xstrdup(arg);
- 		break;
- 
-+	case sMaskRemote:
-+		intptr = &options->mask_remote;
-+		goto parse_flag;
-+
- 	case sDeprecated:
- 		logit("%s line %d: Deprecated option %s",
- 		    filename, linenum, arg);
 @@ -1341,13 +1287,10 @@ void
  copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
  {
@@ -4256,14 +4069,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  	M_CP_INTOPT(permit_root_login);
  	M_CP_INTOPT(permit_empty_passwd);
  
-@@ -1365,6 +1308,7 @@ copy_set_server_options(ServerOptions *d
- 		return;
- 	M_CP_STROPT(adm_forced_command);
- 	M_CP_STROPT(chroot_directory);
-+	M_CP_INTOPT(mask_remote);
- }
- 
- #undef M_CP_INTOPT
 @@ -1491,7 +1435,8 @@ dump_config(ServerOptions *o)
  	u_int i;
  	int ret;
@@ -4274,14 +4079,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  
  	/* these are usually at the top of the config */
  	for (i = 0; i < o->num_ports; i++)
-@@ -1568,6 +1509,7 @@ dump_config(ServerOptions *o)
- 	dump_cfg_fmtint(sUseDNS, o->use_dns);
- 	dump_cfg_fmtint(sAllowTcpForwarding, o->allow_tcp_forwarding);
- 	dump_cfg_fmtint(sUsePrivilegeSeparation, use_privsep);
-+	dump_cfg_fmtint(sMaskRemote, o->mask_remote);
- 
- 	/* string arguments */
- 	dump_cfg_string(sPidFile, o->pid_file);
 @@ -1575,8 +1517,8 @@ dump_config(ServerOptions *o)
  	dump_cfg_string(sCiphers, o->ciphers);
  	dump_cfg_string(sMacs, o->macs);
@@ -4293,26 +4090,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  	dump_cfg_string(sForceCommand, o->adm_forced_command);
  
  	/* string arguments requiring a lookup */
-@@ -1609,3 +1551,17 @@ dump_config(ServerOptions *o)
- 
- 	channel_print_adm_permitted_opens();
- }
-+
-+void
-+process_config_mask_remote(ServerOptions *options)
-+{
-+	if (options->mask_remote == 1) {
-+		if (!mask_remote_identity) {
-+			mask_remote_identity = 1;
-+			debug("Enabling masking of the remote identity");
-+		}
-+	} else if (mask_remote_identity) {
-+		debug("DISabling masking of the remote identity");
-+		mask_remote_identity = 0;
-+	}
-+}
-Index: src/usr.bin/ssh/servconf.h
-diff -up src/usr.bin/ssh/servconf.h:1.1.1.8 src/usr.bin/ssh/servconf.h:1.15
 --- src/usr.bin/ssh/servconf.h:1.1.1.8	Sun Mar 22 13:03:00 2009
 +++ src/usr.bin/ssh/servconf.h	Thu May  3 03:32:46 2018
 @@ -1,3 +1,4 @@
@@ -4381,24 +4158,6 @@ diff -up src/usr.bin/ssh/servconf.h:1.1.1.8 src/usr.bin/ssh/servconf.h:1.15
  
  	char   *adm_forced_command;
  
-@@ -149,6 +135,8 @@ typedef struct {
- 	int	num_permitted_opens;
- 
- 	char   *chroot_directory;
-+
-+	int	mask_remote;
- }       ServerOptions;
- 
- void	 initialize_server_options(ServerOptions *);
-@@ -163,4 +151,6 @@ void	 parse_server_match_config(ServerOp
- void	 copy_set_server_options(ServerOptions *, ServerOptions *, int);
- void	 dump_config(ServerOptions *);
- 
-+void	 process_config_mask_remote(ServerOptions *);
-+
- #endif				/* SERVCONF_H */
-Index: src/usr.bin/ssh/serverloop.c
-diff -up src/usr.bin/ssh/serverloop.c:1.1.1.12 src/usr.bin/ssh/serverloop.c:1.10
 --- src/usr.bin/ssh/serverloop.c:1.1.1.12	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/serverloop.c	Thu Jan 14 20:23:04 2016
 @@ -35,11 +35,10 @@
@@ -7223,22 +6982,6 @@ diff -up src/usr.bin/ssh/sshd.c:1.1.1.16 src/usr.bin/ssh/sshd.c:1.24
  	int opt, i, on = 1;
  	int sock_in = -1, sock_out = -1, newsock = -1;
  	const char *remote_ip;
-@@ -1408,6 +1394,7 @@ main(int ac, char **av)
- 		exit(1);
- 	}
- 
-+	process_config_mask_remote(&options);
- 	debug("sshd version %.100s", SSH_VERSION);
- 
- 	/* load private host keys */
-@@ -1495,6 +1482,7 @@ main(int ac, char **av)
- 		if (test_user != NULL && test_addr != NULL && test_host != NULL)
- 			parse_server_match_config(&options, test_user,
- 			    test_host, test_addr);
-+		process_config_mask_remote(&options);
- 		dump_config(&options);
- 	}
- 
 @@ -1539,11 +1527,12 @@ main(int ac, char **av)
  			close(fd);
  		}
@@ -7400,19 +7143,6 @@ diff -up src/usr.bin/ssh/sshd_config:1.1.1.9 src/usr.bin/ssh/sshd_config:1.24
 +# override default of no subsystems to enable use of SFTP:
  Subsystem	sftp	/usr/libexec/sftp-server
  
--# Example of overriding settings on a per-user basis
--#Match User anoncvs
--#	X11Forwarding no
--#	AllowTcpForwarding no
--#	ForceCommand cvs server
-+# we don't ForceCommand because we have anoncvssh for cvs and rsync
-+Match User _anoncvs
-+	AllowTcpForwarding no
-+	Banner no
-+	GatewayPorts no
-+	MaskRemoteAddress yes
-+	PermitEmptyPasswords yes
-+	X11Forwarding no
 Index: src/usr.bin/ssh/sshd_config.5
 diff -up src/usr.bin/ssh/sshd_config.5:1.1.1.18 src/usr.bin/ssh/sshd_config.5:1.29
 --- src/usr.bin/ssh/sshd_config.5:1.1.1.18	Sun Oct  4 15:25:45 2009
@@ -7571,25 +7301,6 @@ diff -up src/usr.bin/ssh/sshd_config.5:1.1.1.18 src/usr.bin/ssh/sshd_config.5:1.
 +umac-64@openssh.com,hmac-ripemd160,hmac-ripemd160@openssh.com,
 +hmac-sha1,hmac-sha1-96,hmac-md5,hmac-md5-96
  .Ed
-+.It Cm MaskRemoteAddress
-+Hides the remote IP address and port from logging messages.
-+This may help some with EU-DSGVO compliance.
-+If used in a
-+.Cm Match
-+block, masking is only applied for successful logins.
-+If a non-default debugging level is used, remote identity may be
-+disclosed because masking is then activated too late.
- .It Cm Match
- Introduces a conditional block.
- If all of the criteria on the
-@@ -609,6 +595,7 @@ Available keywords are
- .Cm HostbasedAuthentication ,
- .Cm KbdInteractiveAuthentication ,
- .Cm KerberosAuthentication ,
-+.Cm MaskRemoteAddress ,
- .Cm MaxAuthTries ,
- .Cm MaxSessions ,
- .Cm PasswordAuthentication ,
 @@ -701,7 +688,7 @@ The argument must be
  or
  .Dq no .

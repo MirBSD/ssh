@@ -321,6 +321,8 @@ out:
 
 	sshbuf_free(m);
 
+	process_config_mask_remote(&options);
+
 	return (pw);
 }
 

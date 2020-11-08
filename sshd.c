@@ -1647,6 +1647,7 @@ main(int ac, char **av)
 		exit(1);
 	}
 
+	process_config_mask_remote(&options);
 	debug("sshd version %s, %s", SSH_VERSION,
 	    OpenSSL_version(OPENSSL_VERSION)
 	);
@@ -1819,6 +1820,7 @@ main(int ac, char **av)
 			connection_info = get_connection_info(ssh, 0, 0);
 		connection_info->test = 1;
 		parse_server_match_config(&options, &includes, connection_info);
+		process_config_mask_remote(&options);
 		dump_config(&options);
 	}
 

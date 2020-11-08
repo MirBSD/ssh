@@ -175,6 +175,7 @@ initialize_server_options(ServerOptions *options)
 	options->fingerprint_hash = -1;
 	options->disable_forwarding = -1;
 	options->expose_userauth_info = -1;
+	options->mask_remote = -1;
 }
 
 /* Returns 1 if a string option is unset or set to "none" or 0 otherwise. */
@@ -434,6 +435,8 @@ fill_default_server_options(ServerOptions *options)
 		options->expose_userauth_info = 0;
 	if (options->sk_provider == NULL)
 		options->sk_provider = xstrdup("internal");
+	if (options->mask_remote == -1)
+		options->mask_remote = 0;
 
 	assemble_algorithms(options);
 
@@ -508,6 +511,7 @@ typedef enum {
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
 	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions, sSecurityKeyProvider,
+	sMaskRemote,
 	sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
 
@@ -650,6 +654,7 @@ static struct {
 #endif
 	{ "casignaturealgorithms", sCASignatureAlgorithms, SSHCFG_ALL },
 	{ "securitykeyprovider", sSecurityKeyProvider, SSHCFG_GLOBAL },
+	{ "maskremoteaddress", sMaskRemote, SSHCFG_ALL },
 	{ NULL, sBadOption, 0 }
 };
 
@@ -2304,6 +2309,10 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		intptr = &options->expose_userauth_info;
 		goto parse_flag;
 
+	case sMaskRemote:
+		intptr = &options->mask_remote;
+		goto parse_flag;
+
 #ifdef SO_RTABLE
 	case sRDomain:
 		charptr = &options->routing_domain;
@@ -2486,6 +2495,7 @@ copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
 	M_CP_INTOPT(rekey_limit);
 	M_CP_INTOPT(rekey_interval);
 	M_CP_INTOPT(log_level);
+	M_CP_INTOPT(mask_remote);
 
 	/*
 	 * The bind_mask is a mode_t that may be unsigned, so we can't use
@@ -2790,6 +2800,7 @@ dump_config(ServerOptions *o)
 	dump_cfg_fmtint(sStreamLocalBindUnlink, o->fwd_opts.streamlocal_bind_unlink);
 	dump_cfg_fmtint(sFingerprintHash, o->fingerprint_hash);
 	dump_cfg_fmtint(sExposeAuthInfo, o->expose_userauth_info);
+	dump_cfg_fmtint(sMaskRemote, o->mask_remote);
 
 	/* string arguments */
 	dump_cfg_string(sPidFile, o->pid_file);
@@ -2895,4 +2906,18 @@ dump_config(ServerOptions *o)
 	if (o->pubkey_auth_options & PUBKEYAUTH_VERIFY_REQUIRED)
 		printf(" verify-required");
 	printf("\n");
+}
+
+void
+process_config_mask_remote(ServerOptions *options)
+{
+	if (options->mask_remote == 1) {
+		if (!mask_remote_identity) {
+			mask_remote_identity = 1;
+			debug("Enabling masking of the remote identity");
+		}
+	} else if (mask_remote_identity) {
+		debug("DISabling masking of the remote identity");
+		mask_remote_identity = 0;
+	}
 }

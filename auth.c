@@ -74,6 +74,8 @@ extern struct sshauthopt *auth_opts;
 /* Debugging messages */
 static struct sshbuf *auth_debug;
 
+static unsigned char need_maskremote = 0;
+
 /*
  * Check if the user is allowed to log in via ssh. If user is listed
  * in DenyUsers or one of user's groups is listed in DenyGroups, false
@@ -249,6 +251,11 @@ auth_log(struct ssh *ssh, int authenticated, int partial,
 
 	if (use_privsep && !mm_is_monitor() && !authctxt->postponed)
 		return;
+
+	if (authenticated && need_maskremote) {
+		process_config_mask_remote(&options);
+		need_maskremote = 0;
+	}
 
 	/* Raise logging level */
 	if (authenticated == 1 ||
@@ -485,6 +492,11 @@ getpwnamallow(struct ssh *ssh, const char *user)
 	for (i = 0; i < options.num_log_verbose; i++)
 		log_verbose_add(options.log_verbose[i]);
 	process_permitopen(ssh, &options);
+	if (options.mask_remote == 1 && !mask_remote_identity)
+		/* postpone until user is actually auth’d successfully */
+		need_maskremote = 1;
+	else
+		process_config_mask_remote(&options);
 
 	pw = getpwnam(user);
 	if (pw == NULL) {
@@ -715,7 +727,8 @@ auth_get_canonical_hostname(struct ssh *ssh, int use_dns)
 	else if (dnsname != NULL)
 		return dnsname;
 	else {
-		dnsname = remote_hostname(ssh);
+		dnsname = mask_remote_identity ? xstrdup("masked.invalid") :
+		    remote_hostname(ssh);
 		return dnsname;
 	}
 }

@@ -1116,6 +1116,14 @@ hmac-sha2-256,hmac-sha2-512,hmac-sha1
 .Pp
 The list of available MAC algorithms may also be obtained using
 .Qq ssh -Q mac .
+.It Cm MaskRemoteAddress
+Hides the remote IP address and port from logging messages.
+This may help some with EU-DSGVO compliance.
+If used in a
+.Cm Match
+block, masking is only applied for successful logins.
+If a non-default debugging level is used, remote identity may be
+disclosed because masking is then activated too late.
 .It Cm Match
 Introduces a conditional block.
 If all of the criteria on the
@@ -1200,6 +1208,7 @@ Available keywords are
 .Cm KbdInteractiveAuthentication ,
 .Cm KerberosAuthentication ,
 .Cm LogLevel ,
+.Cm MaskRemoteAddress ,
 .Cm MaxAuthTries ,
 .Cm MaxSessions ,
 .Cm PasswordAuthentication ,

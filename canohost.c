@@ -32,6 +32,10 @@
 #include "canohost.h"
 #include "misc.h"
 
+__RCSID("$MirOS: src/usr.bin/ssh/canohost.c,v 1.9 2018/05/03 01:32:45 tg Exp $");
+
+unsigned char mask_remote_identity = 0;
+
 /*
  * Returns the local/remote IP-address/hostname of socket as a string.
  * The returned string must be freed.
@@ -81,8 +85,13 @@ get_peer_ipaddr(int sock)
 {
 	char *p;
 
-	if ((p = get_socket_address(sock, 1, NI_NUMERICHOST)) != NULL)
+	if ((p = get_socket_address(sock, 1, NI_NUMERICHOST)) != NULL) {
+		if (mask_remote_identity) {
+			free(p);
+			p = xstrdup("256.256.256.256");
+		}
 		return p;
+	}
 	return xstrdup("UNKNOWN");
 }
 
@@ -156,7 +165,7 @@ get_sock_port(int sock, int local)
 int
 get_peer_port(int sock)
 {
-	return get_sock_port(sock, 0);
+	return mask_remote_identity ? -666 : get_sock_port(sock, 0);
 }
 
 int

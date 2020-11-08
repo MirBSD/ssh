@@ -224,6 +224,8 @@ typedef struct {
 	int	expose_userauth_info;
 	u_int64_t timing_secret;
 	char   *sk_provider;
+
+	int	mask_remote;
 }       ServerOptions;
 
 /* Information about the incoming connection as used by Match */
@@ -304,5 +306,6 @@ void	 servconf_add_hostkey(const char *, const int,
 	    ServerOptions *, const char *path, int);
 void	 servconf_add_hostcert(const char *, const int,
 	    ServerOptions *, const char *path);
+void	 process_config_mask_remote(ServerOptions *);
 
 #endif				/* SERVCONF_H */

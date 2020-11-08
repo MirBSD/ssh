@@ -91,3 +91,12 @@ Subsystem	sftp	/usr/libexec/sftp-server
 #	AllowTcpForwarding no
 #	PermitTTY no
 #	ForceCommand cvs server
+# we don't ForceCommand because we have anoncvssh for cvs and rsync
+Match User _anoncvs
+	AllowTcpForwarding no
+	Banner no
+	GatewayPorts no
+	MaskRemoteAddress yes
+	PermitEmptyPasswords yes
+	PermitTTY no
+	X11Forwarding no
