@@ -16,6 +16,7 @@ MAN=	ssh-keysign.8
 
 .include <bsd.prog.mk>
 
+SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}
 

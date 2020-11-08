@@ -16,5 +16,6 @@ BINDIR=	/usr/bin
 
 .include <bsd.prog.mk>
 
+SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto -lutil
 DPADD+=	${LIBCRYPTO} ${LIBUTIL}

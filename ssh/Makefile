@@ -15,6 +15,7 @@ MAN=	ssh.1 ssh_config.5
 
 .include <bsd.prog.mk>
 
+SRCS+=	libressl-api-compat.c
 LDADD+=	-lcrypto
 DPADD+=	${LIBCRYPTO}
 
