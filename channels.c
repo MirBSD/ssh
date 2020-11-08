@@ -342,7 +342,7 @@ channel_new(struct ssh *ssh, char *ctype, int type, int rfd, int wfd, int efd,
     u_int window, u_int maxpack, int extusage, char *remote_name, int nonblock)
 {
 	struct ssh_channels *sc = ssh->chanctxt;
-	u_int i, found;
+	u_int i, found /* quiet, gcc */ = 0;
 	Channel *c;
 	int r;
 
