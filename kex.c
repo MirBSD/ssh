@@ -84,12 +84,6 @@ static const struct kexalg kexalgs[] = {
 	{ KEX_DH18_SHA512, KEX_DH_GRP18_SHA512, 0, SSH_DIGEST_SHA512 },
 	{ KEX_DHGEX_SHA1, KEX_DH_GEX_SHA1, 0, SSH_DIGEST_SHA1 },
 	{ KEX_DHGEX_SHA256, KEX_DH_GEX_SHA256, 0, SSH_DIGEST_SHA256 },
-	{ KEX_ECDH_SHA2_NISTP256, KEX_ECDH_SHA2,
-	    NID_X9_62_prime256v1, SSH_DIGEST_SHA256 },
-	{ KEX_ECDH_SHA2_NISTP384, KEX_ECDH_SHA2, NID_secp384r1,
-	    SSH_DIGEST_SHA384 },
-	{ KEX_ECDH_SHA2_NISTP521, KEX_ECDH_SHA2, NID_secp521r1,
-	    SSH_DIGEST_SHA512 },
 	{ KEX_CURVE25519_SHA256, KEX_C25519_SHA256, 0, SSH_DIGEST_SHA256 },
 	{ KEX_CURVE25519_SHA256_OLD, KEX_C25519_SHA256, 0, SSH_DIGEST_SHA256 },
 	{ KEX_SNTRUP4591761X25519_SHA512, KEX_KEM_SNTRUP4591761X25519_SHA512, 0,
@@ -662,7 +656,6 @@ kex_free(struct kex *kex)
 		return;
 
 	DH_free(kex->dh);
-	EC_KEY_free(kex->ec_client_key);
 	for (mode = 0; mode < MODE_MAX; mode++) {
 		kex_free_newkeys(kex->newkeys[mode]);
 		kex->newkeys[mode] = NULL;
@@ -825,7 +818,7 @@ choose_hostkeyalg(struct kex *k, char *client, char *server)
 		error_f("unsupported hostkey algorithm %s", k->hostkey_alg);
 		return SSH_ERR_INTERNAL_ERROR;
 	}
-	k->hostkey_nid = sshkey_ecdsa_nid_from_name(k->hostkey_alg);
+	k->hostkey_nid = -1;
 	return 0;
 }
 
@@ -1096,9 +1089,7 @@ kex_verify_host_key(struct ssh *ssh, struct sshkey *server_host_key)
 		error_f("missing hostkey verifier");
 		return SSH_ERR_INVALID_ARGUMENT;
 	}
-	if (server_host_key->type != kex->hostkey_type ||
-	    (kex->hostkey_type == KEY_ECDSA &&
-	    server_host_key->ecdsa_nid != kex->hostkey_nid))
+	if (server_host_key->type != kex->hostkey_type)
 		return SSH_ERR_KEY_TYPE_MISMATCH;
 	if (kex->verify_host_key(server_host_key, ssh) == -1)
 		return  SSH_ERR_SIGNATURE_INVALID;

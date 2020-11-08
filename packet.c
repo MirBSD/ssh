@@ -2494,13 +2494,6 @@ sshpkt_put_stringb(struct ssh *ssh, const struct sshbuf *v)
 }
 
 int
-sshpkt_put_ec(struct ssh *ssh, const EC_POINT *v, const EC_GROUP *g)
-{
-	return sshbuf_put_ec(ssh->state->outgoing_packet, v, g);
-}
-
-
-int
 sshpkt_put_bignum2(struct ssh *ssh, const BIGNUM *v)
 {
 	return sshbuf_put_bignum2(ssh->state->outgoing_packet, v);
@@ -2560,12 +2553,6 @@ int
 sshpkt_getb_froms(struct ssh *ssh, struct sshbuf **valp)
 {
 	return sshbuf_froms(ssh->state->incoming_packet, valp);
-}
-
-int
-sshpkt_get_ec(struct ssh *ssh, EC_POINT *v, const EC_GROUP *g)
-{
-	return sshbuf_get_ec(ssh->state->incoming_packet, v, g);
 }
 
 int

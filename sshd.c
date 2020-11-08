@@ -654,18 +654,8 @@ get_hostkey_by_type(int type, int nid, int need_private, struct ssh *ssh)
 		}
 		if (key == NULL || key->type != type)
 			continue;
-		switch (type) {
-		case KEY_ECDSA:
-		case KEY_ECDSA_SK:
-		case KEY_ECDSA_CERT:
-		case KEY_ECDSA_SK_CERT:
-			if (key->ecdsa_nid != nid)
-				continue;
-			/* FALLTHROUGH */
-		default:
-			return need_private ?
-			    sensitive_data.host_keys[i] : key;
-		}
+		return need_private ?
+		    sensitive_data.host_keys[i] : key;
 	}
 	return NULL;
 }
