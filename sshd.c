@@ -630,7 +630,7 @@ list_hostkey_types(void)
 }
 
 static struct sshkey *
-get_hostkey_by_type(int type, int nid, int need_private, struct ssh *ssh)
+get_hostkey_by_type(int type, int need_private, struct ssh *ssh)
 {
 	u_int i;
 	struct sshkey *key;
@@ -661,15 +661,15 @@ get_hostkey_by_type(int type, int nid, int need_private, struct ssh *ssh)
 }
 
 struct sshkey *
-get_hostkey_public_by_type(int type, int nid, struct ssh *ssh)
+get_hostkey_public_by_type(int type, struct ssh *ssh)
 {
-	return get_hostkey_by_type(type, nid, 0, ssh);
+	return get_hostkey_by_type(type, 0, ssh);
 }
 
 struct sshkey *
-get_hostkey_private_by_type(int type, int nid, struct ssh *ssh)
+get_hostkey_private_by_type(int type, struct ssh *ssh)
 {
-	return get_hostkey_by_type(type, nid, 1, ssh);
+	return get_hostkey_by_type(type, 1, ssh);
 }
 
 struct sshkey *

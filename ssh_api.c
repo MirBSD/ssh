@@ -39,8 +39,8 @@ int	_ssh_send_banner(struct ssh *, struct sshbuf *);
 int	_ssh_read_banner(struct ssh *, struct sshbuf *);
 int	_ssh_order_hostkeyalgs(struct ssh *);
 int	_ssh_verify_host_key(struct sshkey *, struct ssh *);
-struct sshkey *_ssh_host_public_key(int, int, struct ssh *);
-struct sshkey *_ssh_host_private_key(int, int, struct ssh *);
+static struct sshkey *_ssh_host_public_key(int, struct ssh *);
+static struct sshkey *_ssh_host_private_key(int, struct ssh *);
 int	_ssh_host_key_sign(struct ssh *, struct sshkey *, struct sshkey *,
     u_char **, size_t *, const u_char *, size_t, const char *);
 
@@ -448,31 +448,29 @@ _ssh_exchange_banner(struct ssh *ssh)
 	return 0;
 }
 
-struct sshkey *
-_ssh_host_public_key(int type, int nid, struct ssh *ssh)
+static struct sshkey *
+_ssh_host_public_key(int type, struct ssh *ssh)
 {
 	struct key_entry *k;
 
 	debug3_f("need %d", type);
 	TAILQ_FOREACH(k, &ssh->public_keys, next) {
 		debug3_f("check %s", sshkey_type(k->key));
-		if (k->key->type == type &&
-		    (type != KEY_ECDSA || k->key->ecdsa_nid == nid))
+		if (k->key->type == type)
 			return (k->key);
 	}
 	return (NULL);
 }
 
-struct sshkey *
-_ssh_host_private_key(int type, int nid, struct ssh *ssh)
+static struct sshkey *
+_ssh_host_private_key(int type, struct ssh *ssh)
 {
 	struct key_entry *k;
 
 	debug3_f("need %d", type);
 	TAILQ_FOREACH(k, &ssh->private_keys, next) {
 		debug3_f("check %s", sshkey_type(k->key));
-		if (k->key->type == type &&
-		    (type != KEY_ECDSA || k->key->ecdsa_nid == nid))
+		if (k->key->type == type)
 			return (k->key);
 	}
 	return (NULL);

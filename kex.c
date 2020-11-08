@@ -1072,9 +1072,9 @@ kex_load_hostkey(struct ssh *ssh, struct sshkey **prvp, struct sshkey **pubp)
 		return SSH_ERR_INVALID_ARGUMENT;
 	}
 	*pubp = kex->load_host_public_key(kex->hostkey_type,
-	    kex->hostkey_nid, ssh);
+	    ssh);
 	*prvp = kex->load_host_private_key(kex->hostkey_type,
-	    kex->hostkey_nid, ssh);
+	    ssh);
 	if (*pubp == NULL)
 		return SSH_ERR_NO_HOSTKEY_LOADED;
 	return 0;
