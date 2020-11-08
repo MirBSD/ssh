@@ -643,7 +643,11 @@ static struct {
 	{ "fingerprinthash", sFingerprintHash, SSHCFG_GLOBAL },
 	{ "disableforwarding", sDisableForwarding, SSHCFG_ALL },
 	{ "exposeauthinfo", sExposeAuthInfo, SSHCFG_ALL },
+#ifdef SO_RTABLE
 	{ "rdomain", sRDomain, SSHCFG_ALL },
+#else
+	{ "rdomain", sUnsupported, SSHCFG_ALL },
+#endif
 	{ "casignaturealgorithms", sCASignatureAlgorithms, SSHCFG_ALL },
 	{ "securitykeyprovider", sSecurityKeyProvider, SSHCFG_GLOBAL },
 	{ NULL, sBadOption, 0 }
@@ -774,6 +778,7 @@ add_one_listen_addr(ServerOptions *options, const char *addr,
 	options->listen_addrs[i].addrs = aitop;
 }
 
+#ifdef SO_RTABLE
 /* Returns nonzero if the routing domain name is valid */
 static int
 valid_rdomain(const char *name)
@@ -802,6 +807,7 @@ valid_rdomain(const char *name)
 
 	return 1;
 }
+#endif
 
 /*
  * Queue a ListenAddress to be processed once we have all of the Ports
@@ -1325,6 +1331,7 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		/* Optional routing table */
 		arg2 = NULL;
 		if ((arg = strdelim(&cp)) != NULL) {
+#ifdef SO_RTABLE
 			if (strcmp(arg, "rdomain") != 0 ||
 			    (arg2 = strdelim(&cp)) == NULL)
 				fatal("%s line %d: bad ListenAddress syntax",
@@ -1332,6 +1339,10 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 			if (!valid_rdomain(arg2))
 				fatal("%s line %d: bad routing domain",
 				    filename, linenum);
+#else
+			fatal("%s line %d: Setting the routing domain is not supported on this OS",
+			    filename, linenum);
+#endif
 		}
 
 		queue_listen_addr(options, p, arg2, port);
@@ -2293,6 +2304,7 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		intptr = &options->expose_userauth_info;
 		goto parse_flag;
 
+#ifdef SO_RTABLE
 	case sRDomain:
 		charptr = &options->routing_domain;
 		arg = strdelim(&cp);
@@ -2306,6 +2318,7 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		if (*activep && *charptr == NULL)
 			*charptr = xstrdup(arg);
 		break;
+#endif
 
 	case sDeprecated:
 	case sIgnore:
