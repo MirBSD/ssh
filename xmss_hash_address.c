@@ -3,8 +3,9 @@
 hash_address.c version 20160722
 Andreas Hülsing
 Joost Rijneveld
-Public domain.
+CC0, see https://github.com/XMSS/xmss-reference
 */
+
 #include <stdint.h>
 #include "xmss_hash_address.h"	/* prototypes */
 

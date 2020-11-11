@@ -3,8 +3,9 @@
 xmss_commons.h 20160722
 Andreas Hülsing
 Joost Rijneveld
-Public domain.
+CC0, see https://github.com/XMSS/xmss-reference
 */
+
 #ifndef XMSS_COMMONS_H
 #define XMSS_COMMONS_H
 

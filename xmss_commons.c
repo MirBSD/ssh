@@ -3,7 +3,7 @@
 xmss_commons.c 20160722
 Andreas Hülsing
 Joost Rijneveld
-Public domain.
+CC0, see https://github.com/XMSS/xmss-reference
 */
 
 #include "xmss_commons.h"
