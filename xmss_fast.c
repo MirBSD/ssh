@@ -170,9 +170,9 @@ static int treehash_minheight_on_stack(bds_state* state, const xmss_params *para
  * Currently only used for key generation.
  *
  */
-static void treehash_setup(unsigned char *node, int height, int index, bds_state *state, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const uint32_t addr[8])
+static void treehash_setup(unsigned char *node, int height, int index_, bds_state *state, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const uint32_t addr[8])
 {
-  unsigned int idx = index;
+  unsigned int idx = index_;
   unsigned int n = params->n;
   unsigned int h = params->h;
   unsigned int k = params->k;

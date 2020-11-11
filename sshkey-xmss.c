@@ -981,7 +981,7 @@ sshkey_xmss_decrypt_state(const struct sshkey *k, struct sshbuf *encoded,
 	const struct sshcipher *cipher = NULL;
 	u_char *key, *iv = NULL, *dp;
 	size_t keylen, ivlen, authlen, aadlen;
-	u_int blocksize, encrypted_len, index;
+	u_int blocksize, encrypted_len, pindex;
 	int r = SSH_ERR_INTERNAL_ERROR;
 
 	if (retp != NULL)
@@ -1019,7 +1019,7 @@ sshkey_xmss_decrypt_state(const struct sshkey *k, struct sshbuf *encoded,
 	}
 	/* parse public portion */
 	if ((r = sshbuf_consume(encoded, sizeof(XMSS_MAGIC))) != 0 ||
-	    (r = sshbuf_get_u32(encoded, &index)) != 0 ||
+	    (r = sshbuf_get_u32(encoded, &pindex)) != 0 ||
 	    (r = sshbuf_get_u32(encoded, &encrypted_len)) != 0)
 		goto out;
 
@@ -1037,9 +1037,9 @@ sshkey_xmss_decrypt_state(const struct sshkey *k, struct sshbuf *encoded,
 
 	aadlen = sshbuf_len(copy) - sshbuf_len(encoded);
 
-	/* replace first 4 bytes of IV with index to ensure uniqueness */
+	/* replace first 4 bytes of IV with pindex to ensure uniqueness */
 	memcpy(iv, key + keylen, ivlen);
-	POKE_U32(iv, index);
+	POKE_U32(iv, pindex);
 
 	/* decrypt private state of key */
 	if ((r = sshbuf_reserve(decrypted, aadlen + encrypted_len, &dp)) != 0 ||
