@@ -378,8 +378,7 @@ Specifies which algorithms are allowed for signing of certificates
 by certificate authorities (CAs).
 The default is:
 .Bd -literal -offset indent
-ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,
-ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256,ssh-rsa
+ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
 Certificates signed using other algorithms will not be accepted for
@@ -678,18 +677,10 @@ default set.
 The default for this option is:
 .Bd -literal -offset 3n
 ssh-ed25519-cert-v01@openssh.com,
-ecdsa-sha2-nistp256-cert-v01@openssh.com,
-ecdsa-sha2-nistp384-cert-v01@openssh.com,
-ecdsa-sha2-nistp521-cert-v01@openssh.com,
-sk-ssh-ed25519-cert-v01@openssh.com,
-sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
 ssh-ed25519,
-ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
-sk-ssh-ed25519@openssh.com,
-sk-ecdsa-sha2-nistp256@openssh.com,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -730,7 +721,6 @@ is not to load any certificates.
 Specifies a file containing a private host key
 used by SSH.
 The defaults are
-.Pa /etc/ssh/ssh_host_ecdsa_key ,
 .Pa /etc/ssh/ssh_host_ed25519_key
 and
 .Pa /etc/ssh/ssh_host_rsa_key .
@@ -762,18 +752,10 @@ that the server offers.
 The default for this option is:
 .Bd -literal -offset 3n
 ssh-ed25519-cert-v01@openssh.com,
-ecdsa-sha2-nistp256-cert-v01@openssh.com,
-ecdsa-sha2-nistp384-cert-v01@openssh.com,
-ecdsa-sha2-nistp521-cert-v01@openssh.com,
-sk-ssh-ed25519-cert-v01@openssh.com,
-sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
 ssh-ed25519,
-ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
-sk-ssh-ed25519@openssh.com,
-sk-ecdsa-sha2-nistp256@openssh.com,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -1488,58 +1470,15 @@ default set.
 The default for this option is:
 .Bd -literal -offset 3n
 ssh-ed25519-cert-v01@openssh.com,
-ecdsa-sha2-nistp256-cert-v01@openssh.com,
-ecdsa-sha2-nistp384-cert-v01@openssh.com,
-ecdsa-sha2-nistp521-cert-v01@openssh.com,
-sk-ssh-ed25519-cert-v01@openssh.com,
-sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
 ssh-ed25519,
-ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
-sk-ssh-ed25519@openssh.com,
-sk-ecdsa-sha2-nistp256@openssh.com,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
 The list of available key types may also be obtained using
 .Qq ssh -Q PubkeyAcceptedKeyTypes .
-.It Cm PubkeyAuthOptions
-Sets one or more public key authentication options.
-The supported keywords are:
-.Cm none
-(the default; indicating no additional options are enabled),
-.Cm touch-required
-and
-.Cm verify-required .
-.Pp
-The
-.Cm touch-required
-option causes public key authentication using a FIDO authenticator algorithm
-(i.e.\&
-.Cm ecdsa-sk
-or
-.Cm ed25519-sk )
-to always require the signature to attest that a physically present user
-explicitly confirmed the authentication (usually by touching the authenticator).
-By default,
-.Xr sshd 8
-requires user presence unless overridden with an authorized_keys option.
-The
-.Cm touch-required
-flag disables this override.
-.Pp
-The
-.Cm verify-required
-option requires a FIDO key signature attest that the user was verified,
-e.g. via a PIN.
-.Pp
-Neither the
-.Cm touch-required
-or
-.Cm verify-required
-options have any effect for other, non-FIDO, public key types.
 .It Cm PubkeyAuthentication
 Specifies whether public key authentication is allowed.
 The default is
@@ -1590,10 +1529,6 @@ will be bound to this
 If the routing domain is set to
 .Cm \&%D ,
 then the domain in which the incoming connection was received will be applied.
-.It Cm SecurityKeyProvider
-Specifies a path to a library that will be used when loading
-FIDO authenticator-hosted keys, overriding the default of using
-the built-in USB HID support.
 .It Cm SetEnv
 Specifies one or more environment variables to set in child sessions started
 by

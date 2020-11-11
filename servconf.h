@@ -49,10 +49,6 @@
 /* Magic name for internal sftp-server */
 #define INTERNAL_SFTP_NAME	"internal-sftp"
 
-/* PubkeyAuthOptions flags */
-#define PUBKEYAUTH_TOUCH_REQUIRED	(1)
-#define PUBKEYAUTH_VERIFY_REQUIRED	(1<<1)
-
 struct ssh;
 struct fwd_perm_list;
 

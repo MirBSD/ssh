@@ -156,69 +156,7 @@ rsa_encrypt(int flen, const u_char *from, u_char *to, RSA *rsa, int padding)
 	return (ret);
 }
 
-#if 0
-static ECDSA_SIG *
-ecdsa_do_sign(const unsigned char *dgst, int dgst_len, const BIGNUM *inv,
-    const BIGNUM *rp, EC_KEY *ec)
-{
-	struct sshkey *key = NULL;
-	struct sshbuf *msg = NULL;
-	ECDSA_SIG *ret = NULL;
-	const u_char *cp;
-	u_char *blob = NULL, *signature = NULL;
-	size_t blen, slen = 0;
-	int r, nid;
-
-	nid = sshkey_ecdsa_key_to_nid(ec);
-	if (nid < 0) {
-		error_f("couldn't get curve nid");
-		goto fail;
-	}
-
-	key = sshkey_new(KEY_UNSPEC);
-	if (key == NULL) {
-		error_f("sshkey_new failed");
-		goto fail;
-	}
-	key->ecdsa = ec;
-	key->ecdsa_nid = nid;
-	key->type = KEY_ECDSA;
-	EC_KEY_up_ref(ec);
-
-	if ((r = sshkey_to_blob(key, &blob, &blen)) != 0) {
-		error_fr(r, "encode key");
-		goto fail;
-	}
-	if ((msg = sshbuf_new()) == NULL)
-		fatal_f("sshbuf_new failed");
-	if ((r = sshbuf_put_u8(msg, SSH2_AGENTC_SIGN_REQUEST)) != 0 ||
-	    (r = sshbuf_put_string(msg, blob, blen)) != 0 ||
-	    (r = sshbuf_put_string(msg, dgst, dgst_len)) != 0 ||
-	    (r = sshbuf_put_u32(msg, 0)) != 0)
-		fatal_fr(r, "compose");
-	send_msg(msg);
-	sshbuf_reset(msg);
-
-	if (recv_msg(msg) == SSH2_AGENT_SIGN_RESPONSE) {
-		if ((r = sshbuf_get_string(msg, &signature, &slen)) != 0)
-			fatal_fr(r, "parse");
-		cp = signature;
-		ret = d2i_ECDSA_SIG(NULL, &cp, slen);
-		free(signature);
-	}
-
- fail:
-	free(blob);
-	sshkey_free(key);
-	sshbuf_free(msg);
-	return (ret);
-}
-#endif
-
 static RSA_METHOD	*helper_rsa;
-#if 0
-static EC_KEY_METHOD	*helper_ecdsa;
-#endif
 
 /* redirect private key crypto operations to the ssh-pkcs11-helper */
 static void
@@ -226,10 +164,6 @@ wrap_key(struct sshkey *k)
 {
 	if (k->type == KEY_RSA)
 		RSA_set_method(k->rsa, helper_rsa);
-#if 0
-	else if (k->type == KEY_ECDSA)
-		EC_KEY_set_method(k->ecdsa, helper_ecdsa);
-#endif
 	else
 		fatal_f("unknown key type");
 }
@@ -239,18 +173,6 @@ pkcs11_start_helper_methods(void)
 {
 	if (helper_rsa != NULL)
 		return (0);
-
-#if 0
-	int (*orig_sign)(int, const unsigned char *, int, unsigned char *,
-	    unsigned int *, const BIGNUM *, const BIGNUM *, EC_KEY *) = NULL;
-	if (helper_ecdsa != NULL)
-		return (0);
-	helper_ecdsa = EC_KEY_METHOD_new(EC_KEY_OpenSSL());
-	if (helper_ecdsa == NULL)
-		return (-1);
-	EC_KEY_METHOD_get_sign(helper_ecdsa, &orig_sign, NULL, NULL);
-	EC_KEY_METHOD_set_sign(helper_ecdsa, orig_sign, NULL, ecdsa_do_sign);
-#endif
 
 	if ((helper_rsa = RSA_meth_dup(RSA_get_default_method())) == NULL)
 		fatal_f("RSA_meth_dup failed");

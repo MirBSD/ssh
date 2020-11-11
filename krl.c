@@ -804,7 +804,6 @@ ssh_krl_to_blob(struct ssh_krl *krl, struct sshbuf *buf,
 		if ((r = sshbuf_put_u8(buf, KRL_SECTION_SIGNATURE)) != 0 ||
 		    (r = sshkey_puts(sign_keys[i], buf)) != 0)
 			goto out;
-		/* XXX support sk-* keys */
 		if ((r = sshkey_sign(sign_keys[i], &sblob, &slen,
 		    sshbuf_ptr(buf), sshbuf_len(buf), NULL,
 		    0)) != 0)

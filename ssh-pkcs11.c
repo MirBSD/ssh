@@ -69,18 +69,6 @@ struct pkcs11_key {
 
 int pkcs11_interactive = 0;
 
-#if 0
-static void
-ossl_error(const char *msg)
-{
-	unsigned long    e;
-
-	error_f("%s", msg);
-	while ((e = ERR_get_error()) != 0)
-		error_f("libcrypto error: %s", ERR_error_string(e, NULL));
-}
-#endif
-
 int
 pkcs11_init(int interactive)
 {
@@ -183,10 +171,6 @@ pkcs11_del_provider(char *provider_id)
 #ifdef HAVE_DLOPEN
 static RSA_METHOD *rsa_method;
 static int rsa_idx = 0;
-#if 0
-static EC_KEY_METHOD *ec_key_method;
-static int ec_key_idx = 0;
-#endif
 
 /* release a wrapped object */
 static void
@@ -500,120 +484,6 @@ pkcs11_rsa_wrap(struct pkcs11_provider *provider, CK_ULONG slotidx,
 	return (0);
 }
 
-#if 0
-/* openssl callback doing the actual signing operation */
-static ECDSA_SIG *
-ecdsa_do_sign(const unsigned char *dgst, int dgst_len, const BIGNUM *inv,
-    const BIGNUM *rp, EC_KEY *ec)
-{
-	struct pkcs11_key	*k11;
-	struct pkcs11_slotinfo	*si;
-	CK_FUNCTION_LIST	*f;
-	CK_ULONG		siglen = 0, bnlen;
-	CK_RV			rv;
-	ECDSA_SIG		*ret = NULL;
-	u_char			*sig;
-	BIGNUM			*r = NULL, *s = NULL;
-
-	if ((k11 = EC_KEY_get_ex_data(ec, ec_key_idx)) == NULL) {
-		ossl_error("EC_KEY_get_key_method_data failed for ec");
-		return (NULL);
-	}
-
-	if (pkcs11_get_key(k11, CKM_ECDSA) == -1) {
-		error("pkcs11_get_key failed");
-		return (NULL);
-	}
-
-	f = k11->provider->function_list;
-	si = &k11->provider->slotinfo[k11->slotidx];
-
-	siglen = ECDSA_size(ec);
-	sig = xmalloc(siglen);
-
-	/* XXX handle CKR_BUFFER_TOO_SMALL */
-	rv = f->C_Sign(si->session, (CK_BYTE *)dgst, dgst_len, sig, &siglen);
-	if (rv != CKR_OK) {
-		error("C_Sign failed: %lu", rv);
-		goto done;
-	}
-	if (siglen < 64 || siglen > 132 || siglen % 2) {
-		ossl_error("d2i_ECDSA_SIG failed");
-		goto done;
-	}
-	bnlen = siglen/2;
-	if ((ret = ECDSA_SIG_new()) == NULL) {
-		error("ECDSA_SIG_new failed");
-		goto done;
-	}
-	if ((r = BN_bin2bn(sig, bnlen, NULL)) == NULL ||
-	    (s = BN_bin2bn(sig+bnlen, bnlen, NULL)) == NULL) {
-		ossl_error("d2i_ECDSA_SIG failed");
-		ECDSA_SIG_free(ret);
-		ret = NULL;
-		goto done;
-	}
-	if (!ECDSA_SIG_set0(ret, r, s)) {
-		error_f("ECDSA_SIG_set0 failed");
-		ECDSA_SIG_free(ret);
-		ret = NULL;
-		goto done;
-	}
-	r = s = NULL; /* now owned by ret */
-	/* success */
- done:
-	BN_free(r);
-	BN_free(s);
-	free(sig);
-
-	return (ret);
-}
-
-static int
-pkcs11_ecdsa_start_wrapper(void)
-{
-	int (*orig_sign)(int, const unsigned char *, int, unsigned char *,
-	    unsigned int *, const BIGNUM *, const BIGNUM *, EC_KEY *) = NULL;
-
-	if (ec_key_method != NULL)
-		return (0);
-	ec_key_idx = EC_KEY_get_ex_new_index(0, "ssh-pkcs11-ecdsa",
-	    NULL, NULL, pkcs11_k11_free);
-	if (ec_key_idx == -1)
-		return (-1);
-	ec_key_method = EC_KEY_METHOD_new(EC_KEY_OpenSSL());
-	if (ec_key_method == NULL)
-		return (-1);
-	EC_KEY_METHOD_get_sign(ec_key_method, &orig_sign, NULL, NULL);
-	EC_KEY_METHOD_set_sign(ec_key_method, orig_sign, NULL, ecdsa_do_sign);
-	return (0);
-}
-
-static int
-pkcs11_ecdsa_wrap(struct pkcs11_provider *provider, CK_ULONG slotidx,
-    CK_ATTRIBUTE *keyid_attrib, EC_KEY *ec)
-{
-	struct pkcs11_key	*k11;
-
-	if (pkcs11_ecdsa_start_wrapper() == -1)
-		return (-1);
-
-	k11 = xcalloc(1, sizeof(*k11));
-	k11->provider = provider;
-	provider->refcount++;	/* provider referenced by ECDSA key */
-	k11->slotidx = slotidx;
-	/* identify key object on smartcard */
-	k11->keyid_len = keyid_attrib->ulValueLen;
-	k11->keyid = xmalloc(k11->keyid_len);
-	memcpy(k11->keyid, keyid_attrib->pValue, k11->keyid_len);
-
-	EC_KEY_set_method(ec, ec_key_method);
-	EC_KEY_set_ex_data(ec, ec_key_idx, k11);
-
-	return (0);
-}
-#endif
-
 /* remove trailing spaces */
 static void
 rmspace(u_char *buf, size_t len)
@@ -686,131 +556,6 @@ pkcs11_key_included(struct sshkey ***keysp, int *nkeys, struct sshkey *key)
 			return (1);
 	return (0);
 }
-
-#if 0
-static struct sshkey *
-pkcs11_fetch_ecdsa_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
-    CK_OBJECT_HANDLE *obj)
-{
-	CK_ATTRIBUTE		 key_attr[3];
-	CK_SESSION_HANDLE	 session;
-	CK_FUNCTION_LIST	*f = NULL;
-	CK_RV			 rv;
-	ASN1_OCTET_STRING	*octet = NULL;
-	EC_KEY			*ec = NULL;
-	EC_GROUP		*group = NULL;
-	struct sshkey		*key = NULL;
-	const unsigned char	*attrp = NULL;
-	int			 i;
-	int			 nid;
-
-	memset(&key_attr, 0, sizeof(key_attr));
-	key_attr[0].type = CKA_ID;
-	key_attr[1].type = CKA_EC_POINT;
-	key_attr[2].type = CKA_EC_PARAMS;
-
-	session = p->slotinfo[slotidx].session;
-	f = p->function_list;
-
-	/* figure out size of the attributes */
-	rv = f->C_GetAttributeValue(session, *obj, key_attr, 3);
-	if (rv != CKR_OK) {
-		error("C_GetAttributeValue failed: %lu", rv);
-		return (NULL);
-	}
-
-	/*
-	 * Allow CKA_ID (always first attribute) to be empty, but
-	 * ensure that none of the others are zero length.
-	 * XXX assumes CKA_ID is always first.
-	 */
-	if (key_attr[1].ulValueLen == 0 ||
-	    key_attr[2].ulValueLen == 0) {
-		error("invalid attribute length");
-		return (NULL);
-	}
-
-	/* allocate buffers for attributes */
-	for (i = 0; i < 3; i++)
-		if (key_attr[i].ulValueLen > 0)
-			key_attr[i].pValue = xcalloc(1, key_attr[i].ulValueLen);
-
-	/* retrieve ID, public point and curve parameters of EC key */
-	rv = f->C_GetAttributeValue(session, *obj, key_attr, 3);
-	if (rv != CKR_OK) {
-		error("C_GetAttributeValue failed: %lu", rv);
-		goto fail;
-	}
-
-	ec = EC_KEY_new();
-	if (ec == NULL) {
-		error("EC_KEY_new failed");
-		goto fail;
-	}
-
-	attrp = key_attr[2].pValue;
-	group = d2i_ECPKParameters(NULL, &attrp, key_attr[2].ulValueLen);
-	if (group == NULL) {
-		ossl_error("d2i_ECPKParameters failed");
-		goto fail;
-	}
-
-	if (EC_KEY_set_group(ec, group) == 0) {
-		ossl_error("EC_KEY_set_group failed");
-		goto fail;
-	}
-
-	if (key_attr[1].ulValueLen <= 2) {
-		error("CKA_EC_POINT too small");
-		goto fail;
-	}
-
-	attrp = key_attr[1].pValue;
-	octet = d2i_ASN1_OCTET_STRING(NULL, &attrp, key_attr[1].ulValueLen);
-	if (octet == NULL) {
-		ossl_error("d2i_ASN1_OCTET_STRING failed");
-		goto fail;
-	}
-	attrp = octet->data;
-	if (o2i_ECPublicKey(&ec, &attrp, octet->length) == NULL) {
-		ossl_error("o2i_ECPublicKey failed");
-		goto fail;
-	}
-
-	nid = sshkey_ecdsa_key_to_nid(ec);
-	if (nid < 0) {
-		error("couldn't get curve nid");
-		goto fail;
-	}
-
-	if (pkcs11_ecdsa_wrap(p, slotidx, &key_attr[0], ec))
-		goto fail;
-
-	key = sshkey_new(KEY_UNSPEC);
-	if (key == NULL) {
-		error("sshkey_new failed");
-		goto fail;
-	}
-
-	key->ecdsa = ec;
-	key->ecdsa_nid = nid;
-	key->type = KEY_ECDSA;
-	key->flags |= SSHKEY_FLAG_EXT;
-	ec = NULL;	/* now owned by key */
-
-fail:
-	for (i = 0; i < 3; i++)
-		free(key_attr[i].pValue);
-	if (ec)
-		EC_KEY_free(ec);
-	if (group)
-		EC_GROUP_free(group);
-	if (octet)
-		ASN1_OCTET_STRING_free(octet);
-
-	return (key);
-}
-#endif
 
 static struct sshkey *
 pkcs11_fetch_rsa_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
@@ -916,9 +661,6 @@ pkcs11_fetch_x509_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
 	EC_KEY			*ec = NULL;
 	struct sshkey		*key = NULL;
 	int			 i;
-#if 0
-	int			 nid;
-#endif
 	const u_char		*cp;
 	char			*subject = NULL;
 
@@ -1005,38 +747,6 @@ pkcs11_fetch_x509_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
 		key->type = KEY_RSA;
 		key->flags |= SSHKEY_FLAG_EXT;
 		rsa = NULL;	/* now owned by key */
-#if 0
-	} else if (EVP_PKEY_base_id(evp) == EVP_PKEY_EC) {
-		if (EVP_PKEY_get0_EC_KEY(evp) == NULL) {
-			error("invalid x509; no ec key");
-			goto out;
-		}
-		if ((ec = EC_KEY_dup(EVP_PKEY_get0_EC_KEY(evp))) == NULL) {
-			error("EC_KEY_dup failed");
-			goto out;
-		}
-
-		nid = sshkey_ecdsa_key_to_nid(ec);
-		if (nid < 0) {
-			error("couldn't get curve nid");
-			goto out;
-		}
-
-		if (pkcs11_ecdsa_wrap(p, slotidx, &cert_attr[0], ec))
-			goto out;
-
-		key = sshkey_new(KEY_UNSPEC);
-		if (key == NULL) {
-			error("sshkey_new failed");
-			goto out;
-		}
-
-		key->ecdsa = ec;
-		key->ecdsa_nid = nid;
-		key->type = KEY_ECDSA;
-		key->flags |= SSHKEY_FLAG_EXT;
-		ec = NULL;	/* now owned by key */
-#endif
 	} else {
 		error("unknown certificate key type");
 		goto out;
@@ -1056,17 +766,6 @@ pkcs11_fetch_x509_pubkey(struct pkcs11_provider *p, CK_ULONG slotidx,
 	*labelp = subject;
 	return 0;
 }
-
-#if 0
-static int
-have_rsa_key(const RSA *rsa)
-{
-	const BIGNUM *rsa_n, *rsa_e;
-
-	RSA_get0_key(rsa, &rsa_n, &rsa_e, NULL);
-	return rsa_n != NULL && rsa_e != NULL;
-}
-#endif
 
 /*
  * lookup certificates for token in slot identified by slotidx,
@@ -1241,11 +940,6 @@ pkcs11_fetch_keys(struct pkcs11_provider *p, CK_ULONG slotidx,
 		case CKK_RSA:
 			key = pkcs11_fetch_rsa_pubkey(p, slotidx, &obj);
 			break;
-#if 0
-		case CKK_ECDSA:
-			key = pkcs11_fetch_ecdsa_pubkey(p, slotidx, &obj);
-			break;
-#endif
 		default:
 			/* XXX print key type? */
 			key = NULL;
@@ -1380,91 +1074,6 @@ pkcs11_decode_hex(const char *hex, unsigned char **dest, size_t *rlen)
 		*rlen = len;
 
 	return 0;
-}
-
-static struct ec_curve_info {
-	const char	*name;
-	const char	*oid;
-	const char	*oid_encoded;
-	size_t		 size;
-} ec_curve_infos[] = {
-	{"prime256v1",	"1.2.840.10045.3.1.7",	"06082A8648CE3D030107", 256},
-	{"secp384r1",	"1.3.132.0.34",		"06052B81040022",	384},
-	{"secp521r1",	"1.3.132.0.35",		"06052B81040023",	521},
-	{NULL,		NULL,			NULL,			0},
-};
-
-static struct sshkey *
-pkcs11_ecdsa_generate_private_key(struct pkcs11_provider *p, CK_ULONG slotidx,
-    char *label, CK_ULONG bits, CK_BYTE keyid, u_int32_t *err)
-{
-	struct pkcs11_slotinfo	*si;
-	char			*plabel = label ? label : "";
-	int			 i;
-	size_t			 ecparams_size;
-	unsigned char		*ecparams = NULL;
-	int			 npub = 0, npriv = 0;
-	CK_RV			 rv;
-	CK_FUNCTION_LIST	*f;
-	CK_SESSION_HANDLE	 session;
-	CK_BBOOL		 true_val = CK_TRUE, false_val = CK_FALSE;
-	CK_OBJECT_HANDLE	 pubKey, privKey;
-	CK_MECHANISM		 mech = {
-	    CKM_EC_KEY_PAIR_GEN, NULL_PTR, 0
-	};
-	CK_ATTRIBUTE		 tpub[16], tpriv[16];
-
-	*err = 0;
-
-	for (i = 0; ec_curve_infos[i].name; i++) {
-		if (ec_curve_infos[i].size == bits)
-			break;
-	}
-	if (!ec_curve_infos[i].name) {
-		error_f("invalid key size %lu", bits);
-		return NULL;
-	}
-	if (pkcs11_decode_hex(ec_curve_infos[i].oid_encoded, &ecparams,
-	    &ecparams_size) == -1) {
-		error_f("invalid oid");
-		return NULL;
-	}
-
-	FILL_ATTR(tpub, npub, CKA_TOKEN, &true_val, sizeof(true_val));
-	FILL_ATTR(tpub, npub, CKA_LABEL, plabel, strlen(plabel));
-	FILL_ATTR(tpub, npub, CKA_ENCRYPT, &false_val, sizeof(false_val));
-	FILL_ATTR(tpub, npub, CKA_VERIFY, &true_val, sizeof(true_val));
-	FILL_ATTR(tpub, npub, CKA_VERIFY_RECOVER, &false_val,
-	    sizeof(false_val));
-	FILL_ATTR(tpub, npub, CKA_WRAP, &false_val, sizeof(false_val));
-	FILL_ATTR(tpub, npub, CKA_DERIVE, &false_val, sizeof(false_val));
-	FILL_ATTR(tpub, npub, CKA_EC_PARAMS, ecparams, ecparams_size);
-	FILL_ATTR(tpub, npub, CKA_ID, &keyid, sizeof(keyid));
-
-	FILL_ATTR(tpriv, npriv, CKA_TOKEN, &true_val, sizeof(true_val));
-	FILL_ATTR(tpriv, npriv, CKA_LABEL, plabel, strlen(plabel));
-	FILL_ATTR(tpriv, npriv, CKA_PRIVATE, &true_val, sizeof(true_val));
-	FILL_ATTR(tpriv, npriv, CKA_SENSITIVE, &true_val, sizeof(true_val));
-	FILL_ATTR(tpriv, npriv, CKA_DECRYPT, &false_val, sizeof(false_val));
-	FILL_ATTR(tpriv, npriv, CKA_SIGN, &true_val, sizeof(true_val));
-	FILL_ATTR(tpriv, npriv, CKA_SIGN_RECOVER, &false_val,
-	    sizeof(false_val));
-	FILL_ATTR(tpriv, npriv, CKA_UNWRAP, &false_val, sizeof(false_val));
-	FILL_ATTR(tpriv, npriv, CKA_DERIVE, &false_val, sizeof(false_val));
-	FILL_ATTR(tpriv, npriv, CKA_ID, &keyid, sizeof(keyid));
-
-	f = p->function_list;
-	si = &p->slotinfo[slotidx];
-	session = si->session;
-
-	if ((rv = f->C_GenerateKeyPair(session, &mech, tpub, npub, tpriv, npriv,
-	    &pubKey, &privKey)) != CKR_OK) {
-		error_f("key generation failed: error 0x%lx", rv);
-		*err = rv;
-		return NULL;
-	}
-
-	return pkcs11_fetch_ecdsa_pubkey(p, slotidx, &pubKey);
 }
 #endif /* WITH_PKCS11_KEYGEN */
 
@@ -1700,13 +1309,6 @@ pkcs11_gakp(char *provider_id, char *pin, unsigned int slotidx, char *label,
 			goto out;
 		}
 		break;
-	case KEY_ECDSA:
-		if ((k = pkcs11_ecdsa_generate_private_key(p, slotidx, label,
-		    bits, keyid, err)) == NULL) {
-			debug_f("failed to generate ECDSA key");
-			goto out;
-		}
-		break;
 	default:
 		*err = SSH_PKCS11_ERR_GENERIC;
 		debug_f("unknown type %d", type);
@@ -1802,8 +1404,6 @@ pkcs11_destroy_keypair(char *provider_id, char *pin, unsigned long slotidx,
 		}
 		if (key_type == CKK_RSA)
 			k = pkcs11_fetch_rsa_pubkey(p, slotidx, &obj);
-		else if (key_type == CKK_ECDSA)
-			k = pkcs11_fetch_ecdsa_pubkey(p, slotidx, &obj);
 
 		if ((rv = f->C_DestroyObject(session, obj)) != CKR_OK) {
 			debug_f("could not destroy public key 0x%hhx", keyid);

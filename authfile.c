@@ -323,7 +323,6 @@ sshkey_load_private_cert(int type, const char *filename, const char *passphrase,
 	switch (type) {
 	case KEY_RSA:
 	case KEY_DSA:
-	case KEY_ECDSA:
 	case KEY_ED25519:
 	case KEY_XMSS:
 	case KEY_UNSPEC:

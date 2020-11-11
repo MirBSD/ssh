@@ -278,7 +278,6 @@ sshkey_type_is_valid_ca(int type)
 	switch (type) {
 	case KEY_RSA:
 	case KEY_DSA:
-	case KEY_ECDSA:
 	case KEY_ED25519:
 	case KEY_XMSS:
 		return 1;
@@ -304,8 +303,6 @@ sshkey_type_plain(int type)
 		return KEY_RSA;
 	case KEY_DSA_CERT:
 		return KEY_DSA;
-	case KEY_ECDSA_CERT:
-		return KEY_ECDSA;
 	case KEY_ED25519_CERT:
 		return KEY_ED25519;
 	case KEY_XMSS_CERT:
@@ -387,10 +384,6 @@ sshkey_new(int type)
 			return NULL;
 		}
 		k->dsa = dsa;
-		break;
-	case KEY_ECDSA:
-	case KEY_ECDSA_CERT:
-		/* Cannot do anything until we know the group */
 		break;
 	case KEY_ED25519:
 	case KEY_ED25519_CERT:
@@ -567,7 +560,6 @@ to_blob_buf(const struct sshkey *key, struct sshbuf *b, int force_plain,
 
 	switch (type) {
 	case KEY_DSA_CERT:
-	case KEY_ECDSA_CERT:
 	case KEY_RSA_CERT:
 	case KEY_ED25519_CERT:
 #ifdef WITH_XMSS
@@ -1039,10 +1031,8 @@ sshkey_read(struct sshkey *ret, char **cpp)
 	case KEY_UNSPEC:
 	case KEY_RSA:
 	case KEY_DSA:
-	case KEY_ECDSA:
 	case KEY_ED25519:
 	case KEY_DSA_CERT:
-	case KEY_ECDSA_CERT:
 	case KEY_RSA_CERT:
 	case KEY_ED25519_CERT:
 #ifdef WITH_XMSS
@@ -1651,9 +1641,6 @@ sshkey_shield_private(struct sshkey *k)
 	k->shield_prekey_len = SSHKEY_SHIELD_PREKEY_LEN;
 	enc = prekey = NULL; /* transferred */
 	enclen = 0;
-
-	/* preserve key fields that are required for correct operation */
-	k->sk_flags = kswap->sk_flags;
 
 	/* success */
 	r = 0;
@@ -2294,9 +2281,6 @@ sshkey_to_certified(struct sshkey *k)
 		break;
 	case KEY_DSA:
 		newtype = KEY_DSA_CERT;
-		break;
-	case KEY_ECDSA:
-		newtype = KEY_ECDSA_CERT;
 		break;
 	case KEY_ED25519:
 		newtype = KEY_ED25519_CERT;
@@ -3472,7 +3456,6 @@ sshkey_private_to_fileblob(struct sshkey *key, struct sshbuf *blob,
 {
 	switch (key->type) {
 	case KEY_DSA:
-	case KEY_ECDSA:
 	case KEY_RSA:
 		break; /* see below */
 	case KEY_ED25519:

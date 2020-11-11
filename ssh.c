@@ -1530,11 +1530,9 @@ main(int ac, char **av)
 } while (0)
 
 		if (options.hostbased_authentication == 1) {
-			L_CERT(_PATH_HOST_ECDSA_KEY_FILE, 0);
 			L_CERT(_PATH_HOST_ED25519_KEY_FILE, 1);
 			L_CERT(_PATH_HOST_RSA_KEY_FILE, 2);
 			L_CERT(_PATH_HOST_DSA_KEY_FILE, 3);
-			L_PUBKEY(_PATH_HOST_ECDSA_KEY_FILE, 4);
 			L_PUBKEY(_PATH_HOST_ED25519_KEY_FILE, 5);
 			L_PUBKEY(_PATH_HOST_RSA_KEY_FILE, 6);
 			L_PUBKEY(_PATH_HOST_DSA_KEY_FILE, 7);

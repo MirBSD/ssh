@@ -591,10 +591,7 @@ list_hostkey_types(void)
 			append_hostkey_type(b, "rsa-sha2-256");
 			/* FALLTHROUGH */
 		case KEY_DSA:
-		case KEY_ECDSA:
 		case KEY_ED25519:
-		case KEY_ECDSA_SK:
-		case KEY_ED25519_SK:
 		case KEY_XMSS:
 			append_hostkey_type(b, sshkey_ssh_name(key));
 			break;
@@ -612,10 +609,7 @@ list_hostkey_types(void)
 			    "rsa-sha2-256-cert-v01@openssh.com");
 			/* FALLTHROUGH */
 		case KEY_DSA_CERT:
-		case KEY_ECDSA_CERT:
 		case KEY_ED25519_CERT:
-		case KEY_ECDSA_SK_CERT:
-		case KEY_ED25519_SK_CERT:
 		case KEY_XMSS_CERT:
 			append_hostkey_type(b, sshkey_ssh_name(key));
 			break;
@@ -638,10 +632,7 @@ get_hostkey_by_type(int type, int need_private, struct ssh *ssh)
 		switch (type) {
 		case KEY_RSA_CERT:
 		case KEY_DSA_CERT:
-		case KEY_ECDSA_CERT:
 		case KEY_ED25519_CERT:
-		case KEY_ECDSA_SK_CERT:
-		case KEY_ED25519_SK_CERT:
 		case KEY_XMSS_CERT:
 			key = sensitive_data.host_certificates[i];
 			break;
@@ -1723,10 +1714,7 @@ main(int ac, char **av)
 		switch (keytype) {
 		case KEY_RSA:
 		case KEY_DSA:
-		case KEY_ECDSA:
 		case KEY_ED25519:
-		case KEY_ECDSA_SK:
-		case KEY_ED25519_SK:
 		case KEY_XMSS:
 			if (have_agent || key != NULL)
 				sensitive_data.have_ssh2_key = 1;

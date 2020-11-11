@@ -150,9 +150,6 @@ static long lifetime = 0;
 
 static int fingerprint_hash = SSH_FP_HASH_DEFAULT;
 
-/* Refuse signing of non-SSH messages for web-origin FIDO keys */
-static int restrict_websafe = 1;
-
 static void
 close_socket(SocketEntry *e)
 {
@@ -298,7 +295,6 @@ process_sign_request2(SocketEntry *e)
 		verbose_f("user refused key");
 		goto send;
 	}
-	/* XXX support PIN required FIDO keys */
 	if ((r = sshkey_sign(id->key, &signature, &slen,
 	    data, dlen, agent_decode_alg(key, flags),
 	    compat)) != 0) {
@@ -1117,7 +1113,7 @@ main(int ac, char **av)
 
 	OpenSSL_add_all_algorithms();
 
-	while ((ch = getopt(ac, av, "cDdksE:a:O:P:t:")) != -1) {
+	while ((ch = getopt(ac, av, "cDdksE:a:P:t:")) != -1) {
 		switch (ch) {
 		case 'E':
 			fingerprint_hash = ssh_digest_alg_by_name(optarg);
@@ -1131,12 +1127,6 @@ main(int ac, char **av)
 			break;
 		case 'k':
 			k_flag++;
-			break;
-		case 'O':
-			if (strcmp(optarg, "no-restrict-websafe") == 0)
-				restrict_websafe  = 0;
-			else
-				fatal("Unknown -O option");
 			break;
 		case 'P':
 			if (allowed_providers != NULL)

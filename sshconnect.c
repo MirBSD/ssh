@@ -1283,7 +1283,6 @@ show_other_keys(struct hostkeys *hostkeys, struct sshkey *key)
 	int type[] = {
 		KEY_RSA,
 		KEY_DSA,
-		KEY_ECDSA,
 		KEY_ED25519,
 		KEY_XMSS,
 		-1

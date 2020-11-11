@@ -61,7 +61,7 @@
 # define DEFAULT_KEY_TYPE_NAME "rsa"
 
 /*
- * Default number of bits in the RSA, DSA and ECDSA keys.  These value can be
+ * Default number of bits in the RSA and DSA keys.  These value can be
  * overridden on the command line.
  *
  * These values, with the exception of DSA, provide security equivalent to at
@@ -73,7 +73,6 @@
  */
 #define DEFAULT_BITS		3072
 #define DEFAULT_BITS_DSA	1024
-#define DEFAULT_BITS_ECDSA	256
 
 static int quiet = 0;
 
@@ -957,7 +956,6 @@ do_gen_all_hostkeys(struct passwd *pw)
 	} key_types[] = {
 		{ "rsa", "RSA" ,_PATH_HOST_RSA_KEY_FILE },
 		{ "dsa", "DSA", _PATH_HOST_DSA_KEY_FILE },
-		{ "ecdsa", "ECDSA",_PATH_HOST_ECDSA_KEY_FILE },
 		{ "ed25519", "ED25519",_PATH_HOST_ED25519_KEY_FILE },
 #ifdef WITH_XMSS
 		{ "xmss", "XMSS",_PATH_HOST_XMSS_KEY_FILE },
@@ -2802,7 +2800,7 @@ usage(void)
 	fprintf(stderr,
 	    "usage: ssh-keygen [-q] [-a rounds] [-b bits] [-C comment] [-f output_keyfile]\n"
 	    "                  [-m format] [-N new_passphrase] [-O option]\n"
-	    "                  [-t dsa | ecdsa | ecdsa-sk | ed25519 | ed25519-sk | rsa]\n"
+	    "                  [-t dsa | ed25519 | rsa]\n"
 	    "       ssh-keygen -p [-a rounds] [-f keyfile] [-m format] [-N new_passphrase]\n"
 	    "                   [-P old_passphrase]\n"
 	    "       ssh-keygen -i [-f input_keyfile] [-m key_format]\n"
@@ -3210,9 +3208,6 @@ main(int argc, char **argv)
 			    print_generic);
 			n += do_print_resource_record(pw,
 			    _PATH_HOST_DSA_KEY_FILE, rr_hostname,
-			    print_generic);
-			n += do_print_resource_record(pw,
-			    _PATH_HOST_ECDSA_KEY_FILE, rr_hostname,
 			    print_generic);
 			n += do_print_resource_record(pw,
 			    _PATH_HOST_ED25519_KEY_FILE, rr_hostname,

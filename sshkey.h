@@ -40,18 +40,12 @@ struct sshbuf;
 enum sshkey_types {
 	KEY_RSA,
 	KEY_DSA,
-	KEY_ECDSA,
 	KEY_ED25519,
 	KEY_RSA_CERT,
 	KEY_DSA_CERT,
-	KEY_ECDSA_CERT,
 	KEY_ED25519_CERT,
 	KEY_XMSS,
 	KEY_XMSS_CERT,
-	KEY_ECDSA_SK,
-	KEY_ECDSA_SK_CERT,
-	KEY_ED25519_SK,
-	KEY_ED25519_SK_CERT,
 	KEY_UNSPEC
 };
 
@@ -110,7 +104,7 @@ struct sshkey {
 	RSA	*rsa;
 	/* KEY_DSA */
 	DSA	*dsa;
-	/* KEY_ED25519 and KEY_ED25519_SK */
+	/* KEY_ED25519 */
 	u_char	*ed25519_sk;
 	u_char	*ed25519_pk;
 	/* KEY_XMSS */
@@ -119,11 +113,6 @@ struct sshkey {
 	void	*xmss_state;	/* depends on xmss_name, opaque */
 	u_char	*xmss_sk;
 	u_char	*xmss_pk;
-	/* KEY_ECDSA_SK and KEY_ED25519_SK */
-	char	*sk_application;
-	uint8_t	sk_flags;
-	struct sshbuf *sk_key_handle;
-	struct sshbuf *sk_reserved;
 	/* Certificates */
 	struct sshkey_cert *cert;
 	/* Private key shielding */

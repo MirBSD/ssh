@@ -101,14 +101,12 @@ The default is 5 seconds.
 Specify the type of the key to fetch from the scanned hosts.
 The possible values are
 .Dq dsa ,
-.Dq ecdsa ,
 .Dq ed25519 ,
 or
 .Dq rsa .
 Multiple values may be specified by separating them with commas.
 The default is to fetch
-.Dq rsa ,
-.Dq ecdsa ,
+.Dq rsa
 and
 .Dq ed25519
 keys.
@@ -139,7 +137,7 @@ Find all hosts from the file
 which have new or different keys from those in the sorted file
 .Pa ssh_known_hosts :
 .Bd -literal -offset indent
-$ ssh-keyscan -t rsa,dsa,ecdsa,ed25519 -f ssh_hosts | \e
+$ ssh-keyscan -t rsa,dsa,ed25519 -f ssh_hosts | \e
 	sort -u - ssh_known_hosts | diff ssh_known_hosts -
 .Ed
 .Sh SEE ALSO

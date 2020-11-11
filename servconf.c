@@ -1,4 +1,3 @@
-
 /* $OpenBSD: servconf.c,v 1.371 2020/10/18 11:32:02 djm Exp $ */
 /*
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -286,8 +285,6 @@ fill_default_server_options(ServerOptions *options)
 		servconf_add_hostkey("[default]", 0, options,
 		    _PATH_HOST_RSA_KEY_FILE, 0);
 		servconf_add_hostkey("[default]", 0, options,
-		    _PATH_HOST_ECDSA_KEY_FILE, 0);
-		servconf_add_hostkey("[default]", 0, options,
 		    _PATH_HOST_ED25519_KEY_FILE, 0);
 #ifdef WITH_XMSS
 		servconf_add_hostkey("[default]", 0, options,
@@ -506,7 +503,7 @@ typedef enum {
 	sAuthenticationMethods, sHostKeyAgent, sPermitUserRC,
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
-	sExposeAuthInfo, sRDomain, sPubkeyAuthOptions,
+	sExposeAuthInfo, sRDomain,
 	sMaskRemote,
 	sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
@@ -544,7 +541,6 @@ static struct {
 	{ "rsaauthentication", sDeprecated, SSHCFG_ALL },
 	{ "pubkeyauthentication", sPubkeyAuthentication, SSHCFG_ALL },
 	{ "pubkeyacceptedkeytypes", sPubkeyAcceptedKeyTypes, SSHCFG_ALL },
-	{ "pubkeyauthoptions", sPubkeyAuthOptions, SSHCFG_ALL },
 	{ "dsaauthentication", sPubkeyAuthentication, SSHCFG_GLOBAL }, /* alias */
 #ifdef KRB5
 	{ "kerberosauthentication", sKerberosAuthentication, SSHCFG_ALL },
@@ -1472,26 +1468,6 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 	case sPubkeyAcceptedKeyTypes:
 		charptr = &options->pubkey_key_types;
 		goto parse_keytypes;
-
-	case sPubkeyAuthOptions:
-		intptr = &options->pubkey_auth_options;
-		value = 0;
-		while ((arg = strdelim(&cp)) && *arg != '\0') {
-			if (strcasecmp(arg, "none") == 0)
-				continue;
-			if (strcasecmp(arg, "touch-required") == 0)
-				value |= PUBKEYAUTH_TOUCH_REQUIRED;
-			else if (strcasecmp(arg, "verify-required") == 0)
-				value |= PUBKEYAUTH_VERIFY_REQUIRED;
-			else {
-				fatal("%s line %d: unsupported "
-				    "PubkeyAuthOptions option %s",
-				    filename, linenum, arg);
-			}
-		}
-		if (*activep && *intptr == -1)
-			*intptr = value;
-		break;
 
 	case sKerberosAuthentication:
 		intptr = &options->kerberos_authentication;
@@ -2876,15 +2852,6 @@ dump_config(ServerOptions *o)
 		printf("permituserenvironment %s\n",
 		    o->permit_user_env_allowlist);
 	}
-
-	printf("pubkeyauthoptions");
-	if (o->pubkey_auth_options == 0)
-		printf(" none");
-	if (o->pubkey_auth_options & PUBKEYAUTH_TOUCH_REQUIRED)
-		printf(" touch-required");
-	if (o->pubkey_auth_options & PUBKEYAUTH_VERIFY_REQUIRED)
-		printf(" verify-required");
-	printf("\n");
 }
 
 void

@@ -59,13 +59,10 @@
 adds private key identities to the authentication agent,
 .Xr ssh-agent 1 .
 When run without arguments, it adds the files
-.Pa ~/.ssh/id_rsa ,
-.Pa ~/.ssh/id_dsa ,
-.Pa ~/.ssh/id_ecdsa ,
-.Pa ~/.ssh/id_ecdsa_sk ,
 .Pa ~/.ssh/id_ed25519 ,
+.Pa ~/.ssh/id_rsa
 and
-.Pa ~/.ssh/id_ed25519_sk .
+.Pa ~/.ssh/id_dsa .
 After loading a private key,
 .Nm
 will try to load corresponding certificate information from the
@@ -216,13 +213,9 @@ socket used to communicate with the agent.
 .Sh FILES
 .Bl -tag -width Ds -compact
 .It Pa ~/.ssh/id_dsa
-.It Pa ~/.ssh/id_ecdsa
-.It Pa ~/.ssh/id_ecdsa_sk
 .It Pa ~/.ssh/id_ed25519
-.It Pa ~/.ssh/id_ed25519_sk
 .It Pa ~/.ssh/id_rsa
-Contains the DSA, ECDSA, authenticator-hosted ECDSA, Ed25519,
-authenticator-hosted Ed25519 or RSA authentication identity of the user.
+Contains the DSA, Ed25519 or RSA authentication identity of the user.
 .El
 .Pp
 Identity files should not be readable by anyone but the user.

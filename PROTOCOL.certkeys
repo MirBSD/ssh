@@ -33,9 +33,6 @@ Certified keys are represented using new key types:
 
     ssh-rsa-cert-v01@openssh.com
     ssh-dss-cert-v01@openssh.com
-    ecdsa-sha2-nistp256-cert-v01@openssh.com
-    ecdsa-sha2-nistp384-cert-v01@openssh.com
-    ecdsa-sha2-nistp521-cert-v01@openssh.com
     ssh-ed25519-cert-v01@openssh.com
 
 Two additional types exist for RSA certificates to force use of
@@ -111,26 +108,6 @@ DSA certificate
     string    signature key
     string    signature
 
-ECDSA certificate
-
-    string    "ecdsa-sha2-nistp256-cert-v01@openssh.com" |
-              "ecdsa-sha2-nistp384-cert-v01@openssh.com" |
-              "ecdsa-sha2-nistp521-cert-v01@openssh.com"
-    string    nonce
-    string    curve
-    string    public_key
-    uint64    serial
-    uint32    type
-    string    key id
-    string    valid principals
-    uint64    valid after
-    uint64    valid before
-    string    critical options
-    string    extensions
-    string    reserved
-    string    signature key
-    string    signature
-
 ED25519 certificate
 
     string    "ssh-ed25519-cert-v01@openssh.com"
@@ -155,9 +132,6 @@ inducing collisions in the signature hash infeasible.
 e and n are the RSA exponent and public modulus respectively.
 
 p, q, g, y are the DSA parameters as described in FIPS-186-2.
-
-curve and public key are respectively the ECDSA "[identifier]" and "Q"
-defined in section 3.1 of RFC5656.
 
 pk is the encoded Ed25519 public key as defined by
 draft-josefsson-eddsa-ed25519-03.
@@ -207,17 +181,16 @@ the protocol.
 
 The signature key field contains the CA key used to sign the
 certificate. The valid key types for CA keys are ssh-rsa,
-ssh-dss, ssh-ed25519 and the ECDSA types ecdsa-sha2-nistp256,
-ecdsa-sha2-nistp384, ecdsa-sha2-nistp521. "Chained" certificates, where
+ssh-dss and ssh-ed25519. "Chained" certificates, where
 the signature key type is a certificate type itself are NOT supported.
 Note that it is possible for a RSA certificate key to be signed by a
-Ed25519 or ECDSA CA key and vice-versa.
+Ed25519 CA key and vice-versa.
 
 signature is computed over all preceding fields from the initial string
 up to, and including the signature key. Signatures are computed and
 encoded according to the rules defined for the CA's public key algorithm
-(RFC4253 section 6.6 for ssh-rsa and ssh-dss, RFC5656 for the ECDSA
-types), and draft-josefsson-eddsa-ed25519-03 for Ed25519.
+(RFC4253 section 6.6 for ssh-rsa and ssh-dss,
+and draft-josefsson-eddsa-ed25519-03 for Ed25519.
 
 Critical options
 ----------------
@@ -280,13 +253,6 @@ their data fields are:
 
 Name                    Format        Description
 -----------------------------------------------------------------------------
-no-presence-required    empty         Flag indicating that signatures made
-                                      with this certificate need not assert
-                                      user presence. This option only make
-                                      sense for the U2F/FIDO security key
-                                      types that support this feature in
-                                      their signature formats.
-
 permit-X11-forwarding   empty         Flag indicating that X11 forwarding
                                       should be permitted. X11 forwarding will
                                       be refused if this option is absent.
