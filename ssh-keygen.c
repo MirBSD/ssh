@@ -1,4 +1,4 @@
-/* $OpenBSD: ssh-keygen.c,v 1.423 2020/10/29 03:01:18 djm Exp $ */
+/* $OpenBSD: ssh-keygen.c,v 1.424 2020/11/08 22:37:24 djm Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1994 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -1749,7 +1749,7 @@ do_ca_sign(struct passwd *pw, const char *ca_key_path, int prefer_agent,
 				fatal_r(r, "Couldn't certify %s via agent", tmp);
 		} else {
 			r = sshkey_certify(public, ca, key_type_name);
-			notify_complete(notifier);
+			notify_complete(notifier, "User presence confirmed");
 			if (r != 0)
 				fatal_r(r, "Couldn't certify key %s", tmp);
 		}

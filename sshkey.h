@@ -1,4 +1,4 @@
-/* $OpenBSD: sshkey.h,v 1.47 2020/10/19 22:49:23 dtucker Exp $ */
+/* $OpenBSD: sshkey.h,v 1.48 2020/11/08 11:46:12 dtucker Exp $ */
 
 /*
  * Copyright (c) 2000, 2001 Markus Friedl.  All rights reserved.
@@ -30,6 +30,8 @@
 
 #include <openssl/rsa.h>
 #include <openssl/dsa.h>
+
+#define SSH_OPENSSL_VERSION OpenSSL_version(OPENSSL_VERSION)
 
 #define SSH_RSA_MINIMUM_MODULUS_SIZE	1024
 #define SSH_KEY_MAX_SIGN_DATA_SIZE	(1 << 20)
