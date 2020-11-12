@@ -551,18 +551,6 @@ ssh_local_port(struct ssh *ssh)
 	return ssh->local_port;
 }
 
-/* Returns the routing domain of the input socket, or NULL if unavailable */
-const char *
-ssh_packet_rdomain_in(struct ssh *ssh)
-{
-	if (ssh->rdomain_in != NULL)
-		return ssh->rdomain_in;
-	if (!ssh_packet_connection_is_on_socket(ssh))
-		return NULL;
-	ssh->rdomain_in = get_rdomain(ssh->state->connection_in);
-	return ssh->rdomain_in;
-}
-
 /* Closes the connection and clears and frees internal data structures. */
 
 static void

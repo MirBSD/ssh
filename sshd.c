@@ -990,11 +990,6 @@ listen_on_addrs(struct listenaddr *la)
 		}
 		/* Socket options */
 		set_reuseaddr(listen_sock);
-		if (la->rdomain != NULL &&
-		    set_rdomain(listen_sock, la->rdomain) == -1) {
-			close(listen_sock);
-			continue;
-		}
 
 		debug("Bind to port %s on %s.", strport, ntop);
 
@@ -1012,10 +1007,8 @@ listen_on_addrs(struct listenaddr *la)
 		if (listen(listen_sock, SSH_LISTEN_BACKLOG) == -1)
 			fatal("listen on [%s]:%s: %.100s",
 			    ntop, strport, strerror(errno));
-		logit("Server listening on %s port %s%s%s.",
-		    ntop, strport,
-		    la->rdomain == NULL ? "" : " rdomain ",
-		    la->rdomain == NULL ? "" : la->rdomain);
+		logit("Server listening on %s port %s.",
+		    ntop, strport);
 	}
 }
 
@@ -1027,7 +1020,6 @@ server_listen(void)
 	for (i = 0; i < options.num_listen_addrs; i++) {
 		listen_on_addrs(&options.listen_addrs[i]);
 		freeaddrinfo(options.listen_addrs[i].addrs);
-		free(options.listen_addrs[i].rdomain);
 		memset(&options.listen_addrs[i], 0,
 		    sizeof(options.listen_addrs[i]));
 	}
@@ -1308,33 +1300,6 @@ check_ip_options(struct ssh *ssh)
 	return;
 }
 
-#ifdef SO_RTABLE
-/* Set the routing domain for this process */
-static void
-set_process_rdomain(struct ssh *ssh, const char *name)
-{
-	int rtable, ortable = getrtable();
-	const char *errstr;
-
-	if (name == NULL)
-		return; /* default */
-
-	if (strcmp(name, "%D") == 0) {
-		/* "expands" to routing domain of connection */
-		if ((name = ssh_packet_rdomain_in(ssh)) == NULL)
-			return;
-	}
-
-	rtable = (int)strtonum(name, 0, 255, &errstr);
-	if (errstr != NULL) /* Shouldn't happen */
-		fatal("Invalid routing domain \"%s\": %s", name, errstr);
-	if (rtable != ortable && setrtable(rtable) != 0)
-		fatal("Unable to set routing domain %d: %s",
-		    rtable, strerror(errno));
-	debug_f("set routing domain %d (was %d)", rtable, ortable);
-}
-#endif
-
 static void
 accumulate_host_timing_secret(struct sshbuf *server_cfg,
     struct sshkey *key)
@@ -1394,7 +1359,7 @@ main(int ac, char **av)
 	extern int optind;
 	int r, opt, on = 1, already_daemon, remote_port;
 	int sock_in = -1, sock_out = -1, newsock = -1;
-	const char *remote_ip, *rdomain;
+	const char *remote_ip;
 	char *fp, *line, *laddr, *logfile = NULL;
 	int config_s[2] = { -1 , -1 };
 	u_int i, j;
@@ -1962,15 +1927,10 @@ main(int ac, char **av)
 	 */
 	remote_ip = ssh_remote_ipaddr(ssh);
 
-	rdomain = ssh_packet_rdomain_in(ssh);
-
 	/* Log the connection. */
 	laddr = get_local_ipaddr(sock_in);
-	verbose("Connection from %s port %d on %s port %d%s%s%s",
-	    remote_ip, remote_port, laddr,  ssh_local_port(ssh),
-	    rdomain == NULL ? "" : " rdomain \"",
-	    rdomain == NULL ? "" : rdomain,
-	    rdomain == NULL ? "" : "\"");
+	verbose("Connection from %s port %d on %s port %d",
+	    remote_ip, remote_port, laddr,  ssh_local_port(ssh));
 	free(laddr);
 
 	/*
@@ -2044,11 +2004,6 @@ main(int ac, char **av)
 		close(startup_pipe);
 		startup_pipe = -1;
 	}
-
-#ifdef SO_RTABLE
-	if (options.routing_domain != NULL)
-		set_process_rdomain(ssh, options.routing_domain);
-#endif
 
 	/*
 	 * In privilege separation, we fork another child and prepare

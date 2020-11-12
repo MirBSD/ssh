@@ -60,12 +60,10 @@ struct fwd_perm_list;
 struct queued_listenaddr {
 	char *addr;
 	int port; /* <=0 if unspecified */
-	char *rdomain;
 };
 
 /* Resolved listen addresses, grouped by optional routing domain */
 struct listenaddr {
-	char *rdomain;
 	struct addrinfo *addrs;
 };
 
@@ -78,8 +76,6 @@ typedef struct {
 	struct listenaddr *listen_addrs;
 	u_int	num_listen_addrs;
 	int	address_family;		/* Address family used by the server. */
-
-	char	*routing_domain;	/* Bind session to routing domain */
 
 	char   **host_key_files;	/* Files containing host keys. */
 	int	*host_key_file_userprovided; /* Key was specified by user. */
@@ -216,7 +212,6 @@ struct connection_info {
 	const char *address; 	/* remote address */
 	const char *laddress;	/* local address */
 	int lport;		/* local port */
-	const char *rdomain;	/* routing domain if available */
 	int test;		/* test mode, allow some attributes to be
 				 * unspecified */
 };
@@ -252,7 +247,6 @@ TAILQ_HEAD(include_list, include_item);
 		M_CP_STROPT(hostbased_key_types); \
 		M_CP_STROPT(pubkey_key_types); \
 		M_CP_STROPT(ca_sign_algorithms); \
-		M_CP_STROPT(routing_domain); \
 		M_CP_STROPT(permit_user_env_allowlist); \
 		M_CP_STRARRAYOPT(authorized_keys_files, num_authkeys_files); \
 		M_CP_STRARRAYOPT(allow_users, num_allow_users); \

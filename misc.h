@@ -51,8 +51,6 @@ int	 set_nonblock(int);
 int	 unset_nonblock(int);
 void	 set_nodelay(int);
 int	 set_reuseaddr(int);
-char	*get_rdomain(int);
-int	 set_rdomain(int, const char *);
 int	 waitrfd(int, int *);
 int	 timeout_connect(int, const struct sockaddr *, socklen_t, int *);
 int	 a2port(const char *);

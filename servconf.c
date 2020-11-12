@@ -58,9 +58,9 @@
 #include "digest.h"
 
 static void add_listen_addr(ServerOptions *, const char *,
-    const char *, int);
+    int);
 static void add_one_listen_addr(ServerOptions *, const char *,
-    const char *, int);
+    int);
 static void parse_server_config_depth(ServerOptions *options,
     const char *filename, struct sshbuf *conf, struct include_list *includes,
     struct connection_info *connectinfo, int flags, int *activep, int depth);
@@ -82,7 +82,6 @@ initialize_server_options(ServerOptions *options)
 	options->listen_addrs = NULL;
 	options->num_listen_addrs = 0;
 	options->address_family = -1;
-	options->routing_domain = NULL;
 	options->num_host_key_files = 0;
 	options->num_host_cert_files = 0;
 	options->host_key_agent = NULL;
@@ -288,7 +287,7 @@ fill_default_server_options(ServerOptions *options)
 	if (options->address_family == -1)
 		options->address_family = AF_UNSPEC;
 	if (options->listen_addrs == NULL)
-		add_listen_addr(options, NULL, NULL, 0);
+		add_listen_addr(options, NULL, 0);
 	if (options->pid_file == NULL)
 		options->pid_file = xstrdup(_PATH_SSH_DAEMON_PID_FILE);
 	if (options->login_grace_time == -1)
@@ -430,7 +429,6 @@ fill_default_server_options(ServerOptions *options)
 	CLEAR_ON_NONE(options->authorized_principals_file);
 	CLEAR_ON_NONE(options->adm_forced_command);
 	CLEAR_ON_NONE(options->chroot_directory);
-	CLEAR_ON_NONE(options->routing_domain);
 	CLEAR_ON_NONE(options->host_key_agent);
 	for (i = 0; i < options->num_host_key_files; i++)
 		CLEAR_ON_NONE(options->host_key_files[i]);
@@ -478,7 +476,7 @@ typedef enum {
 	sAuthenticationMethods, sHostKeyAgent, sPermitUserRC,
 	sStreamLocalBindMask, sStreamLocalBindUnlink,
 	sAllowStreamLocalForwarding, sFingerprintHash, sDisableForwarding,
-	sExposeAuthInfo, sRDomain,
+	sExposeAuthInfo,
 	sMaskRemote,
 	sDeprecated, sIgnore, sUnsupported
 } ServerOpCodes;
@@ -593,11 +591,6 @@ static struct {
 	{ "fingerprinthash", sFingerprintHash, SSHCFG_GLOBAL },
 	{ "disableforwarding", sDisableForwarding, SSHCFG_ALL },
 	{ "exposeauthinfo", sExposeAuthInfo, SSHCFG_ALL },
-#ifdef SO_RTABLE
-	{ "rdomain", sRDomain, SSHCFG_ALL },
-#else
-	{ "rdomain", sUnsupported, SSHCFG_ALL },
-#endif
 	{ "casignaturealgorithms", sCASignatureAlgorithms, SSHCFG_ALL },
 	{ "maskremoteaddress", sMaskRemote, SSHCFG_ALL },
 	{ NULL, sBadOption, 0 }
@@ -668,15 +661,15 @@ derelativise_path(const char *path)
 
 static void
 add_listen_addr(ServerOptions *options, const char *addr,
-    const char *rdomain, int port)
+    int port)
 {
 	u_int i;
 
 	if (port > 0)
-		add_one_listen_addr(options, addr, rdomain, port);
+		add_one_listen_addr(options, addr, port);
 	else {
 		for (i = 0; i < options->num_ports; i++) {
-			add_one_listen_addr(options, addr, rdomain,
+			add_one_listen_addr(options, addr,
 			    options->ports[i]);
 		}
 	}
@@ -684,7 +677,7 @@ add_listen_addr(ServerOptions *options, const char *addr,
 
 static void
 add_one_listen_addr(ServerOptions *options, const char *addr,
-    const char *rdomain, int port)
+    int port)
 {
 	struct addrinfo hints, *ai, *aitop;
 	char strport[NI_MAXSERV];
@@ -692,14 +685,7 @@ add_one_listen_addr(ServerOptions *options, const char *addr,
 	u_int i;
 
 	/* Find listen_addrs entry for this rdomain */
-	for (i = 0; i < options->num_listen_addrs; i++) {
-		if (rdomain == NULL && options->listen_addrs[i].rdomain == NULL)
-			break;
-		if (rdomain == NULL || options->listen_addrs[i].rdomain == NULL)
-			continue;
-		if (strcmp(rdomain, options->listen_addrs[i].rdomain) == 0)
-			break;
-	}
+	i = 0;
 	if (i >= options->num_listen_addrs) {
 		/* No entry for this rdomain; allocate one */
 		if (i >= INT_MAX)
@@ -708,8 +694,6 @@ add_one_listen_addr(ServerOptions *options, const char *addr,
 		    options->num_listen_addrs, options->num_listen_addrs + 1,
 		    sizeof(*options->listen_addrs));
 		i = options->num_listen_addrs++;
-		if (rdomain != NULL)
-			options->listen_addrs[i].rdomain = xstrdup(rdomain);
 	}
 	/* options->listen_addrs[i] points to the addresses for this rdomain */
 
@@ -728,44 +712,13 @@ add_one_listen_addr(ServerOptions *options, const char *addr,
 	options->listen_addrs[i].addrs = aitop;
 }
 
-#ifdef SO_RTABLE
-/* Returns nonzero if the routing domain name is valid */
-static int
-valid_rdomain(const char *name)
-{
-	const char *errstr;
-	long long num;
-	struct rt_tableinfo info;
-	int mib[6];
-	size_t miblen = sizeof(mib);
-
-	if (name == NULL)
-		return 1;
-
-	num = strtonum(name, 0, 255, &errstr);
-	if (errstr != NULL)
-		return 0;
-
-	/* Check whether the table actually exists */
-	memset(mib, 0, sizeof(mib));
-	mib[0] = CTL_NET;
-	mib[1] = PF_ROUTE;
-	mib[4] = NET_RT_TABLE;
-	mib[5] = (int)num;
-	if (sysctl(mib, 6, &info, &miblen, NULL, 0) == -1)
-		return 0;
-
-	return 1;
-}
-#endif
-
 /*
  * Queue a ListenAddress to be processed once we have all of the Ports
  * and AddressFamily options.
  */
 static void
 queue_listen_addr(ServerOptions *options, const char *addr,
-    const char *rdomain, int port)
+    int port)
 {
 	struct queued_listenaddr *qla;
 
@@ -776,7 +729,6 @@ queue_listen_addr(ServerOptions *options, const char *addr,
 	qla = &options->queued_listen_addrs[options->num_queued_listens++];
 	qla->addr = xstrdup(addr);
 	qla->port = port;
-	qla->rdomain = rdomain == NULL ? NULL : xstrdup(rdomain);
 }
 
 /*
@@ -795,9 +747,8 @@ process_queued_listen_addrs(ServerOptions *options)
 
 	for (i = 0; i < options->num_queued_listens; i++) {
 		qla = &options->queued_listen_addrs[i];
-		add_listen_addr(options, qla->addr, qla->rdomain, qla->port);
+		add_listen_addr(options, qla->addr, qla->port);
 		free(qla->addr);
-		free(qla->rdomain);
 	}
 	free(options->queued_listen_addrs);
 	options->queued_listen_addrs = NULL;
@@ -870,7 +821,6 @@ get_connection_info(struct ssh *ssh, int populate, int use_dns)
 	ci.address = ssh_remote_ipaddr(ssh);
 	ci.laddress = ssh_local_ipaddr(ssh);
 	ci.lport = ssh_local_port(ssh);
-	ci.rdomain = ssh_packet_rdomain_in(ssh);
 	return &ci;
 }
 
@@ -1081,18 +1031,6 @@ match_cfg_line(char **condition, int line, struct connection_info *ci)
 				    ci->laddress, port, line);
 			else
 				result = 0;
-		} else if (strcasecmp(attrib, "rdomain") == 0) {
-			if (ci == NULL || (ci->test && ci->rdomain == NULL)) {
-				result = 0;
-				continue;
-			}
-			if (ci->rdomain == NULL)
-				match_test_missing_fatal("RDomain", "rdomain");
-			if (match_pattern_list(ci->rdomain, arg, 0) != 1)
-				result = 0;
-			else
-				debug("user %.100s matched 'RDomain %.100s' at "
-				    "line %d", ci->rdomain, arg, line);
 		} else {
 			error("Unsupported Match attribute %s", attrib);
 			return -1;
@@ -1265,7 +1203,6 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 			port = 0;
 			p = arg;
 		} else {
-			arg2 = NULL;
 			ch = '\0';
 			p = hpdelim2(&arg, &ch);
 			if (p == NULL || ch == '/')
@@ -1278,25 +1215,7 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 				fatal("%s line %d: bad port number",
 				    filename, linenum);
 		}
-		/* Optional routing table */
-		arg2 = NULL;
-		if ((arg = strdelim(&cp)) != NULL) {
-#ifdef SO_RTABLE
-			if (strcmp(arg, "rdomain") != 0 ||
-			    (arg2 = strdelim(&cp)) == NULL)
-				fatal("%s line %d: bad ListenAddress syntax",
-				    filename, linenum);
-			if (!valid_rdomain(arg2))
-				fatal("%s line %d: bad routing domain",
-				    filename, linenum);
-#else
-			fatal("%s line %d: Setting the routing domain is not supported on this OS",
-			    filename, linenum);
-#endif
-		}
-
-		queue_listen_addr(options, p, arg2, port);
-
+		queue_listen_addr(options, p, port);
 		break;
 
 	case sAddressFamily:
@@ -2195,22 +2114,6 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 		intptr = &options->mask_remote;
 		goto parse_flag;
 
-#ifdef SO_RTABLE
-	case sRDomain:
-		charptr = &options->routing_domain;
-		arg = strdelim(&cp);
-		if (!arg || *arg == '\0')
-			fatal("%.200s line %d: Missing argument.",
-			    filename, linenum);
-		if (strcasecmp(arg, "none") != 0 && strcmp(arg, "%D") != 0 &&
-		    !valid_rdomain(arg))
-			fatal("%s line %d: bad routing domain",
-			    filename, linenum);
-		if (*activep && *charptr == NULL)
-			*charptr = xstrdup(arg);
-		break;
-#endif
-
 	case sDeprecated:
 	case sIgnore:
 	case sUnsupported:
@@ -2310,8 +2213,6 @@ int parse_server_match_testspec(struct connection_info *ci, char *spec)
 			ci->user = xstrdup(p + 5);
 		} else if (strncmp(p, "laddr=", 6) == 0) {
 			ci->laddress = xstrdup(p + 6);
-		} else if (strncmp(p, "rdomain=", 8) == 0) {
-			ci->rdomain = xstrdup(p + 8);
 		} else if (strncmp(p, "lport=", 6) == 0) {
 			ci->lport = a2port(p + 6);
 			if (ci->lport == -1) {
@@ -2595,16 +2496,12 @@ format_listen_addrs(struct listenaddr *la)
 		}
 		laddr2 = laddr1;
 		if (ai->ai_family == AF_INET6) {
-			xasprintf(&laddr1, "listenaddress [%s]:%s%s%s\n%s",
+			xasprintf(&laddr1, "listenaddress [%s]:%s\n%s",
 			    addr, port,
-			    la->rdomain == NULL ? "" : " rdomain ",
-			    la->rdomain == NULL ? "" : la->rdomain,
 			    laddr2);
 		} else {
-			xasprintf(&laddr1, "listenaddress %s:%s%s%s\n%s",
+			xasprintf(&laddr1, "listenaddress %s:%s\n%s",
 			    addr, port,
-			    la->rdomain == NULL ? "" : " rdomain ",
-			    la->rdomain == NULL ? "" : la->rdomain,
 			    laddr2);
 		}
 		free(laddr2);
@@ -2696,7 +2593,6 @@ dump_config(ServerOptions *o)
 	dump_cfg_string(sHostbasedAcceptedKeyTypes, o->hostbased_key_types);
 	dump_cfg_string(sHostKeyAlgorithms, o->hostkeyalgorithms);
 	dump_cfg_string(sPubkeyAcceptedKeyTypes, o->pubkey_key_types);
-	dump_cfg_string(sRDomain, o->routing_domain);
 
 	/* string arguments requiring a lookup */
 	dump_cfg_string(sLogLevel, log_level_name(o->log_level));

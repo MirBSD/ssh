@@ -163,60 +163,6 @@ set_reuseaddr(int fd)
 	return 0;
 }
 
-/* Get/set routing domain */
-char *
-get_rdomain(int fd)
-{
-#ifdef SO_RTABLE
-	int rtable;
-	char *ret;
-	socklen_t len = sizeof(rtable);
-
-	if (getsockopt(fd, SOL_SOCKET, SO_RTABLE, &rtable, &len) == -1) {
-		error("Failed to get routing domain for fd %d: %s",
-		    fd, strerror(errno));
-		return NULL;
-	}
-	xasprintf(&ret, "%d", rtable);
-	return ret;
-#else
-	return (NULL);
-#endif
-}
-
-int
-set_rdomain(int fd, const char *name)
-{
-#ifdef SO_RTABLE
-	int rtable;
-	const char *errstr;
-#endif
-
-	if (name == NULL)
-		return 0; /* default table */
-
-#ifdef SO_RTABLE
-	rtable = (int)strtonum(name, 0, 255, &errstr);
-	if (errstr != NULL) {
-		/* Shouldn't happen */
-		error("Invalid routing domain \"%s\": %s", name, errstr);
-		return -1;
-	}
-	if (setsockopt(fd, SOL_SOCKET, SO_RTABLE,
-	    &rtable, sizeof(rtable)) == -1) {
-		error("Failed to set routing domain %d on fd %d: %s",
-		    rtable, fd, strerror(errno));
-		return -1;
-	}
-	return 0;
-#else
-#ifndef SMALL
-	error("Setting the routing domain is not supported on this OS");
-#endif
-	return (-1);
-#endif
-}
-
 /*
  * Wait up to *timeoutp milliseconds for events on fd. Updates
  * *timeoutp with time remaining.
