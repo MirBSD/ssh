@@ -83,24 +83,6 @@ diff -up src/usr.bin/ssh/PROTOCOL:1.1.1.2 src/usr.bin/ssh/PROTOCOL:1.2
  	uint64		f_flag		/* bit mask of f_flag values */
  	uint64		f_namemax	/* maximum filename length */
  
-Index: src/usr.bin/ssh/README
-diff -up src/usr.bin/ssh/README:1.1.1.2 src/usr.bin/ssh/README:1.4
---- src/usr.bin/ssh/README:1.1.1.2	Wed Apr 19 12:15:02 2006
-+++ src/usr.bin/ssh/README	Tue Dec 16 21:55:18 2008
-@@ -1,4 +1,4 @@
--This release of OpenSSH is for OpenBSD systems only.
-+This release of OpenSSH is for MirOS BSD systems only.
- 
- Please read
- 	http://www.openssh.com/portable.html
-@@ -24,4 +24,5 @@ for SSH protocol versions 1.5 and 2.0.
- 
- See http://www.openssh.com/ for more information.
- 
-+$MirOS: src/usr.bin/ssh/README,v 1.4 2008/12/16 20:55:18 tg Exp $
- $OpenBSD: README,v 1.7 2006/04/01 05:37:46 djm Exp $
-Index: src/usr.bin/ssh/addrmatch.c
-diff -up src/usr.bin/ssh/addrmatch.c:1.1.1.1 src/usr.bin/ssh/addrmatch.c:1.2
 --- src/usr.bin/ssh/addrmatch.c:1.1.1.1	Tue Dec 16 21:15:31 2008
 +++ src/usr.bin/ssh/addrmatch.c	Sun Oct  4 18:35:24 2009
 @@ -23,6 +23,7 @@
@@ -159,13 +141,8 @@ diff -up src/usr.bin/ssh/auth-bsdauth.c:1.1.1.4 src/usr.bin/ssh/auth-bsdauth.c:1
  #include "auth.h"
  #include "log.h"
  #include "buffer.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
  #include "monitor_wrap.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/auth-bsdauth.c,v 1.5 2008/03/02 21:14:18 tg Exp $");
-+
  static void *
  bsdauth_init_ctx(Authctxt *authctxt)
  {
@@ -174,46 +151,6 @@ diff -up src/usr.bin/ssh/auth-bsdauth.c:1.1.1.4 src/usr.bin/ssh/auth-bsdauth.c:1
  	bsdauth_free_ctx
  };
 +#endif
-Index: src/usr.bin/ssh/auth-options.c
-diff -up src/usr.bin/ssh/auth-options.c:1.1.1.8 src/usr.bin/ssh/auth-options.c:1.6
---- src/usr.bin/ssh/auth-options.c:1.1.1.8	Sun Mar 22 13:02:59 2009
-+++ src/usr.bin/ssh/auth-options.c	Sun Mar 22 16:01:11 2009
-@@ -31,12 +31,11 @@
- #include "key.h"
- #include "hostfile.h"
- #include "auth.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
--/* Flags set authorized_keys flags */
-+__RCSID("$MirOS: src/usr.bin/ssh/auth-options.c,v 1.6 2009/03/22 15:01:11 tg Exp $");
-+
-+/* Flags set authorised_keys flags */
- int no_port_forwarding_flag = 0;
- int no_agent_forwarding_flag = 0;
- int no_x11_forwarding_flag = 0;
-Index: src/usr.bin/ssh/auth-options.h
-diff -up src/usr.bin/ssh/auth-options.h:1.1.1.5 src/usr.bin/ssh/auth-options.h:1.5
---- src/usr.bin/ssh/auth-options.h:1.1.1.5	Thu Apr  3 20:34:30 2008
-+++ src/usr.bin/ssh/auth-options.h	Tue Dec 16 21:55:18 2008
-@@ -1,3 +1,4 @@
-+/* $MirOS: src/usr.bin/ssh/auth-options.h,v 1.5 2008/12/16 20:55:18 tg Exp $ */
- /* $OpenBSD: auth-options.h,v 1.17 2008/03/26 21:28:14 djm Exp $ */
- 
- /*
-@@ -21,7 +22,7 @@ struct envstring {
- 	char   *s;
- };
- 
--/* Flags that may be set in authorized_keys options. */
-+/* Flags that may be set in authorised_keys options. */
- extern int no_port_forwarding_flag;
- extern int no_agent_forwarding_flag;
- extern int no_x11_forwarding_flag;
-Index: src/usr.bin/ssh/auth-passwd.c
-diff -up src/usr.bin/ssh/auth-passwd.c:1.1.1.6 src/usr.bin/ssh/auth-passwd.c:1.9
 --- src/usr.bin/ssh/auth-passwd.c:1.1.1.6	Sun Mar  2 21:40:41 2008
 +++ src/usr.bin/ssh/auth-passwd.c	Sun Mar  2 22:14:18 2008
 @@ -43,6 +43,7 @@
@@ -224,15 +161,6 @@ diff -up src/usr.bin/ssh/auth-passwd.c:1.1.1.6 src/usr.bin/ssh/auth-passwd.c:1.9
  
  #include "packet.h"
  #include "buffer.h"
-@@ -53,6 +54,8 @@
- #include "auth.h"
- #include "auth-options.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth-passwd.c,v 1.9 2008/03/02 21:14:18 tg Exp $");
-+
- extern Buffer loginmsg;
- extern ServerOptions options;
- int sys_auth_passwd(Authctxt *, const char *);
 @@ -62,6 +65,7 @@ extern login_cap_t *lc;
  #define DAY		(24L * 60 * 60) /* 1 day in seconds */
  #define TWO_WEEKS	(2L * 7 * DAY)	/* 2 weeks in seconds */
@@ -253,14 +181,6 @@ diff -up src/usr.bin/ssh/auth-passwd.c:1.1.1.6 src/usr.bin/ssh/auth-passwd.c:1.9
  		ok = 0;
  	if (*password == '\0' && options.permit_empty_passwd == 0)
  		return 0;
--#ifdef KRB5
--	if (options.kerberos_authentication == 1) {
--		int ret = auth_krb5_password(authctxt, password);
--		if (ret == 1 || ret == 0)
--			return ret && ok;
--		/* Fall back to ordinary passwd authentication. */
--	}
--#endif
  	return (sys_auth_passwd(authctxt, password) && ok);
  }
  
@@ -299,20 +219,6 @@ Index: src/usr.bin/ssh/auth-rh-rsa.c
 diff -up src/usr.bin/ssh/auth-rh-rsa.c:1.1.1.4 src/usr.bin/ssh/auth-rh-rsa.c:1.4
 --- src/usr.bin/ssh/auth-rh-rsa.c:1.1.1.4	Wed Sep 20 21:06:47 2006
 +++ src/usr.bin/ssh/auth-rh-rsa.c	Sat Jan 15 22:52:39 2011
-@@ -28,11 +28,10 @@
- #include "pathnames.h"
- #include "auth.h"
- #include "canohost.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth-rh-rsa.c,v 1.4 2011/01/15 21:52:39 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- 
 @@ -48,7 +47,12 @@ auth_rhosts_rsa_key_allowed(struct passw
  
  	host_status = check_key_in_hostfiles(pw, client_host_key,
@@ -331,31 +237,6 @@ Index: src/usr.bin/ssh/auth-rsa.c
 diff -up src/usr.bin/ssh/auth-rsa.c:1.1.1.7 src/usr.bin/ssh/auth-rsa.c:1.10
 --- src/usr.bin/ssh/auth-rsa.c:1.1.1.7	Tue Dec 16 21:15:31 2008
 +++ src/usr.bin/ssh/auth-rsa.c	Tue Dec 16 21:55:18 2008
-@@ -18,7 +18,7 @@
- #include <sys/stat.h>
- 
- #include <openssl/rsa.h>
--#include <openssl/md5.h>
-+#include <md5.h>
- 
- #include <pwd.h>
- #include <stdio.h>
-@@ -38,13 +38,12 @@
- #include "key.h"
- #include "hostfile.h"
- #include "auth.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "ssh.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth-rsa.c,v 1.10 2008/12/16 20:55:18 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- 
 @@ -55,7 +54,7 @@ extern ServerOptions options;
  extern u_char session_id[16];
  
@@ -418,13 +299,8 @@ diff -up src/usr.bin/ssh/auth.c:1.1.1.9 src/usr.bin/ssh/auth.c:1.14
  #include "uidswap.h"
  #include "misc.h"
  #include "packet.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
  #include "monitor_wrap.h"
 +#include "pathnames.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/auth.c,v 1.14 2018/05/03 01:32:44 tg Exp $");
  
  /* import */
  extern ServerOptions options;
@@ -564,8 +440,6 @@ diff -up src/usr.bin/ssh/auth.h:1.1.1.9 src/usr.bin/ssh/auth.h:1.14
  
 +#ifdef BSD_AUTH
  #include <bsd_auth.h>
--#ifdef KRB5
--#include <krb5.h>
  #endif
  
  typedef struct Authctxt Authctxt;
@@ -575,11 +449,6 @@ diff -up src/usr.bin/ssh/auth.h:1.1.1.9 src/usr.bin/ssh/auth.h:1.14
  	void		*kbdintctxt;
 +#ifdef BSD_AUTH
  	auth_session_t	*as;
--#ifdef KRB5
--	krb5_context	 krb5_ctx;
--	krb5_ccache	 krb5_fwd_ccache;
--	krb5_principal	 krb5_user;
--	char		*krb5_ticket_file;
  #endif
  	void		*methoddata;
  };
@@ -596,13 +465,6 @@ diff -up src/usr.bin/ssh/auth.h:1.1.1.9 src/usr.bin/ssh/auth.h:1.14
  int	 hostbased_key_allowed(struct passwd *, const char *, char *, Key *);
  int	 user_key_allowed(struct passwd *, Key *);
  
--#ifdef KRB5
--int	auth_krb5(Authctxt *authctxt, krb5_data *auth, char **client, krb5_data *);
--int	auth_krb5_tgt(Authctxt *authctxt, krb5_data *tgt);
--int	auth_krb5_password(Authctxt *authctxt, const char *password);
--void	krb5_cleanup_proc(Authctxt *authctxt);
--#endif /* KRB5 */
--
  void	do_authentication(Authctxt *);
  void	do_authentication2(Authctxt *);
  
@@ -644,20 +506,6 @@ Index: src/usr.bin/ssh/auth1.c
 diff -up src/usr.bin/ssh/auth1.c:1.1.1.7 src/usr.bin/ssh/auth1.c:1.10
 --- src/usr.bin/ssh/auth1.c:1.1.1.7	Tue Dec 16 21:15:31 2008
 +++ src/usr.bin/ssh/auth1.c	Sun Oct  4 16:29:01 2009
-@@ -32,11 +32,10 @@
- #include "channels.h"
- #include "session.h"
- #include "uidswap.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth1.c,v 1.10 2009/10/04 14:29:01 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- 
 @@ -48,7 +47,7 @@ static int auth1_process_tis_response(Au
  
  struct AuthMethod1 {
@@ -676,17 +524,6 @@ diff -up src/usr.bin/ssh/auth1.c:1.1.1.7 src/usr.bin/ssh/auth1.c:1.10
  get_authname(int type)
  {
  	const struct AuthMethod1 *a;
-@@ -240,10 +239,7 @@ do_authloop(Authctxt *authctxt)
- 
- 	/* If the user has no password, accept authentication immediately. */
- 	if (options.password_authentication &&
--#ifdef KRB5
--	    (!options.kerberos_authentication || options.kerberos_or_local_passwd) &&
--#endif
- 	    PRIVSEP(auth_password(authctxt, ""))) {
- 		auth_log(authctxt, 1, "without authentication", "");
- 		return;
- 	}
 @@ -278,10 +274,12 @@ do_authloop(Authctxt *authctxt)
  		if (authenticated == -1)
  			continue; /* "postponed" */
@@ -708,8 +545,6 @@ diff -up src/usr.bin/ssh/auth2-chall.c:1.1.1.8 src/usr.bin/ssh/auth2-chall.c:1.4
  #include "dispatch.h"
  #include "log.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/auth2-chall.c,v 1.4 2008/12/16 22:13:26 tg Exp $");
-+
  static int auth2_challenge_start(Authctxt *);
  static int send_userauth_info_request(Authctxt *);
  static void input_userauth_info_response(int, u_int32_t, void *);
@@ -739,21 +574,6 @@ Index: src/usr.bin/ssh/auth2-hostbased.c
 diff -up src/usr.bin/ssh/auth2-hostbased.c:1.1.1.4 src/usr.bin/ssh/auth2-hostbased.c:1.7
 --- src/usr.bin/ssh/auth2-hostbased.c:1.1.1.4	Tue Dec 16 21:15:31 2008
 +++ src/usr.bin/ssh/auth2-hostbased.c	Sat Jan 15 22:52:40 2011
-@@ -41,12 +41,11 @@
- #include "hostfile.h"
- #include "auth.h"
- #include "canohost.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "pathnames.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth2-hostbased.c,v 1.7 2011/01/15 21:52:40 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- extern u_char *session_id2;
 @@ -172,7 +171,12 @@ hostbased_key_allowed(struct passwd *pw,
  
  	host_status = check_key_in_hostfiles(pw, key, lookup,
@@ -768,45 +588,6 @@ diff -up src/usr.bin/ssh/auth2-hostbased.c:1.1.1.4 src/usr.bin/ssh/auth2-hostbas
  
  	/* backward compat if no key has been found. */
  	if (host_status == HOST_NEW)
-Index: src/usr.bin/ssh/auth2-none.c
-diff -up src/usr.bin/ssh/auth2-none.c:1.1.1.6 src/usr.bin/ssh/auth2-none.c:1.7
---- src/usr.bin/ssh/auth2-none.c:1.1.1.6	Tue Dec 16 21:15:31 2008
-+++ src/usr.bin/ssh/auth2-none.c	Tue Dec 16 21:55:19 2008
-@@ -35,11 +35,10 @@
- #include "servconf.h"
- #include "compat.h"
- #include "ssh2.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth2-none.c,v 1.7 2008/12/16 20:55:19 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- 
-Index: src/usr.bin/ssh/auth2-passwd.c
-diff -up src/usr.bin/ssh/auth2-passwd.c:1.1.1.3 src/usr.bin/ssh/auth2-passwd.c:1.3
---- src/usr.bin/ssh/auth2-passwd.c:1.1.1.3	Wed Sep 20 21:06:47 2006
-+++ src/usr.bin/ssh/auth2-passwd.c	Tue Dec 16 21:55:19 2008
-@@ -35,12 +35,11 @@
- #include "hostfile.h"
- #include "auth.h"
- #include "buffer.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "servconf.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth2-passwd.c,v 1.3 2008/12/16 20:55:19 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- 
-Index: src/usr.bin/ssh/auth2-pubkey.c
-diff -up src/usr.bin/ssh/auth2-pubkey.c:1.1.1.5 src/usr.bin/ssh/auth2-pubkey.c:1.8
 --- src/usr.bin/ssh/auth2-pubkey.c:1.1.1.5	Tue Dec 16 21:15:31 2008
 +++ src/usr.bin/ssh/auth2-pubkey.c	Tue Dec 16 23:13:27 2008
 @@ -24,7 +24,7 @@
@@ -818,21 +599,6 @@ diff -up src/usr.bin/ssh/auth2-pubkey.c:1.1.1.5 src/usr.bin/ssh/auth2-pubkey.c:1
  #include <sys/stat.h>
  
  #include <fcntl.h>
-@@ -48,12 +48,11 @@
- #include "uidswap.h"
- #include "auth-options.h"
- #include "canohost.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth2-pubkey.c,v 1.8 2008/12/16 22:13:27 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- extern u_char *session_id2;
 @@ -246,21 +245,21 @@ user_key_allowed2(struct passwd *pw, Key
  	return found_key;
  }
@@ -858,56 +624,6 @@ diff -up src/usr.bin/ssh/auth2-pubkey.c:1.1.1.5 src/usr.bin/ssh/auth2-pubkey.c:1
  	success = user_key_allowed2(pw, key, file);
  	xfree(file);
  	return success;
-Index: src/usr.bin/ssh/auth2.c
-diff -up src/usr.bin/ssh/auth2.c:1.1.1.8 src/usr.bin/ssh/auth2.c:1.11
---- src/usr.bin/ssh/auth2.c:1.1.1.8	Sun Oct  4 15:25:44 2009
-+++ src/usr.bin/ssh/auth2.c	Fri Mar 28 23:31:55 2014
-@@ -47,11 +47,10 @@
- #include "auth.h"
- #include "dispatch.h"
- #include "pathnames.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/auth2.c,v 1.11 2014/03/28 22:31:55 tg Exp $");
-+
- /* import */
- extern ServerOptions options;
- extern u_char *session_id2;
-@@ -64,16 +63,10 @@ extern Authmethod method_pubkey;
- extern Authmethod method_passwd;
- extern Authmethod method_kbdint;
- extern Authmethod method_hostbased;
--#ifdef GSSAPI
--extern Authmethod method_gssapi;
--#endif
- 
- Authmethod *authmethods[] = {
- 	&method_none,
- 	&method_pubkey,
--#ifdef GSSAPI
--	&method_gssapi,
--#endif
- 	&method_passwd,
- 	&method_kbdint,
- 	&method_hostbased,
-@@ -243,12 +230,6 @@ input_userauth_request(int type, u_int32
- 	}
- 	/* reset state */
- 	auth2_challenge_stop(authctxt);
--
--#ifdef GSSAPI
--	/* XXX move to auth2_gssapi_stop() */
--	dispatch_set(SSH2_MSG_USERAUTH_GSSAPI_TOKEN, NULL);
--	dispatch_set(SSH2_MSG_USERAUTH_GSSAPI_EXCHANGE_COMPLETE, NULL);
--#endif
- 
- 	authctxt->postponed = 0;
- 
-Index: src/usr.bin/ssh/authfd.c
-diff -up src/usr.bin/ssh/authfd.c:1.1.1.6 src/usr.bin/ssh/authfd.c:1.7
 --- src/usr.bin/ssh/authfd.c:1.1.1.6	Sun Oct  4 15:25:44 2009
 +++ src/usr.bin/ssh/authfd.c	Sun Oct  4 16:29:02 2009
 @@ -36,7 +36,7 @@
@@ -919,15 +635,6 @@ diff -up src/usr.bin/ssh/authfd.c:1.1.1.6 src/usr.bin/ssh/authfd.c:1.7
  #include <sys/un.h>
  #include <sys/socket.h>
  
-@@ -62,6 +62,8 @@
- #include "atomicio.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/authfd.c,v 1.7 2009/10/04 14:29:02 tg Exp $");
-+
- static int agent_present = 0;
- 
- /* helper */
 @@ -415,7 +417,6 @@ ssh_agent_sign(AuthenticationConnection 
      u_char **sigp, u_int *lenp,
      u_char *data, u_int datalen)
@@ -960,15 +667,6 @@ diff -up src/usr.bin/ssh/authfile.c:1.1.1.6 src/usr.bin/ssh/authfile.c:1.9
  #include <sys/uio.h>
  
  #include <openssl/err.h>
-@@ -64,6 +65,8 @@
- #include "misc.h"
- #include "atomicio.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/authfile.c,v 1.9 2013/10/31 20:07:11 tg Exp $");
-+
- /* Version identification string for SSH v1 identity files. */
- static const char authfile_id_string[] =
-     "SSH PRIVATE KEY FILE FORMAT 1.1\n";
 @@ -84,7 +87,6 @@ key_save_private_rsa1(Key *key, const ch
  	int fd, i, cipher_num;
  	CipherContext ciphercontext;
@@ -997,58 +695,8 @@ diff -up src/usr.bin/ssh/authfile.c:1.1.1.6 src/usr.bin/ssh/authfile.c:1.9
  {
  	FILE *fp;
  	int fd;
-Index: src/usr.bin/ssh/bufaux.c
-diff -up src/usr.bin/ssh/bufaux.c:1.1.1.7 src/usr.bin/ssh/bufaux.c:1.2
---- src/usr.bin/ssh/bufaux.c:1.1.1.7	Tue Dec 16 21:15:32 2008
-+++ src/usr.bin/ssh/bufaux.c	Tue Dec 16 23:13:27 2008
-@@ -38,6 +38,7 @@
-  */
- 
- #include <sys/types.h>
-+#include <sys/time.h>
- 
- #include <openssl/bn.h>
- 
-@@ -49,6 +50,8 @@
- #include "log.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/bufaux.c,v 1.2 2008/12/16 22:13:27 tg Exp $");
-+
- /*
-  * Returns integers from the buffer (msb first).
-  */
-Index: src/usr.bin/ssh/bufbn.c
-diff -up src/usr.bin/ssh/bufbn.c:1.1.1.5 src/usr.bin/ssh/bufbn.c:1.2
---- src/usr.bin/ssh/bufbn.c:1.1.1.5	Sat Jun 16 17:11:11 2007
-+++ src/usr.bin/ssh/bufbn.c	Tue Dec 16 23:13:27 2008
-@@ -38,6 +38,7 @@
-  */
- 
- #include <sys/types.h>
-+#include <sys/time.h>
- 
- #include <openssl/bn.h>
- 
 --- src/usr.bin/ssh/channels.c:1.1.1.17	Sun Oct  4 15:25:44 2009
 +++ src/usr.bin/ssh/channels.c	Tue Sep 21 23:24:35 2010
-@@ -51,6 +51,7 @@
- 
- #include <errno.h>
- #include <netdb.h>
-+#include <stddef.h>
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-@@ -73,6 +74,8 @@
- #include "authfd.h"
- #include "pathnames.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/channels.c,v 1.16 2010/09/21 21:24:35 tg Exp $");
-+
- /* -- channel core */
- 
- /*
 @@ -159,7 +162,7 @@ static u_int x11_fake_data_len;
  static int IPv4or6 = AF_UNSPEC;
  
@@ -1272,15 +920,6 @@ diff -up src/usr.bin/ssh/cipher-3des1.c:1.1.1.3 src/usr.bin/ssh/cipher-3des1.c:1
   * Copyright (c) 2003 Markus Friedl.  All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without
-@@ -32,6 +34,8 @@
- #include "xmalloc.h"
- #include "log.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/cipher-3des1.c,v 1.5 2013/10/31 20:07:11 tg Exp $");
-+
- /*
-  * This is used by SSH1:
-  *
 @@ -55,8 +59,8 @@ const EVP_CIPHER * evp_ssh1_3des(void);
  void ssh1_3des_iv(EVP_CIPHER_CTX *, int, u_char *, int);
  
@@ -1304,15 +943,6 @@ diff -up src/usr.bin/ssh/cipher-ctr.c:1.1.1.4 src/usr.bin/ssh/cipher-ctr.c:1.5
   * Copyright (c) 2003 Markus Friedl <markus@openbsd.org>
   *
   * Permission to use, copy, modify, and distribute this software for any
-@@ -25,6 +27,8 @@
- #include "xmalloc.h"
- #include "log.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/cipher-ctr.c,v 1.5 2013/10/31 20:07:11 tg Exp $");
-+
- const EVP_CIPHER *evp_aes_128_ctr(void);
- void ssh_aes_ctr_iv(EVP_CIPHER_CTX *, int, u_char *, u_int);
- 
 @@ -75,7 +79,7 @@ ssh_aes_ctr(EVP_CIPHER_CTX *ctx, u_char 
  
  static int
@@ -1326,15 +956,6 @@ Index: src/usr.bin/ssh/cipher.c
 diff -up src/usr.bin/ssh/cipher.c:1.1.1.6 src/usr.bin/ssh/cipher.c:1.14
 --- src/usr.bin/ssh/cipher.c:1.1.1.6	Sun Mar 22 13:02:59 2009
 +++ src/usr.bin/ssh/cipher.c	Sun Apr 12 16:04:21 2015
-@@ -46,6 +46,8 @@
- #include "log.h"
- #include "cipher.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/cipher.c,v 1.14 2015/04/12 14:04:21 tg Exp $");
-+
- extern const EVP_CIPHER *evp_ssh1_bf(void);
- extern const EVP_CIPHER *evp_ssh1_3des(void);
- extern void ssh1_3des_iv(EVP_CIPHER_CTX *, int, u_char *, int);
 @@ -53,7 +55,7 @@ extern const EVP_CIPHER *evp_aes_128_ctr
  extern void ssh_aes_ctr_iv(EVP_CIPHER_CTX *, int, u_char *, u_int);
  
@@ -1448,16 +1069,6 @@ diff -up src/usr.bin/ssh/clientloop.c:1.1.1.20 src/usr.bin/ssh/clientloop.c:1.18
  #include <sys/queue.h>
  
  #include <ctype.h>
-@@ -101,7 +100,8 @@
- #include "misc.h"
- #include "match.h"
- #include "msg.h"
--#include "roaming.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/clientloop.c,v 1.18 2016/01/14 19:23:00 tg Exp $");
- 
- /* import options */
- extern Options options;
 @@ -117,7 +117,7 @@ extern int muxserver_sock;
  
  /*
@@ -1500,15 +1111,6 @@ Index: src/usr.bin/ssh/compat.c
 diff -up src/usr.bin/ssh/compat.c:1.1.1.6 src/usr.bin/ssh/compat.c:1.6
 --- src/usr.bin/ssh/compat.c:1.1.1.6	Tue Dec 16 21:15:33 2008
 +++ src/usr.bin/ssh/compat.c	Tue Dec 16 21:55:21 2008
-@@ -36,6 +36,8 @@
- #include "log.h"
- #include "match.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/compat.c,v 1.6 2008/12/16 20:55:21 tg Exp $");
-+
- int compat13 = 0;
- int compat20 = 0;
- int datafellows = 0;
 @@ -58,7 +60,7 @@ compat_datafellows(const char *version)
  {
  	int i;
@@ -1547,40 +1149,8 @@ diff -up src/usr.bin/ssh/compat.h:1.1.1.5 src/usr.bin/ssh/compat.h:1.5
  
  extern int compat13;
  extern int compat20;
-Index: src/usr.bin/ssh/deattack.c
-diff -up src/usr.bin/ssh/deattack.c:1.1.1.4 src/usr.bin/ssh/deattack.c:1.3
---- src/usr.bin/ssh/deattack.c:1.1.1.4	Wed Sep 20 21:06:48 2006
-+++ src/usr.bin/ssh/deattack.c	Tue Dec 16 23:13:27 2008
-@@ -19,6 +19,7 @@
-  */
- 
- #include <sys/types.h>
-+#include <sys/time.h>
- 
- #include <string.h>
- #include <stdio.h>
-@@ -30,6 +31,8 @@
- #include "crc32.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/deattack.c,v 1.3 2008/12/16 22:13:27 tg Exp $");
-+
- /*
-  * CRC attack detection has a worst-case behaviour that is O(N^3) over
-  * the number of identical blocks in a packet. This behaviour can be 
-Index: src/usr.bin/ssh/dh.c
-diff -up src/usr.bin/ssh/dh.c:1.1.1.8 src/usr.bin/ssh/dh.c:1.9
 --- src/usr.bin/ssh/dh.c:1.1.1.8	Sun Oct  4 15:25:44 2009
 +++ src/usr.bin/ssh/dh.c	Sun Oct  4 16:29:03 2009
-@@ -37,6 +37,8 @@
- #include "log.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/dh.c,v 1.9 2009/10/04 14:29:03 tg Exp $");
-+
- static int
- parse_prime(int linenum, char *line, struct dhgroup *dhg)
- {
 @@ -295,7 +297,7 @@ dh_new_group(BIGNUM *gen, BIGNUM *modulu
  DH *
  dh_new_group1(void)
@@ -1627,8 +1197,6 @@ diff -up src/usr.bin/ssh/dispatch.c:1.1.1.5 src/usr.bin/ssh/dispatch.c:1.7
  #include "packet.h"
  #include "compat.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/dispatch.c,v 1.7 2013/10/31 20:07:11 tg Exp $");
-+
  #define DISPATCH_MAX	255
  
  dispatch_fn *dispatch[DISPATCH_MAX];
@@ -1663,15 +1231,6 @@ diff -up src/usr.bin/ssh/dns.c:1.1.1.8 src/usr.bin/ssh/dns.c:1.7
   * Copyright (c) 2003 Wesley Griffin. All rights reserved.
   * Copyright (c) 2003 Jakob Schlyter. All rights reserved.
   *
-@@ -37,6 +39,8 @@
- #include "dns.h"
- #include "log.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/dns.c,v 1.7 2013/10/31 20:07:11 tg Exp $");
-+
- static const char *errset_text[] = {
- 	"success",		/* 0 ERRSET_SUCCESS */
- 	"out of memory",	/* 1 ERRSET_NOMEMORY */
 @@ -168,7 +172,8 @@ is_numeric_hostname(const char *hostname
   * Returns 0 if lookup succeeds, -1 otherwise
   */
@@ -1686,15 +1245,6 @@ Index: src/usr.bin/ssh/hostfile.c
 diff -up src/usr.bin/ssh/hostfile.c:1.1.1.6 src/usr.bin/ssh/hostfile.c:1.5
 --- src/usr.bin/ssh/hostfile.c:1.1.1.6	Wed Sep 20 21:06:48 2006
 +++ src/usr.bin/ssh/hostfile.c	Tue Sep 21 23:24:36 2010
-@@ -54,6 +54,8 @@
- #include "hostfile.h"
- #include "log.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/hostfile.c,v 1.5 2010/09/21 21:24:36 tg Exp $");
-+
- static int
- extract_salt(const char *s, u_int l, char *salt, size_t salt_len)
- {
 @@ -108,14 +110,13 @@ host_hash(const char *host, const char *
  	HMAC_CTX mac_ctx;
  	char salt[256], result[256], uu_salt[512], uu_result[512];
@@ -1728,10 +1278,6 @@ diff -up src/usr.bin/ssh/kex.c:1.1.1.10 src/usr.bin/ssh/kex.c:1.12
  #include "dispatch.h"
  #include "monitor.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/kex.c,v 1.12 2016/10/25 21:12:00 tg Exp $");
-+
-+extern const EVP_MD *evp_ssh_sha256(void);
-+
  /* prototype */
  static void kex_kexinit_finish(Kex *);
  static void kex_choose_conf(Kex *);
@@ -1830,44 +1376,6 @@ diff -up src/usr.bin/ssh/kex.h:1.1.1.8 src/usr.bin/ssh/kex.h:1.7
  void	 kex_finish(Kex *);
  
  void	 kex_send_kexinit(Kex *);
-Index: src/usr.bin/ssh/kexdhs.c
-diff -up src/usr.bin/ssh/kexdhs.c:1.1.1.6 src/usr.bin/ssh/kexdhs.c:1.5
---- src/usr.bin/ssh/kexdhs.c:1.1.1.6	Sun Oct  4 15:25:45 2009
-+++ src/usr.bin/ssh/kexdhs.c	Sun Oct  4 16:29:04 2009
-@@ -37,11 +37,10 @@
- #include "packet.h"
- #include "dh.h"
- #include "ssh2.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/kexdhs.c,v 1.5 2009/10/04 14:29:04 tg Exp $");
-+
- void
- kexdh_server(Kex *kex)
- {
-Index: src/usr.bin/ssh/kexgexs.c
-diff -up src/usr.bin/ssh/kexgexs.c:1.1.1.7 src/usr.bin/ssh/kexgexs.c:1.6
---- src/usr.bin/ssh/kexgexs.c:1.1.1.7	Sun Oct  4 15:25:45 2009
-+++ src/usr.bin/ssh/kexgexs.c	Sun Oct  4 16:29:04 2009
-@@ -40,11 +40,10 @@
- #include "dh.h"
- #include "ssh2.h"
- #include "compat.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/kexgexs.c,v 1.6 2009/10/04 14:29:04 tg Exp $");
-+
- void
- kexgex_server(Kex *kex)
- {
-Index: src/usr.bin/ssh/key.c
-diff -up src/usr.bin/ssh/key.c:1.1.1.7 src/usr.bin/ssh/key.c:1.7
 --- src/usr.bin/ssh/key.c:1.1.1.7	Tue Dec 16 21:15:33 2008
 +++ src/usr.bin/ssh/key.c	Thu Mar 13 05:46:47 2014
 @@ -38,6 +38,7 @@
@@ -1882,8 +1390,6 @@ diff -up src/usr.bin/ssh/key.c:1.1.1.7 src/usr.bin/ssh/key.c:1.7
  #include "buffer.h"
  #include "log.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/key.c,v 1.7 2014/03/13 04:46:47 tg Exp $");
-+
 +static void key_gen_callback(int, int, void *);
 +
  Key *
@@ -1949,8 +1455,6 @@ diff -up src/usr.bin/ssh/log.c:1.1.1.5 src/usr.bin/ssh/log.c:1.6
  #include "xmalloc.h"
  #include "log.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/log.c,v 1.6 2008/12/16 20:55:22 tg Exp $");
-+
  static LogLevel log_level = SYSLOG_LEVEL_INFO;
  static int log_on_stderr = 1;
  static int log_facility = LOG_AUTH;
@@ -2040,8 +1544,6 @@ diff -up src/usr.bin/ssh/mac.c:1.1.1.6 src/usr.bin/ssh/mac.c:1.8
  #include "mac.h"
  #include "misc.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/mac.c,v 1.8 2017/04/08 17:05:43 tg Exp $");
-+
  #include "umac.h"
  
  #define SSH_EVP		1	/* OpenSSL EVP-based MAC */
@@ -2064,86 +1566,6 @@ diff -up src/usr.bin/ssh/mac.c:1.1.1.6 src/usr.bin/ssh/mac.c:1.8
  
  	if (mac->mac_len > sizeof(m))
  		fatal("mac_compute: mac too long %u %lu",
-Index: src/usr.bin/ssh/md-sha256.c
-diff -up /dev/null src/usr.bin/ssh/md-sha256.c:1.3
---- /dev/null	Sun Feb 16 01:06:07 2020
-+++ src/usr.bin/ssh/md-sha256.c	Tue Dec 16 23:09:56 2008
-@@ -0,0 +1,73 @@
-+/* $OpenBSD: md-sha256.c,v 1.3 2006/03/25 13:17:02 djm Exp $ */
-+/*
-+ * Copyright (c) 2005 Damien Miller <djm@openbsd.org>
-+ *
-+ * Permission to use, copy, modify, and distribute this software for any
-+ * purpose with or without fee is hereby granted, provided that the above
-+ * copyright notice and this permission notice appear in all copies.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-+ */
-+
-+/* EVP wrapper for SHA256 */
-+
-+#include <openssl/evp.h>
-+#include <sha2.h>
-+#include <string.h>
-+
-+/* helper until OpenSSL 0.9.8h+ upgrade */
-+__RCSID("$MirOS: src/usr.bin/ssh/md-sha256.c,v 1.3 2008/12/16 22:09:56 tg Exp $");
-+
-+const EVP_MD *evp_ssh_sha256(void);
-+
-+static int
-+ssh_sha256_init(EVP_MD_CTX *ctxt)
-+{
-+	SHA256_Init(ctxt->md_data);
-+	return (1);
-+}
-+
-+static int
-+ssh_sha256_update(EVP_MD_CTX *ctxt, const void *data, unsigned long len)
-+{
-+	SHA256_Update(ctxt->md_data, data, len);
-+	return (1);
-+}
-+
-+static int
-+ssh_sha256_final(EVP_MD_CTX *ctxt, unsigned char *digest)
-+{
-+	SHA256_Final(digest, ctxt->md_data);
-+	return (1);
-+}
-+
-+static int
-+ssh_sha256_cleanup(EVP_MD_CTX *ctxt)
-+{
-+	memset(ctxt->md_data, 0, sizeof(SHA256_CTX));
-+	return (1);
-+}
-+
-+const EVP_MD *
-+evp_ssh_sha256(void)
-+{
-+	static EVP_MD ssh_sha256;
-+
-+	memset(&ssh_sha256, 0, sizeof(ssh_sha256));
-+	ssh_sha256.type = NID_undef;
-+	ssh_sha256.md_size = SHA256_DIGEST_LENGTH;
-+	ssh_sha256.init = ssh_sha256_init;
-+	ssh_sha256.update = ssh_sha256_update;
-+	ssh_sha256.final = ssh_sha256_final;
-+	ssh_sha256.cleanup = ssh_sha256_cleanup;
-+	ssh_sha256.block_size = SHA256_BLOCK_LENGTH;
-+	ssh_sha256.ctx_size = sizeof(SHA256_CTX);
-+
-+	return (&ssh_sha256);
-+}
-Index: src/usr.bin/ssh/misc.c
-diff -up src/usr.bin/ssh/misc.c:1.1.1.13 src/usr.bin/ssh/misc.c:1.3
 --- src/usr.bin/ssh/misc.c:1.1.1.13	Sun Mar 22 13:02:59 2009
 +++ src/usr.bin/ssh/misc.c	Sat Apr  8 18:23:48 2017
 @@ -1,4 +1,4 @@
@@ -2152,15 +1574,6 @@ diff -up src/usr.bin/ssh/misc.c:1.1.1.13 src/usr.bin/ssh/misc.c:1.3
  /*
   * Copyright (c) 2000 Markus Friedl.  All rights reserved.
   * Copyright (c) 2005,2006 Damien Miller.  All rights reserved.
-@@ -49,6 +49,8 @@
- #include "log.h"
- #include "ssh.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/misc.c,v 1.3 2017/04/08 16:23:48 tg Exp $");
-+
- /* remove newline at end of string */
- char *
- chop(char *s)
 @@ -431,7 +433,7 @@ colon(char *cp)
  
  /* function to assist building execv() arguments */
@@ -2291,15 +1704,6 @@ Index: src/usr.bin/ssh/moduli.c
 diff -up src/usr.bin/ssh/moduli.c:1.1.1.8 src/usr.bin/ssh/moduli.c:1.10
 --- src/usr.bin/ssh/moduli.c:1.1.1.8	Tue Dec 16 21:15:33 2008
 +++ src/usr.bin/ssh/moduli.c	Fri Mar 28 23:35:20 2014
-@@ -52,6 +52,8 @@
- #include "dh.h"
- #include "log.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/moduli.c,v 1.10 2014/03/28 22:35:20 tg Exp $");
-+
- /*
-  * File output defines
-  */
 @@ -149,8 +151,8 @@ qfileout(FILE * ofile, u_int32_t otype, 
  	time(&time_now);
  	gtm = gmtime(&time_now);
@@ -2336,28 +1740,6 @@ diff -up src/usr.bin/ssh/monitor.c:1.1.1.14 src/usr.bin/ssh/monitor.c:1.17
  #include <sys/queue.h>
  
  #include <openssl/dh.h>
-@@ -64,20 +63,13 @@
- #include "servconf.h"
- #include "monitor.h"
- #include "monitor_mm.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "monitor_fdpass.h"
- #include "misc.h"
- #include "compat.h"
- #include "ssh2.h"
--#include "jpake.h"
--#include "roaming.h"
- 
--#ifdef GSSAPI
--static Gssctxt *gsscontext = NULL;
--#endif
-+__RCSID("$MirOS: src/usr.bin/ssh/monitor.c,v 1.17 2016/01/14 19:23:01 tg Exp $");
- 
- /* Imports */
- extern ServerOptions options;
 @@ -89,6 +81,7 @@ extern u_char session_id[];
  extern Buffer auth_debug;
  extern int auth_debug_init;
@@ -2386,18 +1768,6 @@ diff -up src/usr.bin/ssh/monitor.c:1.1.1.14 src/usr.bin/ssh/monitor.c:1.17
  int mm_answer_rsa_response(int, Buffer *);
  int mm_answer_sesskey(int, Buffer *);
  int mm_answer_sessid(int, Buffer *);
--int mm_answer_jpake_get_pwdata(int, Buffer *);
--int mm_answer_jpake_step1(int, Buffer *);
--int mm_answer_jpake_step2(int, Buffer *);
--int mm_answer_jpake_key_confirm(int, Buffer *);
--int mm_answer_jpake_check_confirm(int, Buffer *);
--
--#ifdef GSSAPI
--int mm_answer_gss_setup_ctx(int, Buffer *);
--int mm_answer_gss_accept_ctx(int, Buffer *);
--int mm_answer_gss_userok(int, Buffer *);
--int mm_answer_gss_checkmic(int, Buffer *);
--#endif
  
  static Authctxt *authctxt;
  static BIGNUM *ssh1_challenge = NULL;	/* used for ssh1 rsa auth */
@@ -2420,19 +1790,6 @@ diff -up src/usr.bin/ssh/monitor.c:1.1.1.14 src/usr.bin/ssh/monitor.c:1.17
 +#endif
      {MONITOR_REQ_KEYALLOWED, MON_ISAUTH, mm_answer_keyallowed},
      {MONITOR_REQ_KEYVERIFY, MON_AUTH, mm_answer_keyverify},
--#ifdef GSSAPI
--    {MONITOR_REQ_GSSSETUP, MON_ISAUTH, mm_answer_gss_setup_ctx},
--    {MONITOR_REQ_GSSSTEP, MON_ISAUTH, mm_answer_gss_accept_ctx},
--    {MONITOR_REQ_GSSUSEROK, MON_AUTH, mm_answer_gss_userok},
--    {MONITOR_REQ_GSSCHECKMIC, MON_ISAUTH, mm_answer_gss_checkmic},
--#endif
--#ifdef JPAKE
--    {MONITOR_REQ_JPAKE_GET_PWDATA, MON_ONCE, mm_answer_jpake_get_pwdata},
--    {MONITOR_REQ_JPAKE_STEP1, MON_ISAUTH, mm_answer_jpake_step1},
--    {MONITOR_REQ_JPAKE_STEP2, MON_ONCE, mm_answer_jpake_step2},
--    {MONITOR_REQ_JPAKE_KEY_CONFIRM, MON_ONCE, mm_answer_jpake_key_confirm},
--    {MONITOR_REQ_JPAKE_CHECK_CONFIRM, MON_AUTH, mm_answer_jpake_check_confirm},
--#endif
      {0, 0, NULL}
  };
  
@@ -2630,140 +1987,8 @@ diff -up src/usr.bin/ssh/monitor.c:1.1.1.14 src/usr.bin/ssh/monitor.c:1.17
  	buffer_free(&m);
  }
  
-@@ -1577,310 +1528,3 @@ monitor_reinit(struct monitor *mon)
- 	mon->m_recvfd = pair[0];
- 	mon->m_sendfd = pair[1];
- }
--
--#ifdef GSSAPI
--int
--mm_answer_gss_setup_ctx(int sock, Buffer *m)
--{
--	gss_OID_desc goid;
--	OM_uint32 major;
--	u_int len;
--
--	goid.elements = buffer_get_string(m, &len);
--	goid.length = len;
--
--	major = ssh_gssapi_server_ctx(&gsscontext, &goid);
--
--	xfree(goid.elements);
--
--	buffer_clear(m);
--	buffer_put_int(m, major);
--
--	mm_request_send(sock, MONITOR_ANS_GSSSETUP, m);
--
--	/* Now we have a context, enable the step */
--	monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 1);
--
--	return (0);
--}
--
--int
--mm_answer_gss_accept_ctx(int sock, Buffer *m)
--{
--	gss_buffer_desc in;
--	gss_buffer_desc out = GSS_C_EMPTY_BUFFER;
--	OM_uint32 major, minor;
--	OM_uint32 flags = 0; /* GSI needs this */
--	u_int len;
--
--	in.value = buffer_get_string(m, &len);
--	in.length = len;
--	major = ssh_gssapi_accept_ctx(gsscontext, &in, &out, &flags);
--	xfree(in.value);
--
--	buffer_clear(m);
--	buffer_put_int(m, major);
--	buffer_put_string(m, out.value, out.length);
--	buffer_put_int(m, flags);
--	mm_request_send(sock, MONITOR_ANS_GSSSTEP, m);
--
--	gss_release_buffer(&minor, &out);
--
--	if (major == GSS_S_COMPLETE) {
--		monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 0);
--		monitor_permit(mon_dispatch, MONITOR_REQ_GSSUSEROK, 1);
--		monitor_permit(mon_dispatch, MONITOR_REQ_GSSCHECKMIC, 1);
--	}
--	return (0);
--}
--
--int
--mm_answer_gss_checkmic(int sock, Buffer *m)
--{
--	gss_buffer_desc gssbuf, mic;
--	OM_uint32 ret;
--	u_int len;
--
--	gssbuf.value = buffer_get_string(m, &len);
--	gssbuf.length = len;
--	mic.value = buffer_get_string(m, &len);
--	mic.length = len;
--
--	ret = ssh_gssapi_checkmic(gsscontext, &gssbuf, &mic);
--
--	xfree(gssbuf.value);
--	xfree(mic.value);
--
--	buffer_clear(m);
--	buffer_put_int(m, ret);
--
--	mm_request_send(sock, MONITOR_ANS_GSSCHECKMIC, m);
--
--	if (!GSS_ERROR(ret))
--		monitor_permit(mon_dispatch, MONITOR_REQ_GSSUSEROK, 1);
--
--	return (0);
--}
--
--int
--mm_answer_gss_userok(int sock, Buffer *m)
--{
--	int authenticated;
--
--	authenticated = authctxt->valid && ssh_gssapi_userok(authctxt->user);
--
--	buffer_clear(m);
--	buffer_put_int(m, authenticated);
--
--	debug3("%s: sending result %d", __func__, authenticated);
--	mm_request_send(sock, MONITOR_ANS_GSSUSEROK, m);
--
--	auth_method = "gssapi-with-mic";
--
--	/* Monitor loop will terminate if authenticated */
--	return (authenticated);
--}
--#endif /* GSSAPI */
-Index: src/usr.bin/ssh/monitor.h
-diff -up src/usr.bin/ssh/monitor.h:1.1.1.3 src/usr.bin/ssh/monitor.h:1.6
 --- src/usr.bin/ssh/monitor.h:1.1.1.3	Tue Dec 16 21:15:33 2008
 +++ src/usr.bin/ssh/monitor.h	Fri Mar 28 23:31:56 2014
-@@ -1,3 +1,4 @@
-+/* $MirOS: src/usr.bin/ssh/monitor.h,v 1.6 2014/03/28 22:31:56 tg Exp $ */
- /* $OpenBSD: monitor.h,v 1.15 2008/11/04 08:22:13 djm Exp $ */
- 
- /*
-@@ -49,16 +50,7 @@ enum monitor_reqtype {
- 	MONITOR_REQ_RSAKEYALLOWED, MONITOR_ANS_RSAKEYALLOWED,
- 	MONITOR_REQ_RSACHALLENGE, MONITOR_ANS_RSACHALLENGE,
- 	MONITOR_REQ_RSARESPONSE, MONITOR_ANS_RSARESPONSE,
--	MONITOR_REQ_GSSSETUP, MONITOR_ANS_GSSSETUP,
--	MONITOR_REQ_GSSSTEP, MONITOR_ANS_GSSSTEP,
--	MONITOR_REQ_GSSUSEROK, MONITOR_ANS_GSSUSEROK,
--	MONITOR_REQ_GSSCHECKMIC, MONITOR_ANS_GSSCHECKMIC,
- 	MONITOR_REQ_TERM,
--	MONITOR_REQ_JPAKE_STEP1, MONITOR_ANS_JPAKE_STEP1,
--	MONITOR_REQ_JPAKE_GET_PWDATA, MONITOR_ANS_JPAKE_GET_PWDATA,
--	MONITOR_REQ_JPAKE_STEP2, MONITOR_ANS_JPAKE_STEP2,
--	MONITOR_REQ_JPAKE_KEY_CONFIRM, MONITOR_ANS_JPAKE_KEY_CONFIRM,
--	MONITOR_REQ_JPAKE_CHECK_CONFIRM, MONITOR_ANS_JPAKE_CHECK_CONFIRM,
- };
- 
- struct mm_master;
 @@ -77,7 +69,7 @@ void monitor_sync(struct monitor *);
  
  struct Authctxt;
@@ -2777,15 +2002,6 @@ Index: src/usr.bin/ssh/monitor_fdpass.c
 diff -up src/usr.bin/ssh/monitor_fdpass.c:1.1.1.7 src/usr.bin/ssh/monitor_fdpass.c:1.4
 --- src/usr.bin/ssh/monitor_fdpass.c:1.1.1.7	Tue Dec 16 21:15:33 2008
 +++ src/usr.bin/ssh/monitor_fdpass.c	Sun Oct  4 18:35:25 2009
-@@ -35,6 +35,8 @@
- #include "log.h"
- #include "monitor_fdpass.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/monitor_fdpass.c,v 1.4 2009/10/04 16:35:25 tg Exp $");
-+
- int
- mm_send_fd(int sock, int fd)
- {
 @@ -50,12 +52,12 @@ mm_send_fd(int sock, int fd)
  
  	memset(&msg, 0, sizeof(msg));
@@ -2822,29 +2038,6 @@ Index: src/usr.bin/ssh/monitor_wrap.c
 diff -up src/usr.bin/ssh/monitor_wrap.c:1.1.1.11 src/usr.bin/ssh/monitor_wrap.c:1.17
 --- src/usr.bin/ssh/monitor_wrap.c:1.1.1.11	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/monitor_wrap.c	Thu May  3 03:32:45 2018
-@@ -55,20 +55,16 @@
- #include "log.h"
- #include <zlib.h>
- #include "monitor.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "atomicio.h"
- #include "monitor_fdpass.h"
- #include "misc.h"
--#include "schnorr.h"
--#include "jpake.h"
- 
- #include "channels.h"
- #include "session.h"
- #include "servconf.h"
--#include "roaming.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/monitor_wrap.c,v 1.17 2018/05/03 01:32:45 tg Exp $");
- 
- /* Imports */
- extern int compat20;
 @@ -446,7 +444,7 @@ mm_newkeys_from_blob(u_char *blob, int b
  	buffer_init(&b);
  	buffer_append(&b, blob, blen);
@@ -2867,137 +2060,8 @@ diff -up src/usr.bin/ssh/monitor_wrap.c:1.1.1.11 src/usr.bin/ssh/monitor_wrap.c:
  	mm_request_send(monitor->m_recvfd, MONITOR_REQ_KEYEXPORT, &m);
  	debug3("%s: Finished sending state", __func__);
  
-@@ -947,251 +939,3 @@ mm_auth_rsa_verify_response(Key *key, BI
- 
- 	return (success);
- }
--
--#ifdef GSSAPI
--OM_uint32
--mm_ssh_gssapi_server_ctx(Gssctxt **ctx, gss_OID goid)
--{
--	Buffer m;
--	OM_uint32 major;
--
--	/* Client doesn't get to see the context */
--	*ctx = NULL;
--
--	buffer_init(&m);
--	buffer_put_string(&m, goid->elements, goid->length);
--
--	mm_request_send(pmonitor->m_recvfd, MONITOR_REQ_GSSSETUP, &m);
--	mm_request_receive_expect(pmonitor->m_recvfd, MONITOR_ANS_GSSSETUP, &m);
--
--	major = buffer_get_int(&m);
--
--	buffer_free(&m);
--	return (major);
--}
--
--OM_uint32
--mm_ssh_gssapi_accept_ctx(Gssctxt *ctx, gss_buffer_desc *in,
--    gss_buffer_desc *out, OM_uint32 *flags)
--{
--	Buffer m;
--	OM_uint32 major;
--	u_int len;
--
--	buffer_init(&m);
--	buffer_put_string(&m, in->value, in->length);
--
--	mm_request_send(pmonitor->m_recvfd, MONITOR_REQ_GSSSTEP, &m);
--	mm_request_receive_expect(pmonitor->m_recvfd, MONITOR_ANS_GSSSTEP, &m);
--
--	major = buffer_get_int(&m);
--	out->value = buffer_get_string(&m, &len);
--	out->length = len;
--	if (flags)
--		*flags = buffer_get_int(&m);
--
--	buffer_free(&m);
--
--	return (major);
--}
--
--OM_uint32
--mm_ssh_gssapi_checkmic(Gssctxt *ctx, gss_buffer_t gssbuf, gss_buffer_t gssmic)
--{
--	Buffer m;
--	OM_uint32 major;
--
--	buffer_init(&m);
--	buffer_put_string(&m, gssbuf->value, gssbuf->length);
--	buffer_put_string(&m, gssmic->value, gssmic->length);
--
--	mm_request_send(pmonitor->m_recvfd, MONITOR_REQ_GSSCHECKMIC, &m);
--	mm_request_receive_expect(pmonitor->m_recvfd, MONITOR_ANS_GSSCHECKMIC,
--	    &m);
--
--	major = buffer_get_int(&m);
--	buffer_free(&m);
--	return(major);
--}
--
--int
--mm_ssh_gssapi_userok(char *user)
--{
--	Buffer m;
--	int authenticated = 0;
--
--	buffer_init(&m);
--
--	mm_request_send(pmonitor->m_recvfd, MONITOR_REQ_GSSUSEROK, &m);
--	mm_request_receive_expect(pmonitor->m_recvfd, MONITOR_ANS_GSSUSEROK,
--				  &m);
--
--	authenticated = buffer_get_int(&m);
--
--	buffer_free(&m);
--	debug3("%s: user %sauthenticated",__func__, authenticated ? "" : "not ");
--	return (authenticated);
--}
--#endif /* GSSAPI */
-Index: src/usr.bin/ssh/monitor_wrap.h
-diff -up src/usr.bin/ssh/monitor_wrap.h:1.1.1.5 src/usr.bin/ssh/monitor_wrap.h:1.7
---- src/usr.bin/ssh/monitor_wrap.h:1.1.1.5	Sun Mar 22 13:03:00 2009
-+++ src/usr.bin/ssh/monitor_wrap.h	Fri Mar 28 23:31:56 2014
-@@ -1,3 +1,4 @@
-+/* $MirOS: src/usr.bin/ssh/monitor_wrap.h,v 1.7 2014/03/28 22:31:56 tg Exp $ */
- /* $OpenBSD: monitor_wrap.h,v 1.22 2009/03/05 07:18:19 djm Exp $ */
- 
- /*
-@@ -53,14 +54,6 @@ int mm_auth_rsa_key_allowed(struct passw
- int mm_auth_rsa_verify_response(Key *, BIGNUM *, u_char *);
- BIGNUM *mm_auth_rsa_generate_challenge(Key *);
- 
--#ifdef GSSAPI
--OM_uint32 mm_ssh_gssapi_server_ctx(Gssctxt **, gss_OID);
--OM_uint32 mm_ssh_gssapi_accept_ctx(Gssctxt *,
--   gss_buffer_desc *, gss_buffer_desc *, OM_uint32 *);
--int mm_ssh_gssapi_userok(char *user);
--OM_uint32 mm_ssh_gssapi_checkmic(Gssctxt *, gss_buffer_t, gss_buffer_t);
--#endif
--
- struct Session;
- void mm_terminate(void);
- int mm_pty_allocate(int *, int *, char *, size_t);
-Index: src/usr.bin/ssh/myproposal.h
-diff -up src/usr.bin/ssh/myproposal.h:1.1.1.6 src/usr.bin/ssh/myproposal.h:1.12
 --- src/usr.bin/ssh/myproposal.h:1.1.1.6	Sun Mar 22 13:03:00 2009
 +++ src/usr.bin/ssh/myproposal.h	Sun Mar 22 16:01:17 2009
-@@ -1,3 +1,4 @@
-+/* $MirOS: src/usr.bin/ssh/myproposal.h,v 1.12 2009/03/22 15:01:17 tg Exp $ */
- /* $OpenBSD: myproposal.h,v 1.23 2009/01/23 07:58:11 djm Exp $ */
- 
- /*
-@@ -23,6 +24,7 @@
-  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  */
-+
- #define KEX_DEFAULT_KEX		\
- 	"diffie-hellman-group-exchange-sha256," \
- 	"diffie-hellman-group-exchange-sha1," \
 @@ -31,19 +33,17 @@
  #define	KEX_DEFAULT_PK_ALG	"ssh-rsa,ssh-dss"
  
@@ -3028,15 +2092,6 @@ Index: src/usr.bin/ssh/nchan.c
 diff -up src/usr.bin/ssh/nchan.c:1.1.1.4 src/usr.bin/ssh/nchan.c:1.5
 --- src/usr.bin/ssh/nchan.c:1.1.1.4	Tue Dec 16 21:15:33 2008
 +++ src/usr.bin/ssh/nchan.c	Tue Dec 16 21:55:24 2008
-@@ -39,6 +39,8 @@
- #include "compat.h"
- #include "log.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/nchan.c,v 1.5 2008/12/16 20:55:24 tg Exp $");
-+
- /*
-  * SSH Protocol 1.5 aka New Channel Protocol
-  * Thanks to Martina, Axel and everyone who left Erlangen, leaving me bored.
 @@ -82,8 +84,8 @@ static void	chan_send_eow2(Channel *);
  static void	chan_shutdown_write(Channel *);
  static void	chan_shutdown_read(Channel *);
@@ -3069,9 +2124,6 @@ diff -up src/usr.bin/ssh/packet.c:1.1.1.12 src/usr.bin/ssh/packet.c:1.18
  #include "canohost.h"
  #include "misc.h"
  #include "ssh.h"
--#include "roaming.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/packet.c,v 1.18 2016/01/14 19:23:02 tg Exp $");
 +
 +const char NULs[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
  
@@ -3415,15 +2467,6 @@ diff -up src/usr.bin/ssh/progressmeter.c:1.1.1.6 src/usr.bin/ssh/progressmeter.c
   * Copyright (c) 2003 Nils Nordman.  All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without
-@@ -37,6 +39,8 @@
- #include "progressmeter.h"
- #include "atomicio.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/progressmeter.c,v 1.5 2013/10/31 20:07:12 tg Exp $");
-+
- #define DEFAULT_WINSIZE 80
- #define MAX_WINSIZE 512
- #define PADDING 1		/* padding between the progress indicators */
 @@ -225,7 +229,7 @@ refresh_progress_meter(void)
  
  /*ARGSUSED*/
@@ -3445,15 +2488,6 @@ diff -up src/usr.bin/ssh/readconf.c:1.1.1.15 src/usr.bin/ssh/readconf.c:1.22
  #include <signal.h>
  #include <stdio.h>
  #include <string.h>
-@@ -40,6 +41,8 @@
- #include "kex.h"
- #include "mac.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/readconf.c,v 1.22 2016/01/14 19:23:02 tg Exp $");
-+
- /* Format of the configuration file:
- 
-    # Configuration data is parsed as follows:
 @@ -58,7 +61,7 @@
       User foo
  
@@ -3472,60 +2506,6 @@ diff -up src/usr.bin/ssh/readconf.c:1.1.1.15 src/usr.bin/ssh/readconf.c:1.22
       Port 22
       EscapeChar ~
  
-@@ -123,11 +126,11 @@ typedef enum {
- 	oHostKeyAlgorithms, oBindAddress, oSmartcardDevice,
- 	oClearAllForwardings, oNoHostAuthenticationForLocalhost,
- 	oEnableSSHKeysign, oRekeyLimit, oVerifyHostKeyDNS, oConnectTimeout,
--	oAddressFamily, oGssAuthentication, oGssDelegateCreds,
-+	oAddressFamily,
- 	oServerAliveInterval, oServerAliveCountMax, oIdentitiesOnly,
- 	oSendEnv, oControlPath, oControlMaster, oHashKnownHosts,
- 	oTunnel, oTunnelDevice, oLocalCommand, oPermitLocalCommand,
--	oVisualHostKey, oUseRoaming, oZeroKnowledgePasswordAuthentication,
-+	oVisualHostKey,
- 	oDeprecated, oUnsupported
- } OpCodes;
- 
-@@ -159,13 +162,8 @@ static struct {
- 	{ "kerberosauthentication", oUnsupported },
- 	{ "kerberostgtpassing", oUnsupported },
- 	{ "afstokenpassing", oUnsupported },
--#if defined(GSSAPI)
--	{ "gssapiauthentication", oGssAuthentication },
--	{ "gssapidelegatecredentials", oGssDelegateCreds },
--#else
- 	{ "gssapiauthentication", oUnsupported },
- 	{ "gssapidelegatecredentials", oUnsupported },
--#endif
- 	{ "fallbacktorsh", oDeprecated },
- 	{ "usersh", oDeprecated },
- 	{ "identityfile", oIdentityFile },
-@@ -445,14 +433,6 @@ parse_flag:
- 		intptr = &options->challenge_response_authentication;
- 		goto parse_flag;
- 
--	case oGssAuthentication:
--		intptr = &options->gss_authentication;
--		goto parse_flag;
--
--	case oGssDelegateCreds:
--		intptr = &options->gss_deleg_creds;
--		goto parse_flag;
--
- 	case oBatchMode:
- 		intptr = &options->batch_mode;
- 		goto parse_flag;
-@@ -910,10 +890,6 @@ parse_int:
- 		intptr = &options->visual_host_key;
- 		goto parse_flag;
- 
--	case oUseRoaming:
--		intptr = &options->use_roaming;
--		goto parse_flag;
--
- 	case oDeprecated:
- 		debug("%s line %d: Deprecated option \"%s\"",
- 		    filename, linenum, keyword);
 @@ -994,7 +970,7 @@ read_config_file(const char *filename, c
   */
  
@@ -3535,24 +2515,6 @@ diff -up src/usr.bin/ssh/readconf.c:1.1.1.15 src/usr.bin/ssh/readconf.c:1.22
  {
  	memset(options, 'X', sizeof(*options));
  	options->forward_agent = -1;
-@@ -1007,8 +983,6 @@ initialize_options(Options * options)
- 	options->rsa_authentication = -1;
- 	options->pubkey_authentication = -1;
- 	options->challenge_response_authentication = -1;
--	options->gss_authentication = -1;
--	options->gss_deleg_creds = -1;
- 	options->password_authentication = -1;
- 	options->kbd_interactive_authentication = -1;
- 	options->kbd_interactive_devices = NULL;
-@@ -1063,8 +1037,7 @@ initialize_options(Options * options)
- 	options->tun_remote = -1;
- 	options->local_command = NULL;
- 	options->permit_local_command = -1;
--	options->use_roaming = -1;
- 	options->visual_host_key = -1;
- }
- 
- /*
 @@ -1074,7 +1046,7 @@ initialize_options(Options * options)
   */
  
@@ -3571,17 +2533,6 @@ diff -up src/usr.bin/ssh/readconf.c:1.1.1.15 src/usr.bin/ssh/readconf.c:1.22
  	if (options->gateway_ports == -1)
  		options->gateway_ports = 0;
  	if (options->use_privileged_port == -1)
-@@ -1098,10 +1070,6 @@ fill_default_options(Options * options)
- 		options->pubkey_authentication = 1;
- 	if (options->challenge_response_authentication == -1)
- 		options->challenge_response_authentication = 1;
--	if (options->gss_authentication == -1)
--		options->gss_authentication = 0;
--	if (options->gss_deleg_creds == -1)
--		options->gss_deleg_creds = 0;
- 	if (options->password_authentication == -1)
- 		options->password_authentication = 1;
- 	if (options->kbd_interactive_authentication == -1)
 @@ -1163,13 +1131,18 @@ fill_default_options(Options * options)
  	if (options->escape_char == -1)
  		options->escape_char = '~';
@@ -3622,19 +2573,6 @@ diff -up src/usr.bin/ssh/readconf.h:1.1.1.10 src/usr.bin/ssh/readconf.h:1.16
  /* $OpenBSD: readconf.h,v 1.79 2009/06/27 09:35:06 andreas Exp $ */
  
  /*
-@@ -43,12 +44,10 @@ typedef struct {
- 	int     hostbased_authentication;	/* ssh2's rhosts_rsa */
- 	int     challenge_response_authentication;
- 					/* Try S/Key or TIS, authentication. */
--	int     gss_authentication;	/* Try GSS authentication */
--	int     gss_deleg_creds;	/* Delegate GSS credentials */
- 	int     password_authentication;	/* Try password
- 						 * authentication. */
- 	int     kbd_interactive_authentication; /* Try keyboard-interactive auth. */
- 	char	*kbd_interactive_devices; /* Keyboard-interactive auth devices. */
- 	int     batch_mode;	/* Batch mode: do not ask for passwords. */
- 	int     check_host_ip;	/* Also keep track of keys for IP address */
- 	int     strict_host_key_checking;	/* Strict host key checking. */
 @@ -68,18 +66,18 @@ typedef struct {
  	int     number_of_password_prompts;	/* Max number of password
  						 * prompts. */
@@ -3724,8 +2662,6 @@ diff -up src/usr.bin/ssh/scp.1:1.1.1.8 src/usr.bin/ssh/scp.1:1.11
  .It ControlMaster
  .It ControlPath
  .It GlobalKnownHostsFile
--.It GSSAPIAuthentication
--.It GSSAPIDelegateCredentials
  .It HashKnownHosts
  .It Host
  .It HostbasedAuthentication
@@ -3757,15 +2693,6 @@ diff -up src/usr.bin/ssh/scp.c:1.1.1.14 src/usr.bin/ssh/scp.c:1.20
  #include <sys/poll.h>
  #include <sys/wait.h>
  #include <sys/stat.h>
-@@ -100,6 +101,8 @@
- #include "misc.h"
- #include "progressmeter.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/scp.c,v 1.20 2013/10/31 20:07:13 tg Exp $");
-+
- #define COPY_BUFLEN	16384
- 
- int do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout);
 @@ -122,12 +125,12 @@ int verbose_mode = 0;
  int showprogress = 1;
  
@@ -3834,29 +2761,6 @@ Index: src/usr.bin/ssh/servconf.c
 diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
 --- src/usr.bin/ssh/servconf.c:1.1.1.15	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/servconf.c	Thu May  3 03:32:46 2018
-@@ -39,6 +39,9 @@
- #include "match.h"
- #include "channels.h"
- #include "groupaccess.h"
-+#include "canohost.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/servconf.c,v 1.26 2018/05/03 01:32:46 tg Exp $");
- 
- static void add_listen_addr(ServerOptions *, char *, int);
- static void add_one_listen_addr(ServerOptions *, char *, int);
-@@ -80,12 +83,6 @@ initialize_server_options(ServerOptions 
- 	options->hostbased_uses_name_from_packet_only = -1;
- 	options->rsa_authentication = -1;
- 	options->pubkey_authentication = -1;
--	options->kerberos_authentication = -1;
--	options->kerberos_or_local_passwd = -1;
--	options->kerberos_ticket_cleanup = -1;
--	options->kerberos_get_afs_token = -1;
--	options->gss_authentication=-1;
--	options->gss_cleanup_creds = -1;
- 	options->password_authentication = -1;
- 	options->kbd_interactive_authentication = -1;
- 	options->challenge_response_authentication = -1;
 @@ -113,14 +110,14 @@ initialize_server_options(ServerOptions 
  	options->use_dns = -1;
  	options->client_alive_interval = -1;
@@ -3876,25 +2780,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  	if (options->ignore_rhosts == -1)
  		options->ignore_rhosts = 1;
  	if (options->ignore_user_known_hosts == -1)
-@@ -188,18 +185,6 @@ fill_default_server_options(ServerOption
- 		options->rsa_authentication = 1;
- 	if (options->pubkey_authentication == -1)
- 		options->pubkey_authentication = 1;
--	if (options->kerberos_authentication == -1)
--		options->kerberos_authentication = 0;
--	if (options->kerberos_or_local_passwd == -1)
--		options->kerberos_or_local_passwd = 1;
--	if (options->kerberos_ticket_cleanup == -1)
--		options->kerberos_ticket_cleanup = 1;
--	if (options->kerberos_get_afs_token == -1)
--		options->kerberos_get_afs_token = 0;
--	if (options->gss_authentication == -1)
--		options->gss_authentication = 0;
--	if (options->gss_cleanup_creds == -1)
--		options->gss_cleanup_creds = 1;
- 	if (options->password_authentication == -1)
- 		options->password_authentication = 1;
- 	if (options->kbd_interactive_authentication == -1)
 @@ -236,23 +221,24 @@ fill_default_server_options(ServerOption
  		options->client_alive_interval = 0;
  	if (options->client_alive_count_max == -1)
@@ -3917,17 +2802,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
 +		options->authorised_keys_file1 = (char *)_PATH_SSH_USER_PERMITTED_KEYS;
  	if (options->permit_tun == -1)
  		options->permit_tun = SSH_TUNMODE_NO;
-@@ -261,9 +247,7 @@ typedef enum {
- 	sPort, sHostKeyFile, sServerKeyBits, sLoginGraceTime, sKeyRegenerationTime,
- 	sPermitRootLogin, sLogFacility, sLogLevel,
- 	sRhostsRSAAuthentication, sRSAAuthentication,
--	sKerberosAuthentication, sKerberosOrLocalPasswd, sKerberosTicketCleanup,
--	sKerberosGetAFSToken,
--	sKerberosTgtPassing, sChallengeResponseAuthentication,
-+	sChallengeResponseAuthentication,
- 	sPasswordAuthentication, sKbdInteractiveAuthentication,
- 	sListenAddress, sAddressFamily,
- 	sPrintMotd, sPrintLastLog, sIgnoreRhosts,
 @@ -276,11 +260,11 @@ typedef enum {
  	sMaxStartups, sMaxAuthTries, sMaxSessions,
  	sBanner, sUseDNS, sHostbasedAuthentication,
@@ -3938,42 +2812,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
 +	sAcceptEnv, sPermitTunnel,
  	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
  	sUsePrivilegeSeparation, sAllowAgentForwarding,
-@@ -311,35 +295,18 @@ static struct {
- 	{ "rsaauthentication", sRSAAuthentication, SSHCFG_ALL },
- 	{ "pubkeyauthentication", sPubkeyAuthentication, SSHCFG_ALL },
- 	{ "dsaauthentication", sPubkeyAuthentication, SSHCFG_GLOBAL }, /* alias */
--#ifdef KRB5
--	{ "kerberosauthentication", sKerberosAuthentication, SSHCFG_ALL },
--	{ "kerberosorlocalpasswd", sKerberosOrLocalPasswd, SSHCFG_GLOBAL },
--	{ "kerberosticketcleanup", sKerberosTicketCleanup, SSHCFG_GLOBAL },
--	{ "kerberosgetafstoken", sKerberosGetAFSToken, SSHCFG_GLOBAL },
--#else
- 	{ "kerberosauthentication", sUnsupported, SSHCFG_ALL },
- 	{ "kerberosorlocalpasswd", sUnsupported, SSHCFG_GLOBAL },
- 	{ "kerberosticketcleanup", sUnsupported, SSHCFG_GLOBAL },
- 	{ "kerberosgetafstoken", sUnsupported, SSHCFG_GLOBAL },
--#endif
- 	{ "kerberostgtpassing", sUnsupported, SSHCFG_GLOBAL },
- 	{ "afstokenpassing", sUnsupported, SSHCFG_GLOBAL },
--#ifdef GSSAPI
--	{ "gssapiauthentication", sGssAuthentication, SSHCFG_ALL },
--	{ "gssapicleanupcredentials", sGssCleanupCreds, SSHCFG_GLOBAL },
--#else
- 	{ "gssapiauthentication", sUnsupported, SSHCFG_ALL },
- 	{ "gssapicleanupcredentials", sUnsupported, SSHCFG_GLOBAL },
--#endif
- 	{ "passwordauthentication", sPasswordAuthentication, SSHCFG_ALL },
- 	{ "kbdinteractiveauthentication", sKbdInteractiveAuthentication, SSHCFG_ALL },
- 	{ "challengeresponseauthentication", sChallengeResponseAuthentication, SSHCFG_GLOBAL },
- 	{ "skeyauthentication", sChallengeResponseAuthentication, SSHCFG_GLOBAL }, /* alias */
--#ifdef JPAKE
--	{ "zeroknowledgepasswordauthentication", sZeroKnowledgePasswordAuthentication, SSHCFG_ALL },
--#else
--	{ "zeroknowledgepasswordauthentication", sUnsupported, SSHCFG_ALL },
--#endif
- 	{ "checkmail", sDeprecated, SSHCFG_GLOBAL },
- 	{ "listenaddress", sListenAddress, SSHCFG_GLOBAL },
- 	{ "addressfamily", sAddressFamily, SSHCFG_GLOBAL },
 @@ -378,8 +345,10 @@ static struct {
  	{ "reversemappingcheck", sDeprecated, SSHCFG_GLOBAL },
  	{ "clientaliveinterval", sClientAliveInterval, SSHCFG_GLOBAL },
@@ -3996,45 +2834,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  } tunmode_desc[] = {
  	{ SSH_TUNMODE_NO, "no" },
  	{ SSH_TUNMODE_POINTOPOINT, "point-to-point" },
-@@ -828,38 +798,10 @@ process_server_config_line(ServerOptions
- 		intptr = &options->pubkey_authentication;
- 		goto parse_flag;
- 
--	case sKerberosAuthentication:
--		intptr = &options->kerberos_authentication;
--		goto parse_flag;
--
--	case sKerberosOrLocalPasswd:
--		intptr = &options->kerberos_or_local_passwd;
--		goto parse_flag;
--
--	case sKerberosTicketCleanup:
--		intptr = &options->kerberos_ticket_cleanup;
--		goto parse_flag;
--
--	case sKerberosGetAFSToken:
--		intptr = &options->kerberos_get_afs_token;
--		goto parse_flag;
--
--	case sGssAuthentication:
--		intptr = &options->gss_authentication;
--		goto parse_flag;
--
--	case sGssCleanupCreds:
--		intptr = &options->gss_cleanup_creds;
--		goto parse_flag;
--
- 	case sPasswordAuthentication:
- 		intptr = &options->password_authentication;
- 		goto parse_flag;
- 
--	case sZeroKnowledgePasswordAuthentication:
--		intptr = &options->zero_knowledge_password_authentication;
--		goto parse_flag;
--
- 	case sKbdInteractiveAuthentication:
- 		intptr = &options->kbd_interactive_authentication;
- 		goto parse_flag;
 @@ -1139,13 +1081,13 @@ process_server_config_line(ServerOptions
  	 * These options can contain %X options expanded at
  	 * connect time, so that you can specify paths like:
@@ -4055,20 +2854,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  		goto parse_filename;
  
  	case sClientAliveInterval:
-@@ -1341,13 +1287,10 @@ void
- copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
- {
- 	M_CP_INTOPT(password_authentication);
--	M_CP_INTOPT(gss_authentication);
- 	M_CP_INTOPT(rsa_authentication);
- 	M_CP_INTOPT(pubkey_authentication);
--	M_CP_INTOPT(kerberos_authentication);
- 	M_CP_INTOPT(hostbased_authentication);
- 	M_CP_INTOPT(kbd_interactive_authentication);
--	M_CP_INTOPT(zero_knowledge_password_authentication);
- 	M_CP_INTOPT(permit_root_login);
- 	M_CP_INTOPT(permit_empty_passwd);
- 
 @@ -1491,7 +1435,8 @@ dump_config(ServerOptions *o)
  	u_int i;
  	int ret;
@@ -4121,25 +2906,10 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  	int     hostbased_uses_name_from_packet_only; /* experimental */
  	int     rsa_authentication;	/* If true, permit RSA authentication. */
  	int     pubkey_authentication;	/* If true, permit ssh2 pubkey authentication. */
--	int     kerberos_authentication;	/* If true, permit Kerberos
--						 * authentication. */
--	int     kerberos_or_local_passwd;	/* If true, permit kerberos
--						 * and any other password
--						 * authentication mechanism,
--						 * such as SecurID or
--						 * /etc/passwd */
--	int     kerberos_ticket_cleanup;	/* If true, destroy ticket
--						 * file on logout. */
--	int     kerberos_get_afs_token;		/* If true, try to get AFS token if
--						 * authenticated with Kerberos. */
--	int     gss_authentication;	/* If true, permit GSSAPI authentication */
--	int     gss_cleanup_creds;	/* If true, destroy cred cache on logout */
  	int     password_authentication;	/* If true, permit password
  						 * authentication. */
  	int     kbd_interactive_authentication;	/* If true, permit */
  	int     challenge_response_authentication;
--	int     zero_knowledge_password_authentication;
--					/* If true, permit jpake auth */
  	int     permit_empty_passwd;	/* If false, do not permit empty
  					 * passwords. */
 -	int     permit_user_env;	/* If true, read ~/.ssh/environment */
@@ -4173,16 +2943,6 @@ diff -up src/usr.bin/ssh/servconf.c:1.1.1.15 src/usr.bin/ssh/servconf.c:1.26
  #include <sys/queue.h>
  
  #include <netinet/in.h>
-@@ -74,7 +73,8 @@
- #include "auth-options.h"
- #include "serverloop.h"
- #include "misc.h"
--#include "roaming.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/serverloop.c,v 1.10 2016/01/14 19:23:04 tg Exp $");
- 
- extern ServerOptions options;
- 
 @@ -376,11 +376,8 @@ process_input(fd_set *readset)
  
  	/* Read and buffer any input data from the client. */
@@ -4217,23 +2977,6 @@ diff -up src/usr.bin/ssh/session.c:1.1.1.18 src/usr.bin/ssh/session.c:1.24
  #include <errno.h>
  #include <grp.h>
  #include <login_cap.h>
-@@ -77,15 +77,10 @@
- #include "canohost.h"
- #include "misc.h"
- #include "session.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
- #include "monitor_wrap.h"
- #include "sftp.h"
- 
--#ifdef KRB5
--#include <kafs.h>
--#endif
-+__RCSID("$MirOS: src/usr.bin/ssh/session.c,v 1.24 2016/03/25 18:55:35 tg Exp $");
- 
- #define IS_INTERNAL_SFTP(c) \
- 	(!strncmp(c, INTERNAL_SFTP_NAME, sizeof(INTERNAL_SFTP_NAME) - 1) && \
 @@ -95,7 +90,6 @@
  
  /* func */
@@ -4315,39 +3058,13 @@ diff -up src/usr.bin/ssh/session.c:1.1.1.18 src/usr.bin/ssh/session.c:1.24
  		debug("Forced command (key option) '%.900s'", command);
  	}
  
--#ifdef GSSAPI
--	if (options.gss_authentication) {
--		temporarily_use_uid(s->pw);
--		ssh_gssapi_storecreds();
--		restore_uid();
--	}
--#endif
  	if (s->ttyfd != -1)
  		ret = do_exec_pty(s, command);
  	else
-@@ -928,13 +942,6 @@ do_setup_env(Session *s, const char *she
- 	env = xcalloc(envsize, sizeof(char *));
- 	env[0] = NULL;
- 
--#ifdef GSSAPI
--	/* Allow any GSSAPI methods that we've used to alter
--	 * the childs environment as they see fit
--	 */
--	ssh_gssapi_do_child(&env, &envsize);
--#endif
--
- 	if (!options.use_login) {
- 		/* Set basic environment. */
- 		for (i = 0; i < s->num_env; i++)
 @@ -997,18 +1004,13 @@ do_setup_env(Session *s, const char *she
  	if (original_command)
  		child_set_env(&env, &envsize, "SSH_ORIGINAL_COMMAND",
  		    original_command);
--#ifdef KRB5
--	if (s->authctxt->krb5_ticket_file)
--		child_set_env(&env, &envsize, "KRB5CCNAME",
--		    s->authctxt->krb5_ticket_file);
--#endif
  	if (auth_sock_name != NULL)
  		child_set_env(&env, &envsize, SSH_AUTHSOCKET_ENV_NAME,
  		    auth_sock_name);
@@ -4379,32 +3096,6 @@ diff -up src/usr.bin/ssh/session.c:1.1.1.18 src/usr.bin/ssh/session.c:1.24
  	 */
  	environ = env;
  
--#ifdef KRB5
--	/*
--	 * At this point, we check to see if AFS is active and if we have
--	 * a valid Kerberos 5 TGT. If so, it seems like a good idea to see
--	 * if we can (and need to) extend the ticket into an AFS token. If
--	 * we don't do this, we run into potential problems if the user's
--	 * home directory is in AFS and it's not world-readable.
--	 */
--
--	if (options.kerberos_get_afs_token && k_hasafs() &&
--	    (s->authctxt->krb5_ctx != NULL)) {
--		char cell[64];
--
--		debug("Getting AFS token");
--
--		k_setpag();
--
--		if (k_afs_cell_of_file(pw->pw_dir, cell, sizeof(cell)) == 0)
--			krb5_afslog(s->authctxt->krb5_ctx,
--			    s->authctxt->krb5_fwd_ccache, cell, NULL);
--
--		krb5_afslog_home(s->authctxt->krb5_ctx,
--		    s->authctxt->krb5_fwd_ccache, NULL, NULL, pw->pw_dir);
--	}
--#endif
--
  	/* Change current directory to the user's home directory. */
  	if (chdir(pw->pw_dir) < 0) {
  		/* Suppress missing homedir warning for chroot case */
@@ -4477,25 +3168,6 @@ diff -up src/usr.bin/ssh/session.c:1.1.1.18 src/usr.bin/ssh/session.c:1.24
  	 * different than the DISPLAY string for localhost displays.
  	 */
  	if (options.x11_use_localhost) {
-@@ -2293,16 +2279,6 @@ do_cleanup(Authctxt *authctxt)
- 
- 	if (authctxt == NULL || !authctxt->authenticated)
- 		return;
--#ifdef KRB5
--	if (options.kerberos_ticket_cleanup &&
--	    authctxt->krb5_ctx)
--		krb5_cleanup_proc(authctxt);
--#endif
--
--#ifdef GSSAPI
--	if (compat20 && options.gss_cleanup_creds)
--		ssh_gssapi_cleanup_creds();
--#endif
- 
- 	/* remove agent socket */
- 	auth_sock_cleanup_proc(authctxt->pw);
-Index: src/usr.bin/ssh/sftp-client.c
-diff -up src/usr.bin/ssh/sftp-client.c:1.1.1.15 src/usr.bin/ssh/sftp-client.c:1.18
 --- src/usr.bin/ssh/sftp-client.c:1.1.1.15	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/sftp-client.c	Thu Oct 31 21:07:13 2013
 @@ -1,5 +1,7 @@
@@ -4518,15 +3190,6 @@ diff -up src/usr.bin/ssh/sftp-client.c:1.1.1.15 src/usr.bin/ssh/sftp-client.c:1.
 -#include <sys/param.h>
  #include <sys/statvfs.h>
  #include <sys/uio.h>
- 
-@@ -48,6 +49,8 @@
- #include "sftp-common.h"
- #include "sftp-client.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/sftp-client.c,v 1.18 2013/10/31 20:07:13 tg Exp $");
-+
- extern volatile sig_atomic_t interrupted;
- extern int showprogress;
  
 @@ -72,7 +75,7 @@ struct sftp_conn {
  
@@ -4573,43 +3236,8 @@ diff -up src/usr.bin/ssh/sftp-client.h:1.1.1.5 src/usr.bin/ssh/sftp-client.h:1.2
  
  /* Get statistics for filesystem hosting file at "path" */
  int do_statvfs(struct sftp_conn *, const char *, struct sftp_statvfs *, int);
-Index: src/usr.bin/ssh/sftp-common.c
-diff -up src/usr.bin/ssh/sftp-common.c:1.1.1.4 src/usr.bin/ssh/sftp-common.c:1.4
---- src/usr.bin/ssh/sftp-common.c:1.1.1.4	Wed Sep 20 21:06:49 2006
-+++ src/usr.bin/ssh/sftp-common.c	Wed Sep 20 23:41:04 2006
-@@ -24,9 +24,8 @@
-  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  */
- 
--#include <sys/types.h>
--#include <sys/stat.h>
- #include <sys/param.h>
-+#include <sys/stat.h>
- 
- #include <grp.h>
- #include <pwd.h>
-@@ -42,6 +41,8 @@
- #include "sftp.h"
- #include "sftp-common.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/sftp-common.c,v 1.4 2006/09/20 21:41:04 tg Exp $");
-+
- /* Clear contents of attributes structure */
- void
- attrib_clear(Attrib *a)
-Index: src/usr.bin/ssh/sftp-glob.c
-diff -up src/usr.bin/ssh/sftp-glob.c:1.1.1.4 src/usr.bin/ssh/sftp-glob.c:1.6
 --- src/usr.bin/ssh/sftp-glob.c:1.1.1.4	Wed Sep 20 21:06:49 2006
 +++ src/usr.bin/ssh/sftp-glob.c	Fri Oct  8 22:18:55 2010
-@@ -28,6 +28,8 @@
- #include "sftp-common.h"
- #include "sftp-client.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/sftp-glob.c,v 1.6 2010/10/08 20:18:55 tg Exp $");
-+
- int remote_glob(struct sftp_conn *, const char *, int,
-     int (*)(const char *, int), glob_t *);
- 
 @@ -118,5 +120,6 @@ remote_glob(struct sftp_conn *conn, cons
  	memset(&cur, 0, sizeof(cur));
  	cur.conn = conn;
@@ -4639,8 +3267,6 @@ diff -up src/usr.bin/ssh/sftp-server.c:1.1.1.13 src/usr.bin/ssh/sftp-server.c:1.
  #include "sftp.h"
  #include "sftp-common.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/sftp-server.c,v 1.12 2009/10/04 14:29:08 tg Exp $");
-+
 +extern const char *__progname;
 +
  /* helper */
@@ -4687,8 +3313,6 @@ diff -up src/usr.bin/ssh/sftp.1:1.1.1.6 src/usr.bin/ssh/sftp.1:1.8
  .It ControlMaster
  .It ControlPath
  .It GlobalKnownHostsFile
--.It GSSAPIAuthentication
--.It GSSAPIDelegateCredentials
  .It HashKnownHosts
  .It Host
  .It HostbasedAuthentication
@@ -4721,8 +3345,6 @@ diff -up src/usr.bin/ssh/sftp.c:1.1.1.17 src/usr.bin/ssh/sftp.c:1.22
  #include "sftp-common.h"
  #include "sftp-client.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/sftp.c,v 1.22 2010/10/08 20:18:55 tg Exp $");
-+
 +extern const char *__progname;
 +
  /* File to read commands from */
@@ -4900,8 +3522,6 @@ diff -up src/usr.bin/ssh/ssh-add.c:1.1.1.10 src/usr.bin/ssh/ssh-add.c:1.8
  #include "pathnames.h"
  #include "misc.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/ssh-add.c,v 1.8 2009/10/04 14:29:09 tg Exp $");
-+
  /* argv0 */
  extern char *__progname;
  
@@ -5003,15 +3623,6 @@ diff -up src/usr.bin/ssh/ssh-agent.c:1.1.1.14 src/usr.bin/ssh/ssh-agent.c:1.18
  
  #include <openssl/evp.h>
  #include <openssl/md5.h>
-@@ -66,6 +66,8 @@
- #include "log.h"
- #include "misc.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/ssh-agent.c,v 1.18 2013/10/31 20:07:14 tg Exp $");
-+
- #ifdef SMARTCARD
- #include "scard.h"
- #endif
 @@ -297,7 +299,6 @@ process_sign_request2(SocketEntry *e)
  {
  	u_char *blob, *data, *signature = NULL;
@@ -5179,15 +3790,6 @@ diff -up src/usr.bin/ssh/ssh-keygen.c:1.1.1.18 src/usr.bin/ssh/ssh-keygen.c:1.24
  
  #include <errno.h>
  #include <fcntl.h>
-@@ -45,6 +45,8 @@
- #include "scard.h"
- #endif
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/ssh-keygen.c,v 1.24 2014/03/12 23:19:37 tg Exp $");
-+
- /* Number of bits in the RSA/DSA key.  This value can be set on the command line. */
- #define DEFAULT_BITS		2048
- #define DEFAULT_BITS_DSA	1024
 @@ -96,7 +98,7 @@ int convert_from_ssh2 = 0;
  int print_public = 0;
  int print_generic = 0;
@@ -5320,15 +3922,6 @@ diff -up src/usr.bin/ssh/ssh-keyscan.c:1.1.1.12 src/usr.bin/ssh/ssh-keyscan.c:1.
  #include <sys/socket.h>
  #include <sys/queue.h>
  #include <sys/time.h>
-@@ -41,6 +42,8 @@
- #include "misc.h"
- #include "hostfile.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/ssh-keyscan.c,v 1.9 2009/03/22 15:01:21 tg Exp $");
-+
- /* Flag indicating whether IPv4 or IPv6.  This can be set on the command line.
-    Default value is AF_UNSPEC means both IPv4 and IPv6. */
- int IPv4or6 = AF_UNSPEC;
 @@ -315,7 +318,7 @@ keygrab_ssh1(con *c)
  	return (rsa);
  }
@@ -5361,15 +3954,6 @@ Index: src/usr.bin/ssh/ssh-keysign.c
 diff -up src/usr.bin/ssh/ssh-keysign.c:1.1.1.5 src/usr.bin/ssh/ssh-keysign.c:1.7
 --- src/usr.bin/ssh/ssh-keysign.c:1.1.1.5	Wed Sep 20 21:06:50 2006
 +++ src/usr.bin/ssh/ssh-keysign.c	Thu Mar 13 05:46:47 2014
-@@ -50,6 +50,8 @@
- #include "readconf.h"
- #include "uidswap.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/ssh-keysign.c,v 1.7 2014/03/13 04:46:47 tg Exp $");
-+
- /* XXX readconf.c needs these */
- uid_t original_real_uid;
- 
 @@ -141,7 +143,7 @@ valid_request(struct passwd *pw, char *h
  }
  
@@ -5477,24 +4061,10 @@ diff -up src/usr.bin/ssh/ssh.1:1.1.1.17 src/usr.bin/ssh/ssh.1:1.29
  for protocol version 2.
  Identity files may also be specified on
  a per-host basis in the configuration file.
-@@ -307,11 +310,6 @@ It is possible to have multiple
- .Fl i
- options (and multiple identities specified in
- configuration files).
--.It Fl K
--Enables GSSAPI-based authentication and forwarding (delegation) of GSSAPI
--credentials to the server.
--.It Fl k
--Disables forwarding (delegation) of GSSAPI credentials to the server.
- .It Fl L Xo
- .Sm off
- .Oo Ar bind_address : Oc
 @@ -450,14 +448,12 @@ For full details of the options listed b
  .It ForwardX11Trusted
  .It GatewayPorts
  .It GlobalKnownHostsFile
--.It GSSAPIAuthentication
--.It GSSAPIDelegateCredentials
  .It HashKnownHosts
  .It Host
  .It HostbasedAuthentication
@@ -5524,7 +4094,6 @@ diff -up src/usr.bin/ssh/ssh.1:1.1.1.17 src/usr.bin/ssh/ssh.1:1.29
  integrity of the connection.
  .Pp
  The methods available for authentication are:
--GSSAPI-based authentication,
  host-based authentication,
  public key authentication,
  challenge-response authentication,
@@ -5800,15 +4369,6 @@ diff -up src/usr.bin/ssh/ssh.c:1.1.1.20 src/usr.bin/ssh/ssh.c:1.30
  
  #include <ctype.h>
  #include <errno.h>
-@@ -97,6 +98,8 @@
- #include "scard.h"
- #endif
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/ssh.c,v 1.30 2013/10/31 20:07:14 tg Exp $");
-+
- extern char *__progname;
- 
- /* Flag indicating whether debug mode is on.  May be set on the command line. */
 @@ -134,7 +137,7 @@ char *config = NULL;
  
  /*
@@ -5861,18 +4421,6 @@ diff -up src/usr.bin/ssh/ssh.c:1.1.1.20 src/usr.bin/ssh/ssh.c:1.30
  	    "ACD:F:I:KL:MNO:PR:S:TVw:XYy")) != -1) {
  		switch (opt) {
  		case '1':
-@@ -317,11 +314,7 @@ main(int ac, char **av)
- 			options.forward_agent = 1;
- 			break;
- 		case 'k':
--			options.gss_deleg_creds = 0;
--			break;
- 		case 'K':
--			options.gss_authentication = 1;
--			options.gss_deleg_creds = 1;
- 			break;
- 		case 'i':
- 			if (stat(optarg, &st) < 0) {
 @@ -412,7 +405,7 @@ main(int ac, char **av)
  				else if (options.cipher == SSH_CIPHER_BLOWFISH)
  					options.ciphers = "blowfish-cbc";
@@ -5964,56 +4512,6 @@ diff -up src/usr.bin/ssh/ssh.h:1.1.1.3 src/usr.bin/ssh/ssh.h:1.4
   * Current value permits 16kbit RSA and RSA1 keys and 8kbit DSA keys, with
   * some room for options and comments.
   */
-Index: src/usr.bin/ssh/ssh1.h
-diff -up src/usr.bin/ssh/ssh1.h:1.1.1.2 src/usr.bin/ssh/ssh1.h:1.3
---- src/usr.bin/ssh/ssh1.h:1.1.1.2	Wed Apr 19 12:15:05 2006
-+++ src/usr.bin/ssh/ssh1.h	Wed Apr 19 12:40:55 2006
-@@ -1,3 +1,4 @@
-+/* $MirOS: src/usr.bin/ssh/ssh1.h,v 1.3 2006/04/19 10:40:55 tg Exp $ */
- /* $OpenBSD: ssh1.h,v 1.6 2006/03/25 22:22:43 djm Exp $ */
- 
- /*
-@@ -64,10 +65,6 @@
- #define SSH_CMSG_AUTH_TIS			39	/* we use this for s/key */
- #define SSH_SMSG_AUTH_TIS_CHALLENGE		40	/* challenge (string) */
- #define SSH_CMSG_AUTH_TIS_RESPONSE		41	/* response (string) */
--#define SSH_CMSG_AUTH_KERBEROS			42	/* (KTEXT) */
--#define SSH_SMSG_AUTH_KERBEROS_RESPONSE		43	/* (KTEXT) */
--#define SSH_CMSG_HAVE_KERBEROS_TGT		44	/* credentials (s) */
--#define SSH_CMSG_HAVE_AFS_TOKEN			65	/* token (s) */
- 
- /* protocol version 1.5 overloads some version 1.3 message types */
- #define SSH_MSG_CHANNEL_INPUT_EOF	SSH_MSG_CHANNEL_CLOSE
-@@ -82,10 +79,7 @@
- #define SSH_AUTH_PASSWORD	3
- #define SSH_AUTH_RHOSTS_RSA	4
- #define SSH_AUTH_TIS		5
--#define SSH_AUTH_KERBEROS	6
--#define SSH_PASS_KERBEROS_TGT	7
- 				/* 8 to 15 are reserved */
--#define SSH_PASS_AFS_TOKEN	21
- 
- /* Protocol flags.  These are bit masks. */
- #define SSH_PROTOFLAG_SCREEN_NUMBER	1	/* X11 forwarding includes screen */
-Index: src/usr.bin/ssh/ssh2.h
-diff -up src/usr.bin/ssh/ssh2.h:1.1.1.3 src/usr.bin/ssh/ssh2.h:1.2
---- src/usr.bin/ssh/ssh2.h:1.1.1.3	Tue Dec 16 21:15:34 2008
-+++ src/usr.bin/ssh/ssh2.h	Fri Mar 28 23:31:58 2014
-@@ -111,12 +111,6 @@
- #define SSH2_MSG_USERAUTH_PASSWD_CHANGEREQ		60
- #define SSH2_MSG_USERAUTH_INFO_REQUEST			60
- #define SSH2_MSG_USERAUTH_INFO_RESPONSE			61
--#define SSH2_MSG_USERAUTH_JPAKE_CLIENT_STEP1		60
--#define SSH2_MSG_USERAUTH_JPAKE_SERVER_STEP1		61
--#define SSH2_MSG_USERAUTH_JPAKE_CLIENT_STEP2		62
--#define SSH2_MSG_USERAUTH_JPAKE_SERVER_STEP2		63
--#define SSH2_MSG_USERAUTH_JPAKE_CLIENT_CONFIRM		64
--#define SSH2_MSG_USERAUTH_JPAKE_SERVER_CONFIRM		65
- 
- /* connection protocol: generic */
- 
-Index: src/usr.bin/ssh/ssh_config
-diff -up src/usr.bin/ssh/ssh_config:1.1.1.7 src/usr.bin/ssh/ssh_config:1.20
 --- src/usr.bin/ssh/ssh_config:1.1.1.7	Sun Mar 22 13:03:00 2009
 +++ src/usr.bin/ssh/ssh_config	Tue Nov 24 22:22:18 2009
 @@ -1,4 +1,6 @@
@@ -6203,16 +4701,6 @@ diff -up src/usr.bin/ssh/ssh_config.5:1.1.1.18 src/usr.bin/ssh/ssh_config.5:1.26
  Specifies a file to use for the global
  host key database instead of
  .Pa /etc/ssh/ssh_known_hosts .
--.It Cm GSSAPIAuthentication
--Specifies whether user authentication based on GSSAPI is allowed.
--The default is
--.Dq no .
--Note that this option applies to protocol version 2 only.
--.It Cm GSSAPIDelegateCredentials
--Forward (delegate) credentials to the server.
--The default is
--.Dq no .
--Note that this option applies to protocol version 2 only.
  .It Cm HashKnownHosts
  Indicates that
  .Xr ssh 1
@@ -6339,18 +4827,6 @@ Index: src/usr.bin/ssh/sshconnect.c
 diff -up src/usr.bin/ssh/sshconnect.c:1.1.1.17 src/usr.bin/ssh/sshconnect.c:1.18
 --- src/usr.bin/ssh/sshconnect.c:1.1.1.17	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/sshconnect.c	Thu Jan 14 20:23:04 2016
-@@ -47,9 +47,10 @@
- #include "atomicio.h"
- #include "misc.h"
- #include "dns.h"
--#include "roaming.h"
- #include "version.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/sshconnect.c,v 1.18 2016/01/14 19:23:04 tg Exp $");
-+
- char *client_version_string = NULL;
- char *server_version_string = NULL;
- 
 @@ -444,7 +445,7 @@ ssh_exchange_identification(int timeout_
  				}
  			}
@@ -6424,24 +4900,6 @@ Index: src/usr.bin/ssh/sshconnect1.c
 diff -up src/usr.bin/ssh/sshconnect1.c:1.1.1.7 src/usr.bin/ssh/sshconnect1.c:1.11
 --- src/usr.bin/ssh/sshconnect1.c:1.1.1.7	Thu Nov  9 03:38:02 2006
 +++ src/usr.bin/ssh/sshconnect1.c	Thu Mar 13 00:35:12 2014
-@@ -17,7 +17,7 @@
- #include <sys/socket.h>
- 
- #include <openssl/bn.h>
--#include <openssl/md5.h>
-+#include <md5.h>
- 
- #include <stdio.h>
- #include <stdlib.h>
-@@ -45,6 +45,8 @@
- #include "hostfile.h"
- #include "auth.h"
- 
-+__RCSID("$MirOS: src/usr.bin/ssh/sshconnect1.c,v 1.11 2014/03/12 23:35:12 tg Exp $");
-+
- /* Session id for the current session. */
- u_char session_id[16];
- u_int supported_authentications = 0;
 @@ -176,10 +178,10 @@ respond_to_rsa_challenge(BIGNUM * challe
  
  	memset(buf, 0, sizeof(buf));
@@ -6496,24 +4954,6 @@ Index: src/usr.bin/ssh/sshconnect2.c
 diff -up src/usr.bin/ssh/sshconnect2.c:1.1.1.13 src/usr.bin/ssh/sshconnect2.c:1.18
 --- src/usr.bin/ssh/sshconnect2.c:1.1.1.13	Sun Mar 22 13:03:00 2009
 +++ src/usr.bin/ssh/sshconnect2.c	Tue May 15 22:49:59 2018
-@@ -62,12 +62,12 @@
- #include "msg.h"
- #include "pathnames.h"
- #include "uidswap.h"
--#include "schnorr.h"
--#include "jpake.h"
- 
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
-+__RCSID("$MirOS: src/usr.bin/ssh/sshconnect2.c,v 1.18 2018/05/15 20:49:59 tg Exp $");
-+
-+/* for now */
-+extern const EVP_MD *evp_ssh_sha256(void);
-+#define EVP_sha256 evp_ssh_sha256
- 
- /* import */
- extern char *client_version_string;
 @@ -196,7 +196,7 @@ struct Authctxt {
  	void *methoddata;
  };
@@ -6532,87 +4972,8 @@ diff -up src/usr.bin/ssh/sshconnect2.c:1.1.1.13 src/usr.bin/ssh/sshconnect2.c:1.
  void	input_userauth_info_req(int, u_int32_t, void *);
  void	input_userauth_pk_ok(int, u_int32_t, void *);
  void	input_userauth_passwd_changereq(int, u_int32_t, void *);
--void	input_userauth_jpake_server_step1(int, u_int32_t, void *);
--void	input_userauth_jpake_server_step2(int, u_int32_t, void *);
--void	input_userauth_jpake_server_confirm(int, u_int32_t, void *);
- 
- int	userauth_none(Authctxt *);
- int	userauth_pubkey(Authctxt *);
- int	userauth_passwd(Authctxt *);
- int	userauth_kbdint(Authctxt *);
- int	userauth_hostbased(Authctxt *);
--int	userauth_jpake(Authctxt *);
--
--void	userauth_jpake_cleanup(Authctxt *);
--
--#ifdef GSSAPI
--int	userauth_gssapi(Authctxt *authctxt);
--void	input_gssapi_response(int type, u_int32_t, void *);
--void	input_gssapi_token(int type, u_int32_t, void *);
--void	input_gssapi_hash(int type, u_int32_t, void *);
--void	input_gssapi_error(int, u_int32_t, void *);
--void	input_gssapi_errtok(int, u_int32_t, void *);
--#endif
- 
- void	userauth(Authctxt *, char *);
- 
-@@ -244,13 +229,6 @@ static Authmethod *authmethod_lookup(con
- static char *authmethods_get(void);
- 
- Authmethod authmethods[] = {
--#ifdef GSSAPI
--	{"gssapi-with-mic",
--		userauth_gssapi,
--		NULL,
--		&options.gss_authentication,
--		NULL},
--#endif
- 	{"hostbased",
- 		userauth_hostbased,
- 		NULL,
-@@ -408,7 +379,7 @@ input_userauth_banner(int type, u_int32_
- 		if (len > 65536)
- 			len = 65536;
- 		msg = xmalloc(len * 4 + 1); /* max expansion from strnvis() */
--		strnvis(msg, raw, len * 4 + 1, VIS_SAFE|VIS_OCTAL);
-+		strnvis(msg, raw, len * 4 + 1, VIS_SAFE|VIS_OCTAL|VIS_NOSLASH|VIS_UTF8);
- 		fprintf(stderr, "%s", msg);
- 		xfree(msg);
- 	}
-@@ -527,237 +498,6 @@ done:
- 		userauth(authctxt, NULL);
- }
- 
--#ifdef GSSAPI
--	//…
--#endif /* GSSAPI */
--
- int
- userauth_none(Authctxt *authctxt)
- {
-Index: src/usr.bin/ssh/sshd.8
-diff -up src/usr.bin/ssh/sshd.8:1.1.1.14 src/usr.bin/ssh/sshd.8:1.20
 --- src/usr.bin/ssh/sshd.8:1.1.1.14	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/sshd.8	Sat Jan 15 22:52:44 2011
-@@ -34,8 +34,9 @@
- .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- .\"
-+.\" $MirOS: src/usr.bin/ssh/sshd.8,v 1.20 2011/01/15 21:52:44 tg Exp $
- .\" $OpenBSD: sshd.8,v 1.248 2009/03/26 08:38:39 sobrado Exp $
--.Dd $Mdocdate: October 4 2009 $
-+.Dd $Mdocdate: January 15 2011 $
- .Dt SSHD 8
- .Os
- .Sh NAME
-@@ -166,6 +167,7 @@ and
- for protocol version 2.
- It is possible to have multiple host key files for
- the different protocol versions and host key algorithms.
-+.br
- .It Fl i
- Specifies that
- .Nm
 @@ -271,6 +273,12 @@ For both protocols,
  each host has a host-specific key,
  normally 2048 bits,
@@ -6803,22 +5164,10 @@ Index: src/usr.bin/ssh/sshd.c
 diff -up src/usr.bin/ssh/sshd.c:1.1.1.16 src/usr.bin/ssh/sshd.c:1.24
 --- src/usr.bin/ssh/sshd.c:1.1.1.16	Sun Oct  4 15:25:45 2009
 +++ src/usr.bin/ssh/sshd.c	Thu May  3 03:32:46 2018
-@@ -64,7 +64,7 @@
- 
- #include <openssl/dh.h>
- #include <openssl/bn.h>
--#include <openssl/md5.h>
-+#include <md5.h>
- #include <openssl/rand.h>
- 
- #include "xmalloc.h"
 @@ -97,19 +97,10 @@
  #include "session.h"
  #include "monitor_mm.h"
  #include "monitor.h"
--#ifdef GSSAPI
--#include "ssh-gss.h"
--#endif
  #include "monitor_wrap.h"
 -#include "roaming.h"
  #include "version.h"
@@ -7216,24 +5565,6 @@ diff -up src/usr.bin/ssh/sshd_config.5:1.1.1.18 src/usr.bin/ssh/sshd_config.5:1.
  if present.
  The command is invoked by using the user's login shell with the -c option.
  This applies to shell, command, or subsystem execution.
-@@ -375,17 +386,6 @@ to force remote port forwardings to bind
- to allow the client to select the address to which the forwarding is bound.
- The default is
- .Dq no .
--.It Cm GSSAPIAuthentication
--Specifies whether user authentication based on GSSAPI is allowed.
--The default is
--.Dq no .
--Note that this option applies to protocol version 2 only.
--.It Cm GSSAPICleanupCredentials
--Specifies whether to automatically destroy the user's credentials cache
--on logout.
--The default is
--.Dq yes .
--Note that this option applies to protocol version 2 only.
- .It Cm HostbasedAuthentication
- Specifies whether rhosts or /etc/hosts.equiv authentication together
- with successful public key client host authentication is allowed
 @@ -415,13 +415,16 @@ The default is
  .It Cm HostKey
  Specifies a file containing a private host key
@@ -7264,31 +5595,6 @@ diff -up src/usr.bin/ssh/sshd_config.5:1.1.1.18 src/usr.bin/ssh/sshd_config.5:1.
  .Cm HostbasedAuthentication .
  The default is
  .Dq no .
--.It Cm KerberosAuthentication
--Specifies whether the password provided by the user for
--.Cm PasswordAuthentication
--will be validated through the Kerberos KDC.
--To use this option, the server needs a
--Kerberos servtab which allows the verification of the KDC's identity.
--The default is
--.Dq no .
--.It Cm KerberosGetAFSToken
--If AFS is active and the user has a Kerberos 5 TGT, attempt to acquire
--an AFS token before accessing the user's home directory.
--The default is
--.Dq no .
--.It Cm KerberosOrLocalPasswd
--If password authentication through Kerberos fails then
--the password will be validated via any additional local mechanism
--such as
--.Pa /etc/passwd .
--The default is
--.Dq yes .
--.It Cm KerberosTicketCleanup
--Specifies whether to automatically destroy the user's ticket cache
--file on logout.
--The default is
--.Dq yes .
  .It Cm KeyRegenerationInterval
  In protocol version 1, the ephemeral server key is automatically regenerated
  after this many seconds (if it has been used).
@@ -7361,8 +5667,6 @@ diff -up src/usr.bin/ssh/sshlogin.c:1.1.1.4 src/usr.bin/ssh/sshlogin.c:1.7
  #include "buffer.h"
  #include "servconf.h"
  
-+__RCSID("$MirOS: src/usr.bin/ssh/sshlogin.c,v 1.7 2013/10/31 20:07:15 tg Exp $");
-+
  extern Buffer loginmsg;
  extern ServerOptions options;
  
@@ -7491,8 +5795,6 @@ diff -up src/usr.bin/ssh/umac.c:1.1.1.3 src/usr.bin/ssh/umac.c:1.7
 +#include "xmalloc.h"
 +#include "umac.h"
 +#include "misc.h"
-+
-+__RCSID("$MirOS: src/usr.bin/ssh/umac.c,v 1.7 2017/04/08 17:05:44 tg Exp $");
 +
  /* ---------------------------------------------------------------------- */
  /* --- Primitive Data Types ---                                           */

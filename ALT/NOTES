@@ -1,6 +1,8 @@
 - EVP_sha256 now exists
 - use -DNO_BSDAUTH instead of -DBSD_AUTH next time
 
+sync flags in manpage, getopt, switch, usage
+
 .Bk -words
 
 .It Fl … doesn’t warn about too many arguments
