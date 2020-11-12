@@ -2141,8 +2141,6 @@ fill_default_options(Options * options)
 	if (options->num_identity_files == 0) {
 		add_identity_file(options, "~/", _PATH_SSH_CLIENT_ID_RSA, 0);
 		add_identity_file(options, "~/", _PATH_SSH_CLIENT_ID_DSA, 0);
-		add_identity_file(options, "~/",
-		    _PATH_SSH_CLIENT_ID_ED25519, 0);
 		add_identity_file(options, "~/", _PATH_SSH_CLIENT_ID_XMSS, 0);
 	}
 	if (options->escape_char == -1)

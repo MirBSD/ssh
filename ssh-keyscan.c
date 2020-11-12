@@ -50,14 +50,13 @@ int ssh_port = SSH_DEFAULT_PORT;
 
 #define KT_DSA		(1)
 #define KT_RSA		(1<<1)
-#define KT_ED25519	(1<<3)
-#define KT_XMSS		(1<<4)
+#define KT_XMSS		(1<<2)
 
 #define KT_MIN		KT_DSA
-#define KT_MAX		KT_ED25519
+#define KT_MAX		KT_XMSS
 
 int get_cert = 0;
-int get_keytypes = KT_RSA|KT_ED25519;
+int get_keytypes = KT_RSA;
 
 int hash_hosts = 0;		/* Hash hostname on output */
 
@@ -223,10 +222,6 @@ keygrab_ssh2(con *c)
 		    "rsa-sha2-256,"
 		    "ssh-rsa";
 		break;
-	case KT_ED25519:
-		myproposal[PROPOSAL_SERVER_HOST_KEY_ALGS] = get_cert ?
-		    "ssh-ed25519-cert-v01@openssh.com" : "ssh-ed25519";
-		break;
 	case KT_XMSS:
 		myproposal[PROPOSAL_SERVER_HOST_KEY_ALGS] = get_cert ?
 		    "ssh-xmss-cert-v01@openssh.com" : "ssh-xmss@openssh.com";
@@ -248,8 +243,6 @@ keygrab_ssh2(con *c)
 	c->c_ssh->kex->kex[KEX_DH_GEX_SHA1] = kexgex_client;
 	c->c_ssh->kex->kex[KEX_DH_GEX_SHA256] = kexgex_client;
 	c->c_ssh->kex->kex[KEX_ECDH_SHA2] = kex_gen_client;
-	c->c_ssh->kex->kex[KEX_C25519_SHA256] = kex_gen_client;
-	c->c_ssh->kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_client;
 	ssh_set_verify_host_key_callback(c->c_ssh, key_print_wrapper);
 	/*
 	 * do the key-exchange until an error occurs or until
@@ -684,9 +677,6 @@ main(int argc, char **argv)
 					break;
 				case KEY_RSA:
 					get_keytypes |= KT_RSA;
-					break;
-				case KEY_ED25519:
-					get_keytypes |= KT_ED25519;
 					break;
 				case KEY_XMSS:
 					get_keytypes |= KT_XMSS;

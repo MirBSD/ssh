@@ -232,10 +232,6 @@ ask_filename(struct passwd *pw, const char *prompt)
 		case KEY_RSA:
 			name = _PATH_SSH_CLIENT_ID_RSA;
 			break;
-		case KEY_ED25519:
-		case KEY_ED25519_CERT:
-			name = _PATH_SSH_CLIENT_ID_ED25519;
-			break;
 		case KEY_XMSS:
 		case KEY_XMSS_CERT:
 			name = _PATH_SSH_CLIENT_ID_XMSS;
@@ -956,7 +952,6 @@ do_gen_all_hostkeys(struct passwd *pw)
 	} key_types[] = {
 		{ "rsa", "RSA" ,_PATH_HOST_RSA_KEY_FILE },
 		{ "dsa", "DSA", _PATH_HOST_DSA_KEY_FILE },
-		{ "ed25519", "ED25519",_PATH_HOST_ED25519_KEY_FILE },
 #ifdef WITH_XMSS
 		{ "xmss", "XMSS",_PATH_HOST_XMSS_KEY_FILE },
 #endif /* WITH_XMSS */
@@ -1442,7 +1437,7 @@ do_change_comment(struct passwd *pw, const char *identity_comment)
 		}
 	}
 
-	if (private->type != KEY_ED25519 && private->type != KEY_XMSS &&
+	if (private->type != KEY_XMSS &&
 	    private_key_format != SSHKEY_PRIVATE_OPENSSH) {
 		error("Comments are only supported for keys stored in "
 		    "the new format (-o).");
@@ -2800,7 +2795,7 @@ usage(void)
 	fprintf(stderr,
 	    "usage: ssh-keygen [-q] [-a rounds] [-b bits] [-C comment] [-f output_keyfile]\n"
 	    "                  [-m format] [-N new_passphrase] [-O option]\n"
-	    "                  [-t dsa | ed25519 | rsa]\n"
+	    "                  [-t dsa | rsa]\n"
 	    "       ssh-keygen -p [-a rounds] [-f keyfile] [-m format] [-N new_passphrase]\n"
 	    "                   [-P old_passphrase]\n"
 	    "       ssh-keygen -i [-f input_keyfile] [-m key_format]\n"
@@ -3208,9 +3203,6 @@ main(int argc, char **argv)
 			    print_generic);
 			n += do_print_resource_record(pw,
 			    _PATH_HOST_DSA_KEY_FILE, rr_hostname,
-			    print_generic);
-			n += do_print_resource_record(pw,
-			    _PATH_HOST_ED25519_KEY_FILE, rr_hostname,
 			    print_generic);
 			n += do_print_resource_record(pw,
 			    _PATH_HOST_XMSS_KEY_FILE, rr_hostname,

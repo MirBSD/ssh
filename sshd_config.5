@@ -378,7 +378,7 @@ Specifies which algorithms are allowed for signing of certificates
 by certificate authorities (CAs).
 The default is:
 .Bd -literal -offset indent
-ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
+rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
 Certificates signed using other algorithms will not be accepted for
@@ -481,13 +481,10 @@ aes256-ctr
 aes128-gcm@openssh.com
 .It
 aes256-gcm@openssh.com
-.It
-chacha20-poly1305@openssh.com
 .El
 .Pp
 The default is:
 .Bd -literal -offset indent
-chacha20-poly1305@openssh.com,
 aes128-ctr,aes192-ctr,aes256-ctr,
 aes128-gcm@openssh.com,aes256-gcm@openssh.com
 .Ed
@@ -676,11 +673,9 @@ character, then the specified key types will be placed at the head of the
 default set.
 The default for this option is:
 .Bd -literal -offset 3n
-ssh-ed25519-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
-ssh-ed25519,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -721,8 +716,6 @@ is not to load any certificates.
 Specifies a file containing a private host key
 used by SSH.
 The defaults are
-.Pa /etc/ssh/ssh_host_ed25519_key
-and
 .Pa /etc/ssh/ssh_host_rsa_key .
 .Pp
 Note that
@@ -751,11 +744,9 @@ Specifies the host key algorithms
 that the server offers.
 The default for this option is:
 .Bd -literal -offset 3n
-ssh-ed25519-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
-ssh-ed25519,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -909,10 +900,6 @@ The supported algorithms are:
 .Pp
 .Bl -item -compact -offset indent
 .It
-curve25519-sha256
-.It
-curve25519-sha256@libssh.org
-.It
 diffie-hellman-group1-sha1
 .It
 diffie-hellman-group14-sha1
@@ -932,13 +919,10 @@ ecdh-sha2-nistp256
 ecdh-sha2-nistp384
 .It
 ecdh-sha2-nistp521
-.It
-sntrup4591761x25519-sha512@tinyssh.org
 .El
 .Pp
 The default is:
 .Bd -literal -offset indent
-curve25519-sha256,curve25519-sha256@libssh.org,
 ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,
 diffie-hellman-group-exchange-sha256,
 diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,
@@ -1469,11 +1453,9 @@ character, then the specified key types will be placed at the head of the
 default set.
 The default for this option is:
 .Bd -literal -offset 3n
-ssh-ed25519-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
-ssh-ed25519,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp

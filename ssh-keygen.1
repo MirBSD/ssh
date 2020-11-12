@@ -192,7 +192,6 @@ section for details.
 Normally each user wishing to use SSH
 with public key authentication runs this once to create the authentication
 key in
-.Pa ~/.ssh/id_ed25519 ,
 .Pa ~/.ssh/id_dsa
 or
 .Pa ~/.ssh/id_rsa .
@@ -255,7 +254,7 @@ should be placed to be activated.
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl A
-For each of the key types (rsa, dsa and ed25519)
+For each of the key types (rsa or dsa)
 for which host keys
 do not exist, generate the host keys with the default key file path,
 an empty passphrase, default bits for the key type, and default comment.
@@ -279,9 +278,6 @@ Specifies the number of bits in the key to create.
 For RSA keys, the minimum size is 1024 bits and the default is 3072 bits.
 Generally, 3072 bits is considered sufficient.
 DSA keys must be exactly 1024 bits as specified by FIPS 186-2.
-Ed25519 keys have a fixed length and the
-.Fl b
-flag will be ignored.
 .It Fl C Ar comment
 Provides a new comment.
 .It Fl c
@@ -506,8 +502,7 @@ section for details.
 .It Fl t Cm dsa | rsa
 Specifies the type of key to create.
 The possible values are
-.Dq dsa ,
-.Dq ed25519 ,
+.Dq dsa
 or
 .Dq rsa .
 .Pp
@@ -1062,9 +1057,8 @@ user2@example.com namespaces="file" ssh-ed25519 AAA41...
 .Sh FILES
 .Bl -tag -width Ds -compact
 .It Pa ~/.ssh/id_dsa
-.It Pa ~/.ssh/id_ed25519
 .It Pa ~/.ssh/id_rsa
-Contains the DSA, Ed25519 or RSA authentication identity of the user.
+Contains the DSA or RSA authentication identity of the user.
 This file should not be readable by anyone but the user.
 It is possible to
 specify a passphrase when generating the key; that passphrase will be
@@ -1076,9 +1070,8 @@ but it is offered as the default file for the private key.
 will read this file when a login attempt is made.
 .Pp
 .It Pa ~/.ssh/id_dsa.pub
-.It Pa ~/.ssh/id_ed25519.pub
 .It Pa ~/.ssh/id_rsa.pub
-Contains the DSA, Ed25519 or RSA public key for authentication.
+Contains the DSA or RSA public key for authentication.
 The contents of this file should be added to
 .Pa ~/.ssh/authorized_keys
 on all machines

@@ -591,7 +591,6 @@ list_hostkey_types(void)
 			append_hostkey_type(b, "rsa-sha2-256");
 			/* FALLTHROUGH */
 		case KEY_DSA:
-		case KEY_ED25519:
 		case KEY_XMSS:
 			append_hostkey_type(b, sshkey_ssh_name(key));
 			break;
@@ -609,7 +608,6 @@ list_hostkey_types(void)
 			    "rsa-sha2-256-cert-v01@openssh.com");
 			/* FALLTHROUGH */
 		case KEY_DSA_CERT:
-		case KEY_ED25519_CERT:
 		case KEY_XMSS_CERT:
 			append_hostkey_type(b, sshkey_ssh_name(key));
 			break;
@@ -632,7 +630,6 @@ get_hostkey_by_type(int type, int need_private, struct ssh *ssh)
 		switch (type) {
 		case KEY_RSA_CERT:
 		case KEY_DSA_CERT:
-		case KEY_ED25519_CERT:
 		case KEY_XMSS_CERT:
 			key = sensitive_data.host_certificates[i];
 			break;
@@ -1709,7 +1706,6 @@ main(int ac, char **av)
 		switch (keytype) {
 		case KEY_RSA:
 		case KEY_DSA:
-		case KEY_ED25519:
 		case KEY_XMSS:
 			if (have_agent || key != NULL)
 				sensitive_data.have_ssh2_key = 1;
@@ -2170,8 +2166,6 @@ do_ssh2_kex(struct ssh *ssh)
 	kex->kex[KEX_DH_GEX_SHA1] = kexgex_server;
 	kex->kex[KEX_DH_GEX_SHA256] = kexgex_server;
 	kex->kex[KEX_ECDH_SHA2] = kex_gen_server;
-	kex->kex[KEX_C25519_SHA256] = kex_gen_server;
-	kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_server;
 	kex->load_host_public_key=&get_hostkey_public_by_type;
 	kex->load_host_private_key=&get_hostkey_private_by_type;
 	kex->host_key_index=&get_hostkey_index;

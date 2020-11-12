@@ -479,8 +479,6 @@ ssh_add_identity_constrained(int sock, struct sshkey *key,
 	case KEY_RSA_CERT:
 	case KEY_DSA:
 	case KEY_DSA_CERT:
-	case KEY_ED25519:
-	case KEY_ED25519_CERT:
 	case KEY_XMSS:
 	case KEY_XMSS_CERT:
 		type = constrained ?

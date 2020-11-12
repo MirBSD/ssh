@@ -42,10 +42,8 @@ struct sshbuf;
 enum sshkey_types {
 	KEY_RSA,
 	KEY_DSA,
-	KEY_ED25519,
 	KEY_RSA_CERT,
 	KEY_DSA_CERT,
-	KEY_ED25519_CERT,
 	KEY_XMSS,
 	KEY_XMSS_CERT,
 	KEY_UNSPEC
@@ -106,9 +104,6 @@ struct sshkey {
 	RSA	*rsa;
 	/* KEY_DSA */
 	DSA	*dsa;
-	/* KEY_ED25519 */
-	u_char	*ed25519_sk;
-	u_char	*ed25519_pk;
 	/* KEY_XMSS */
 	char	*xmss_name;
 	char	*xmss_filename;	/* for state file updates */
@@ -123,9 +118,6 @@ struct sshkey {
 	u_char	*shield_prekey;
 	size_t	shield_prekey_len;
 };
-
-#define	ED25519_SK_SZ	crypto_sign_ed25519_SECRETKEYBYTES
-#define	ED25519_PK_SZ	crypto_sign_ed25519_PUBLICKEYBYTES
 
 struct sshkey	*sshkey_new(int);
 void		 sshkey_free(struct sshkey *);
@@ -238,11 +230,6 @@ int ssh_rsa_verify(const struct sshkey *key,
 int ssh_dss_sign(const struct sshkey *key, u_char **sigp, size_t *lenp,
     const u_char *data, size_t datalen, u_int compat);
 int ssh_dss_verify(const struct sshkey *key,
-    const u_char *signature, size_t signaturelen,
-    const u_char *data, size_t datalen, u_int compat);
-int ssh_ed25519_sign(const struct sshkey *key, u_char **sigp, size_t *lenp,
-    const u_char *data, size_t datalen, u_int compat);
-int ssh_ed25519_verify(const struct sshkey *key,
     const u_char *signature, size_t signaturelen,
     const u_char *data, size_t datalen, u_int compat);
 int ssh_xmss_sign(const struct sshkey *key, u_char **sigp, size_t *lenp,

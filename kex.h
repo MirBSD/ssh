@@ -44,16 +44,11 @@
 #define	KEX_ECDH_SHA2_NISTP256		"ecdh-sha2-nistp256"
 #define	KEX_ECDH_SHA2_NISTP384		"ecdh-sha2-nistp384"
 #define	KEX_ECDH_SHA2_NISTP521		"ecdh-sha2-nistp521"
-#define	KEX_CURVE25519_SHA256		"curve25519-sha256"
-#define	KEX_CURVE25519_SHA256_OLD	"curve25519-sha256@libssh.org"
-#define	KEX_SNTRUP4591761X25519_SHA512	"sntrup4591761x25519-sha512@tinyssh.org"
 
 #define COMP_NONE	0
 /* pre-auth compression (COMP_ZLIB) is only supported in the client */
 #define COMP_ZLIB	1
 #define COMP_DELAYED	2
-
-#define CURVE25519_SIZE 32
 
 enum kex_init_proposals {
 	PROPOSAL_KEX_ALGS,
@@ -84,8 +79,6 @@ enum kex_exchange {
 	KEX_DH_GEX_SHA1,
 	KEX_DH_GEX_SHA256,
 	KEX_ECDH_SHA2,
-	KEX_C25519_SHA256,
-	KEX_KEM_SNTRUP4591761X25519_SHA512,
 	KEX_MAX
 };
 
@@ -148,9 +141,6 @@ struct kex {
 	/* kex specific state */
 	DH	*dh;			/* DH */
 	u_int	min, max, nbits;	/* GEX */
-	u_char c25519_client_key[CURVE25519_SIZE]; /* 25519 + KEM */
-	u_char c25519_client_pubkey[CURVE25519_SIZE]; /* 25519 */
-	u_char sntrup4591761_client_key[crypto_kem_sntrup4591761_SECRETKEYBYTES]; /* KEM */
 	struct sshbuf *client_pub;
 };
 
@@ -190,17 +180,6 @@ int	 kex_dh_enc(struct kex *, const struct sshbuf *, struct sshbuf **,
     struct sshbuf **);
 int	 kex_dh_dec(struct kex *, const struct sshbuf *, struct sshbuf **);
 
-int	 kex_c25519_keypair(struct kex *);
-int	 kex_c25519_enc(struct kex *, const struct sshbuf *, struct sshbuf **,
-    struct sshbuf **);
-int	 kex_c25519_dec(struct kex *, const struct sshbuf *, struct sshbuf **);
-
-int	 kex_kem_sntrup4591761x25519_keypair(struct kex *);
-int	 kex_kem_sntrup4591761x25519_enc(struct kex *, const struct sshbuf *,
-    struct sshbuf **, struct sshbuf **);
-int	 kex_kem_sntrup4591761x25519_dec(struct kex *, const struct sshbuf *,
-    struct sshbuf **);
-
 int	 kex_dh_keygen(struct kex *);
 int	 kex_dh_compute_key(struct kex *, BIGNUM *, struct sshbuf *);
 
@@ -210,18 +189,6 @@ int	 kexgex_hash(int, const struct sshbuf *, const struct sshbuf *,
     const BIGNUM *, const BIGNUM *, const BIGNUM *,
     const BIGNUM *, const u_char *, size_t,
     u_char *, size_t *);
-
-void	kexc25519_keygen(u_char key[CURVE25519_SIZE], u_char pub[CURVE25519_SIZE])
-	__attribute__((__bounded__(__minbytes__, 1, CURVE25519_SIZE)))
-	__attribute__((__bounded__(__minbytes__, 2, CURVE25519_SIZE)));
-int	kexc25519_shared_key(const u_char key[CURVE25519_SIZE],
-    const u_char pub[CURVE25519_SIZE], struct sshbuf *out)
-	__attribute__((__bounded__(__minbytes__, 1, CURVE25519_SIZE)))
-	__attribute__((__bounded__(__minbytes__, 2, CURVE25519_SIZE)));
-int	kexc25519_shared_key_ext(const u_char key[CURVE25519_SIZE],
-    const u_char pub[CURVE25519_SIZE], struct sshbuf *out, int)
-	__attribute__((__bounded__(__minbytes__, 1, CURVE25519_SIZE)))
-	__attribute__((__bounded__(__minbytes__, 2, CURVE25519_SIZE)));
 
 #if defined(DEBUG_KEX) || defined(DEBUG_KEXDH) || defined(DEBUG_KEXECDH)
 void	dump_digest(const char *, const u_char *, int);

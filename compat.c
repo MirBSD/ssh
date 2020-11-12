@@ -61,7 +61,7 @@ compat_datafellows(const char *version)
 					SSH_BUG_SIGTYPE},
 		{ "OpenSSH_6.6.1*",	SSH_NEW_OPENSSH|SSH_BUG_SIGTYPE},
 		{ "OpenSSH_6.5*,"
-		  "OpenSSH_6.6*",	SSH_NEW_OPENSSH|SSH_BUG_CURVE25519PAD|
+		  "OpenSSH_6.6*",	SSH_NEW_OPENSSH|
 					SSH_BUG_SIGTYPE},
 		{ "OpenSSH_7.0*,"
 		  "OpenSSH_7.1*,"
@@ -186,13 +186,9 @@ compat_pkalg_proposal(char *pkalg_prop)
 char *
 compat_kex_proposal(char *p)
 {
-	if ((datafellows & (SSH_BUG_CURVE25519PAD|SSH_OLD_DHGEX)) == 0)
+	if ((datafellows & (SSH_OLD_DHGEX)) == 0)
 		return p;
 	debug2_f("original KEX proposal: %s", p);
-	if ((datafellows & SSH_BUG_CURVE25519PAD) != 0)
-		if ((p = match_filter_denylist(p,
-		    "curve25519-sha256@libssh.org")) == NULL)
-			fatal("match_filter_denylist failed");
 	if ((datafellows & SSH_OLD_DHGEX) != 0) {
 		if ((p = match_filter_denylist(p,
 		    "diffie-hellman-group-exchange-sha256,"

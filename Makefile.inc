@@ -42,29 +42,15 @@ SRCS_KEX+=	kexdh.c
 SRCS_KEX+=	kexgex.c
 SRCS_KEXC+=	kexgexc.c
 SRCS_KEXS+=	kexgexs.c
-SRCS_KEX+=	kexc25519.c
-SRCS_KEX+=	smult_curve25519_ref.c
 SRCS_KEX+=	kexgen.c
-SRCS_KEX+=	kexsntrup4591761x25519.c
-SRCS_KEX+=	sntrup4591761.c
 
 SRCS_KEY+=	sshkey.c
 SRCS_KEY+=	cipher.c
 SRCS_KEY+=	cipher-ctr.c
-SRCS_KEY+=	chacha.c
-SRCS_KEY+=	poly1305.c
 SRCS_KEY+=	ssh-dss.c
 SRCS_KEY+=	ssh-rsa.c
 SRCS_KEY+=	sshbuf-getput-crypto.c
 SRCS_KEY+=	digest-openssl.c
-SRCS_KEY+=	ssh-ed25519.c
-# ed25519, from supercop
-SRCS_KEY+=	sc25519.c
-SRCS_KEY+=	ge25519.c
-SRCS_KEY+=	fe25519.c
-SRCS_KEY+=	ed25519.c
-SRCS_KEY+=	verify.c
-SRCS_KEY+=	hash.c
 
 SRCS_KEYP+=	authfile.c
 SRCS_KEYP+=	sshbuf-io.c

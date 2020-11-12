@@ -372,7 +372,7 @@ Specifies which algorithms are allowed for signing of certificates
 by certificate authorities (CAs).
 The default is:
 .Bd -literal -offset indent
-ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
+rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
 .Xr ssh 1
@@ -458,12 +458,10 @@ aes192-ctr
 aes256-ctr
 aes128-gcm@openssh.com
 aes256-gcm@openssh.com
-chacha20-poly1305@openssh.com
 .Ed
 .Pp
 The default is:
 .Bd -literal -offset indent
-chacha20-poly1305@openssh.com,
 aes128-ctr,aes192-ctr,aes256-ctr,
 aes128-gcm@openssh.com,aes256-gcm@openssh.com
 .Ed
@@ -822,11 +820,9 @@ character, then the specified key types will be placed at the head of the
 default set.
 The default for this option is:
 .Bd -literal -offset 3n
-ssh-ed25519-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
-ssh-ed25519,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -852,11 +848,9 @@ character, then the specified key types will be placed at the head of the
 default set.
 The default for this option is:
 .Bd -literal -offset 3n
-ssh-ed25519-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
-ssh-ed25519,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp
@@ -935,10 +929,9 @@ section and environment variables as described in the
 .Sx ENVIRONMENT VARIABLES
 section.
 .It Cm IdentityFile
-Specifies a file from which the user's DSA,
-Ed25519 or RSA authentication identity is read.
+Specifies a file from which the user's DSA or
+RSA authentication identity is read.
 The default is
-.Pa ~/.ssh/id_ed25519 ,
 .Pa ~/.ssh/id_dsa
 and
 .Pa ~/.ssh/id_rsa .
@@ -1087,7 +1080,6 @@ character, then the specified methods will be placed at the head of the
 default set.
 The default is:
 .Bd -literal -offset indent
-curve25519-sha256,curve25519-sha256@libssh.org,
 ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,
 diffie-hellman-group-exchange-sha256,
 diffie-hellman-group16-sha512,
@@ -1357,11 +1349,9 @@ character, then the specified key types will be placed at the head of the
 default set.
 The default for this option is:
 .Bd -literal -offset 3n
-ssh-ed25519-cert-v01@openssh.com,
 rsa-sha2-512-cert-v01@openssh.com,
 rsa-sha2-256-cert-v01@openssh.com,
 ssh-rsa-cert-v01@openssh.com,
-ssh-ed25519,
 rsa-sha2-512,rsa-sha2-256,ssh-rsa
 .Ed
 .Pp

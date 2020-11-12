@@ -25,8 +25,6 @@
  */
 
 #define KEX_SERVER_KEX	\
-	"curve25519-sha256," \
-	"curve25519-sha256@libssh.org," \
 	"ecdh-sha2-nistp256," \
 	"ecdh-sha2-nistp384," \
 	"ecdh-sha2-nistp521," \
@@ -38,17 +36,14 @@
 #define KEX_CLIENT_KEX KEX_SERVER_KEX
 
 #define	KEX_DEFAULT_PK_ALG	\
-	"ssh-ed25519-cert-v01@openssh.com," \
 	"rsa-sha2-512-cert-v01@openssh.com," \
 	"rsa-sha2-256-cert-v01@openssh.com," \
 	"ssh-rsa-cert-v01@openssh.com," \
-	"ssh-ed25519," \
 	"rsa-sha2-512," \
 	"rsa-sha2-256," \
 	"ssh-rsa"
 
 #define	KEX_SERVER_ENCRYPT \
-	"chacha20-poly1305@openssh.com," \
 	"aes128-ctr,aes192-ctr,aes256-ctr," \
 	"aes128-gcm@openssh.com,aes256-gcm@openssh.com"
 
@@ -70,7 +65,6 @@
 
 /* Not a KEX value, but here so all the algorithm defaults are together */
 #define	SSH_ALLOWED_CA_SIGALGS	\
-	"ssh-ed25519," \
 	"rsa-sha2-512," \
 	"rsa-sha2-256"
 

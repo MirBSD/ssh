@@ -44,8 +44,7 @@ FgCqVWAQ==
 
 The publickey field MUST contain the serialisation of the
 public key used to make the signature using the usual SSH
-encoding rules, i.e RFC4253, RFC5656,
-draft-ietf-curdle-ssh-ed25519-ed448, etc.
+encoding rules, i.e RFC4253, RFC5656, etc.
 
 Verifiers MUST reject signatures with versions greater than those
 they support.
