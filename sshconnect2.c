@@ -68,10 +68,6 @@
 #include "ssherr.h"
 #include "utf8.h"
 
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
-
 /* import */
 extern char *client_version_string;
 extern char *server_version_string;

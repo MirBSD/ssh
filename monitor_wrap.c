@@ -54,9 +54,6 @@
 #include "mac.h"
 #include "log.h"
 #include "monitor.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "atomicio.h"
 #include "monitor_fdpass.h"

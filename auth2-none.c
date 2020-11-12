@@ -38,9 +38,6 @@
 #include "compat.h"
 #include "ssh2.h"
 #include "ssherr.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 
 /* import */

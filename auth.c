@@ -56,9 +56,6 @@
 #include "canohost.h"
 #include "uidswap.h"
 #include "packet.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "authfile.h"
 #include "monitor_wrap.h"
 #include "ssherr.h"

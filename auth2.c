@@ -50,9 +50,6 @@
 #include "auth.h"
 #include "dispatch.h"
 #include "pathnames.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "ssherr.h"
 #include "digest.h"

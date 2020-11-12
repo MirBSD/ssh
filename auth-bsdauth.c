@@ -33,9 +33,6 @@
 #include "hostfile.h"
 #include "auth.h"
 #include "log.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 
 static void *

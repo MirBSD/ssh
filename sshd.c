@@ -96,9 +96,6 @@
 #include "channels.h"
 #include "session.h"
 #include "monitor.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "ssh-sandbox.h"
 #include "auth-options.h"

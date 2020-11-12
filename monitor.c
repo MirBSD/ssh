@@ -70,9 +70,6 @@
 #include "misc.h"
 #include "servconf.h"
 #include "monitor.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "monitor_fdpass.h"
 #include "compat.h"

@@ -36,9 +36,6 @@
 #include "sshkey.h"
 #include "hostfile.h"
 #include "auth.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "misc.h"
 #include "servconf.h"

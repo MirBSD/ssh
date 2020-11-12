@@ -82,9 +82,6 @@
 #include "serverloop.h"
 #include "canohost.h"
 #include "session.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "sftp.h"
 #include "atomicio.h"

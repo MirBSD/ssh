@@ -42,9 +42,6 @@
 #include "dh.h"
 #include "ssh2.h"
 #include "compat.h"
-#ifdef GSSAPI
-#include "ssh-gss.h"
-#endif
 #include "monitor_wrap.h"
 #include "dispatch.h"
 #include "ssherr.h"
