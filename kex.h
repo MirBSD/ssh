@@ -40,9 +40,6 @@
 #define	KEX_DH18_SHA512			"diffie-hellman-group18-sha512"
 #define	KEX_DHGEX_SHA1			"diffie-hellman-group-exchange-sha1"
 #define	KEX_DHGEX_SHA256		"diffie-hellman-group-exchange-sha256"
-#define	KEX_ECDH_SHA2_NISTP256		"ecdh-sha2-nistp256"
-#define	KEX_ECDH_SHA2_NISTP384		"ecdh-sha2-nistp384"
-#define	KEX_ECDH_SHA2_NISTP521		"ecdh-sha2-nistp521"
 
 #define COMP_NONE	0
 /* pre-auth compression (COMP_ZLIB) is only supported in the client */
@@ -77,7 +74,6 @@ enum kex_exchange {
 	KEX_DH_GRP18_SHA512,
 	KEX_DH_GEX_SHA1,
 	KEX_DH_GEX_SHA256,
-	KEX_ECDH_SHA2,
 	KEX_MAX
 };
 

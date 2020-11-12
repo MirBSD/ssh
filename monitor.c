@@ -1372,7 +1372,6 @@ monitor_apply_keystate(struct ssh *ssh, struct monitor *pmonitor)
 		kex->kex[KEX_DH_GRP18_SHA512] = kex_gen_server;
 		kex->kex[KEX_DH_GEX_SHA1] = kexgex_server;
 		kex->kex[KEX_DH_GEX_SHA256] = kexgex_server;
-		kex->kex[KEX_ECDH_SHA2] = kex_gen_server;
 		kex->load_host_public_key=&get_hostkey_public_by_type;
 		kex->load_host_private_key=&get_hostkey_private_by_type;
 		kex->host_key_index=&get_hostkey_index;

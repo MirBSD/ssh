@@ -242,7 +242,6 @@ keygrab_ssh2(con *c)
 	c->c_ssh->kex->kex[KEX_DH_GRP18_SHA512] = kex_gen_client;
 	c->c_ssh->kex->kex[KEX_DH_GEX_SHA1] = kexgex_client;
 	c->c_ssh->kex->kex[KEX_DH_GEX_SHA256] = kexgex_client;
-	c->c_ssh->kex->kex[KEX_ECDH_SHA2] = kex_gen_client;
 	ssh_set_verify_host_key_callback(c->c_ssh, key_print_wrapper);
 	/*
 	 * do the key-exchange until an error occurs or until

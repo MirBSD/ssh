@@ -648,8 +648,6 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_BATON_SHUFFLE		(0x1035)
 #define CKM_BATON_WRAP			(0x1036)
 #define CKM_EC_KEY_PAIR_GEN		(0x1040)
-#define CKM_ECDH1_DERIVE		(0x1050)
-#define CKM_ECDH1_COFACTOR_DERIVE	(0x1051)
 #define CKM_ECMQV_DERIVE		(0x1052)
 #define CKM_JUNIPER_KEY_GEN		(0x1060)
 #define CKM_JUNIPER_ECB128		(0x1061)

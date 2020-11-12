@@ -25,9 +25,6 @@
  */
 
 #define KEX_SERVER_KEX	\
-	"ecdh-sha2-nistp256," \
-	"ecdh-sha2-nistp384," \
-	"ecdh-sha2-nistp521," \
 	"diffie-hellman-group-exchange-sha256," \
 	"diffie-hellman-group16-sha512," \
 	"diffie-hellman-group18-sha512," \
