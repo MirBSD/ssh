@@ -25,7 +25,7 @@
 #define _PATH_SSH_SYSTEM_HOSTFILE2	SSHDIR "/ssh_known_hosts2"
 
 /*
- * Of these, ssh_host_key must be readable only by root, whereas ssh_config
+ * Of these, ssh_host_*_key must be readable only by root, whereas ssh_config
  * should be world-readable.
  */
 #define _PATH_SERVER_CONFIG_FILE	SSHDIR "/sshd_config"
