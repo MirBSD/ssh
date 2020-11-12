@@ -112,12 +112,12 @@ kex_gen_client(struct ssh *ssh)
 	}
 	if (r != 0)
 		return r;
-	if ((r = sshpkt_start(ssh, SSH2_MSG_KEX_ECDH_INIT)) != 0 ||
+	if ((r = sshpkt_start(ssh, SSH2_MSG_KEXDH_INIT)) != 0 ||
 	    (r = sshpkt_put_stringb(ssh, kex->client_pub)) != 0 ||
 	    (r = sshpkt_send(ssh)) != 0)
 		return r;
-	debug("expecting SSH2_MSG_KEX_ECDH_REPLY");
-	ssh_dispatch_set(ssh, SSH2_MSG_KEX_ECDH_REPLY, &input_kex_gen_reply);
+	debug("expecting SSH2_MSG_KEXDH_REPLY");
+	ssh_dispatch_set(ssh, SSH2_MSG_KEXDH_REPLY, &input_kex_gen_reply);
 	return 0;
 }
 
@@ -207,8 +207,8 @@ out:
 int
 kex_gen_server(struct ssh *ssh)
 {
-	debug("expecting SSH2_MSG_KEX_ECDH_INIT");
-	ssh_dispatch_set(ssh, SSH2_MSG_KEX_ECDH_INIT, &input_kex_gen_init);
+	debug("expecting SSH2_MSG_KEXDH_INIT");
+	ssh_dispatch_set(ssh, SSH2_MSG_KEXDH_INIT, &input_kex_gen_init);
 	return 0;
 }
 
@@ -277,7 +277,7 @@ input_kex_gen_init(int type, u_int32_t seq, struct ssh *ssh)
 		goto out;
 
 	/* send server hostkey, ECDH pubkey 'Q_S' and signed H */
-	if ((r = sshpkt_start(ssh, SSH2_MSG_KEX_ECDH_REPLY)) != 0 ||
+	if ((r = sshpkt_start(ssh, SSH2_MSG_KEXDH_REPLY)) != 0 ||
 	    (r = sshpkt_put_stringb(ssh, server_host_key_blob)) != 0 ||
 	    (r = sshpkt_put_stringb(ssh, server_pubkey)) != 0 ||
 	    (r = sshpkt_put_string(ssh, signature, slen)) != 0 ||
