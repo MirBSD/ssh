@@ -27,7 +27,6 @@
 #define KEX_H
 
 #include "mac.h"
-#include "crypto_api.h"
 
 #include <openssl/bn.h>
 #include <openssl/dh.h>

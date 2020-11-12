@@ -34,8 +34,6 @@
 
 #include "libressl-api-compat.h"
 
-#include "crypto_api.h"
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>

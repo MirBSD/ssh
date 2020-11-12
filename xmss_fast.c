@@ -11,14 +11,13 @@ CC0, see https://github.com/XMSS/xmss-reference
 #include <stdint.h>
 
 #include "xmss_fast.h"
-#include "crypto_api.h"
 #include "xmss_wots.h"
 #include "xmss_hash.h"
 
 #include "xmss_commons.h"
 #include "xmss_hash_address.h"
 // For testing
-#include "stdio.h"
+//#include "stdio.h"
 
 
 
@@ -523,7 +522,7 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, bds_state *state, xmss_pa
   sk[2] = 0;
   sk[3] = 0;
   // Init SK_SEED (n byte), SK_PRF (n byte), and PUB_SEED (n byte)
-  randombytes(sk+4, 3*n);
+  arc4random_buf(sk+4, 3*n);
   // Copy PUB_SEED to public key
   memcpy(pk+n, sk+4+2*n, n);
 
@@ -752,7 +751,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
     sk[i] = 0;
   }
   // Init SK_SEED (n byte), SK_PRF (n byte), and PUB_SEED (n byte)
-  randombytes(sk+params->index_len, 3*n);
+  arc4random_buf(sk+params->index_len, 3*n);
   // Copy PUB_SEED to public key
   memcpy(pk+n, sk+params->index_len+2*n, n);
 
