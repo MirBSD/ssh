@@ -155,7 +155,6 @@
 
 __RCSID("$MirOS$");
 
-#ifndef HAVE_DSA_GET0_PQG
 void
 DSA_get0_pqg(const DSA *d, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 {
@@ -166,9 +165,7 @@ DSA_get0_pqg(const DSA *d, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 	if (g != NULL)
 		*g = d->g;
 }
-#endif /* HAVE_DSA_GET0_PQG */
 
-#ifndef HAVE_DSA_SET0_PQG
 int
 DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 {
@@ -191,9 +188,7 @@ DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 
 	return 1;
 }
-#endif /* HAVE_DSA_SET0_PQG */
 
-#ifndef HAVE_DSA_GET0_KEY
 void
 DSA_get0_key(const DSA *d, const BIGNUM **pub_key, const BIGNUM **priv_key)
 {
@@ -202,9 +197,7 @@ DSA_get0_key(const DSA *d, const BIGNUM **pub_key, const BIGNUM **priv_key)
 	if (priv_key != NULL)
 		*priv_key = d->priv_key;
 }
-#endif /* HAVE_DSA_GET0_KEY */
 
-#ifndef HAVE_DSA_SET0_KEY
 int
 DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
 {
@@ -222,9 +215,7 @@ DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
 
 	return 1;
 }
-#endif /* HAVE_DSA_SET0_KEY */
 
-#ifndef HAVE_RSA_GET0_KEY
 void
 RSA_get0_key(const RSA *r, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
 {
@@ -235,9 +226,7 @@ RSA_get0_key(const RSA *r, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
 	if (d != NULL)
 		*d = r->d;
 }
-#endif /* HAVE_RSA_GET0_KEY */
 
-#ifndef HAVE_RSA_SET0_KEY
 int
 RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 {
@@ -259,9 +248,7 @@ RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 
 	return 1;
 }
-#endif /* HAVE_RSA_SET0_KEY */
 
-#ifndef HAVE_RSA_GET0_CRT_PARAMS
 void
 RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1,
     const BIGNUM **iqmp)
@@ -273,9 +260,7 @@ RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1,
 	if (iqmp != NULL)
 		*iqmp = r->iqmp;
 }
-#endif /* HAVE_RSA_GET0_CRT_PARAMS */
 
-#ifndef HAVE_RSA_SET0_CRT_PARAMS
 int
 RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 {
@@ -299,9 +284,7 @@ RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 
 	return 1;
 }
-#endif /* HAVE_RSA_SET0_CRT_PARAMS */
 
-#ifndef HAVE_RSA_GET0_FACTORS
 void
 RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q)
 {
@@ -310,9 +293,7 @@ RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q)
 	if (q != NULL)
 		*q = r->q;
 }
-#endif /* HAVE_RSA_GET0_FACTORS */
 
-#ifndef HAVE_RSA_SET0_FACTORS
 int
 RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q)
 {
@@ -330,9 +311,7 @@ RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q)
 
 	return 1;
 }
-#endif /* HAVE_RSA_SET0_FACTORS */
 
-#ifndef HAVE_EVP_CIPHER_CTX_GET_IV
 int
 EVP_CIPHER_CTX_get_iv(const EVP_CIPHER_CTX *ctx, unsigned char *iv, size_t len)
 {
@@ -351,17 +330,11 @@ EVP_CIPHER_CTX_get_iv(const EVP_CIPHER_CTX *ctx, unsigned char *iv, size_t len)
 	if (len != 0) {
 		if (iv == NULL)
 			return 0;
-# ifdef HAVE_EVP_CIPHER_CTX_IV
-		memcpy(iv, EVP_CIPHER_CTX_iv(ctx), len);
-# else
 		memcpy(iv, ctx->iv, len);
-# endif /* HAVE_EVP_CIPHER_CTX_IV */
 	}
 	return 1;
 }
-#endif /* HAVE_EVP_CIPHER_CTX_GET_IV */
 
-#ifndef HAVE_EVP_CIPHER_CTX_SET_IV
 int
 EVP_CIPHER_CTX_set_iv(EVP_CIPHER_CTX *ctx, const unsigned char *iv, size_t len)
 {
@@ -380,17 +353,11 @@ EVP_CIPHER_CTX_set_iv(EVP_CIPHER_CTX *ctx, const unsigned char *iv, size_t len)
 	if (len != 0) {
 		if (iv == NULL)
 			return 0;
-# ifdef HAVE_EVP_CIPHER_CTX_IV_NOCONST
-		memcpy(EVP_CIPHER_CTX_iv_noconst(ctx), iv, len);
-# else
 		memcpy(ctx->iv, iv, len);
-# endif /* HAVE_EVP_CIPHER_CTX_IV_NOCONST */
 	}
 	return 1;
 }
-#endif /* HAVE_EVP_CIPHER_CTX_SET_IV */
 
-#ifndef HAVE_DSA_SIG_GET0
 void
 DSA_SIG_get0(const DSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
 {
@@ -399,9 +366,7 @@ DSA_SIG_get0(const DSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
 	if (ps != NULL)
 		*ps = sig->s;
 }
-#endif /* HAVE_DSA_SIG_GET0 */
 
-#ifndef HAVE_DSA_SIG_SET0
 int
 DSA_SIG_set0(DSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 {
@@ -415,9 +380,7 @@ DSA_SIG_set0(DSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 
 	return 1;
 }
-#endif /* HAVE_DSA_SIG_SET0 */
 
-#ifndef HAVE_DH_GET0_PQG
 void
 DH_get0_pqg(const DH *dh, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 {
@@ -428,9 +391,7 @@ DH_get0_pqg(const DH *dh, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 	if (g != NULL)
 		*g = dh->g;
 }
-#endif /* HAVE_DH_GET0_PQG */
 
-#ifndef HAVE_DH_SET0_PQG
 int
 DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 {
@@ -452,9 +413,7 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 
 	return 1;
 }
-#endif /* HAVE_DH_SET0_PQG */
 
-#ifndef HAVE_DH_GET0_KEY
 void
 DH_get0_key(const DH *dh, const BIGNUM **pub_key, const BIGNUM **priv_key)
 {
@@ -463,26 +422,7 @@ DH_get0_key(const DH *dh, const BIGNUM **pub_key, const BIGNUM **priv_key)
 	if (priv_key != NULL)
 		*priv_key = dh->priv_key;
 }
-#endif /* HAVE_DH_GET0_KEY */
 
-#ifndef HAVE_DH_SET0_KEY
-int
-DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key)
-{
-	if (pub_key != NULL) {
-		BN_free(dh->pub_key);
-		dh->pub_key = pub_key;
-	}
-	if (priv_key != NULL) {
-		BN_free(dh->priv_key);
-		dh->priv_key = priv_key;
-	}
-
-	return 1;
-}
-#endif /* HAVE_DH_SET0_KEY */
-
-#ifndef HAVE_DH_SET_LENGTH
 int
 DH_set_length(DH *dh, long length)
 {
@@ -492,20 +432,7 @@ DH_set_length(DH *dh, long length)
 	dh->length = length;
 	return 1;
 }
-#endif /* HAVE_DH_SET_LENGTH */
 
-#ifndef HAVE_RSA_METH_FREE
-void
-RSA_meth_free(RSA_METHOD *meth)
-{
-	if (meth != NULL) {
-		free((char *)meth->name);
-		free(meth);
-	}
-}
-#endif /* HAVE_RSA_METH_FREE */
-
-#ifndef HAVE_RSA_METH_DUP
 RSA_METHOD *
 RSA_meth_dup(const RSA_METHOD *meth)
 {
@@ -521,9 +448,7 @@ RSA_meth_dup(const RSA_METHOD *meth)
 
 	return copy;
 }
-#endif /* HAVE_RSA_METH_DUP */
 
-#ifndef HAVE_RSA_METH_SET1_NAME
 int
 RSA_meth_set1_name(RSA_METHOD *meth, const char *name)
 {
@@ -535,17 +460,7 @@ RSA_meth_set1_name(RSA_METHOD *meth, const char *name)
 	meth->name = copy;
 	return 1;
 }
-#endif /* HAVE_RSA_METH_SET1_NAME */
 
-#ifndef HAVE_RSA_METH_GET_FINISH
-int
-(*RSA_meth_get_finish(const RSA_METHOD *meth))(RSA *rsa)
-{
-	return meth->finish;
-}
-#endif /* HAVE_RSA_METH_GET_FINISH */
-
-#ifndef HAVE_RSA_METH_SET_PRIV_ENC
 int
 RSA_meth_set_priv_enc(RSA_METHOD *meth, int (*priv_enc)(int flen,
     const unsigned char *from, unsigned char *to, RSA *rsa, int padding))
@@ -553,56 +468,3 @@ RSA_meth_set_priv_enc(RSA_METHOD *meth, int (*priv_enc)(int flen,
 	meth->rsa_priv_enc = priv_enc;
 	return 1;
 }
-#endif /* HAVE_RSA_METH_SET_PRIV_ENC */
-
-#ifndef HAVE_RSA_METH_SET_PRIV_DEC
-int
-RSA_meth_set_priv_dec(RSA_METHOD *meth, int (*priv_dec)(int flen,
-    const unsigned char *from, unsigned char *to, RSA *rsa, int padding))
-{
-	meth->rsa_priv_dec = priv_dec;
-	return 1;
-}
-#endif /* HAVE_RSA_METH_SET_PRIV_DEC */
-
-#ifndef HAVE_RSA_METH_SET_FINISH
-int
-RSA_meth_set_finish(RSA_METHOD *meth, int (*finish)(RSA *rsa))
-{
-	meth->finish = finish;
-	return 1;
-}
-#endif /* HAVE_RSA_METH_SET_FINISH */
-
-#ifndef HAVE_EVP_PKEY_GET0_RSA
-RSA *
-EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
-{
-	if (pkey->type != EVP_PKEY_RSA) {
-		/* EVPerror(EVP_R_EXPECTING_AN_RSA_KEY); */
-		return NULL;
-	}
-	return pkey->pkey.rsa;
-}
-#endif /* HAVE_EVP_PKEY_GET0_RSA */
-
-#ifndef HAVE_EVP_MD_CTX_NEW
-EVP_MD_CTX *
-EVP_MD_CTX_new(void)
-{
-	return calloc(1, sizeof(EVP_MD_CTX));
-}
-#endif /* HAVE_EVP_MD_CTX_NEW */
-
-#ifndef HAVE_EVP_MD_CTX_FREE
-void
-EVP_MD_CTX_free(EVP_MD_CTX *ctx)
-{
-	if (ctx == NULL)
-		return;
-
-	EVP_MD_CTX_cleanup(ctx);
-
-	free(ctx);
-}
-#endif /* HAVE_EVP_MD_CTX_FREE */
