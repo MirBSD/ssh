@@ -186,7 +186,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface]\n"
+"usage: ssh [-46AaCfGgMNnqsTtVvXxYy] [-B bind_interface]\n"
 "           [-b bind_address] [-c cipher_spec] [-D [bind_address:]port]\n"
 "           [-E log_file] [-e escape_char] [-F configfile] [-I pkcs11]\n"
 "           [-i identity_file] [-J [user@]host[:port]] [-L address]\n"
@@ -691,7 +691,7 @@ main(int ac, char **av)
 
  again:
 	while ((opt = getopt(ac, av, "1246ab:c:e:fgi:kl:m:no:p:qstvx"
-	    "AB:CD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy")) != -1) {
+	    "AB:CD:E:F:GI:J:L:MNO:PQ:R:S:TVw:W:XYy")) != -1) {
 		switch (opt) {
 		case '1':
 			fatal("SSH protocol v.1 is no longer supported");
@@ -811,11 +811,6 @@ main(int ac, char **av)
 			options.forward_agent = 1;
 			break;
 		case 'k':
-			options.gss_deleg_creds = 0;
-			break;
-		case 'K':
-			options.gss_authentication = 1;
-			options.gss_deleg_creds = 1;
 			break;
 		case 'i':
 			p = tilde_expand_filename(optarg, getuid());

@@ -59,14 +59,6 @@ int mm_hostbased_key_allowed(struct ssh *, struct passwd *, const char *,
 int mm_sshkey_verify(const struct sshkey *, const u_char *, size_t,
     const u_char *, size_t, const char *, u_int);
 
-#ifdef GSSAPI
-OM_uint32 mm_ssh_gssapi_server_ctx(Gssctxt **, gss_OID);
-OM_uint32 mm_ssh_gssapi_accept_ctx(Gssctxt *,
-   gss_buffer_desc *, gss_buffer_desc *, OM_uint32 *);
-int mm_ssh_gssapi_userok(char *user);
-OM_uint32 mm_ssh_gssapi_checkmic(Gssctxt *, gss_buffer_t, gss_buffer_t);
-#endif
-
 struct Session;
 void mm_terminate(void);
 int mm_pty_allocate(int *, int *, char *, size_t);

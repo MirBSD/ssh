@@ -86,10 +86,6 @@
 #include "sftp.h"
 #include "atomicio.h"
 
-#ifdef KRB5
-#include <kafs.h>
-#endif
-
 #define IS_INTERNAL_SFTP(c) \
 	(!strncmp(c, INTERNAL_SFTP_NAME, sizeof(INTERNAL_SFTP_NAME) - 1) && \
 	 (c[sizeof(INTERNAL_SFTP_NAME) - 1] == '\0' || \
@@ -672,13 +668,6 @@ do_exec(struct ssh *ssh, Session *s, const char *command)
 	    ssh_remote_port(ssh),
 	    s->self);
 
-#ifdef GSSAPI
-	if (options.gss_authentication) {
-		temporarily_use_uid(s->pw);
-		ssh_gssapi_storecreds();
-		restore_uid();
-	}
-#endif
 	if (s->ttyfd != -1)
 		ret = do_exec_pty(ssh, s, command);
 	else
@@ -841,13 +830,6 @@ do_setup_env(struct ssh *ssh, Session *s, const char *shell)
 	env = xcalloc(envsize, sizeof(char *));
 	env[0] = NULL;
 
-#ifdef GSSAPI
-	/* Allow any GSSAPI methods that we've used to alter
-	 * the child's environment as they see fit
-	 */
-	ssh_gssapi_do_child(&env, &envsize);
-#endif
-
 	/* Set basic environment. */
 	for (i = 0; i < s->num_env; i++)
 		child_set_env(&env, &envsize, s->env[i].name, s->env[i].val);
@@ -872,11 +854,6 @@ do_setup_env(struct ssh *ssh, Session *s, const char *shell)
 		child_set_env(&env, &envsize, "TERM", s->term);
 	if (s->display)
 		child_set_env(&env, &envsize, "DISPLAY", s->display);
-#ifdef KRB5
-	if (s->authctxt->krb5_ticket_file)
-		child_set_env(&env, &envsize, "KRB5CCNAME",
-		    s->authctxt->krb5_ticket_file);
-#endif
 	if (auth_sock_name != NULL)
 		child_set_env(&env, &envsize, SSH_AUTHSOCKET_ENV_NAME,
 		    auth_sock_name);
@@ -1277,32 +1254,6 @@ do_child(struct ssh *ssh, Session *s, const char *command)
 	 * /etc/ssh/sshrc and xauth are run in the proper environment.
 	 */
 	environ = env;
-
-#ifdef KRB5
-	/*
-	 * At this point, we check to see if AFS is active and if we have
-	 * a valid Kerberos 5 TGT. If so, it seems like a good idea to see
-	 * if we can (and need to) extend the ticket into an AFS token. If
-	 * we don't do this, we run into potential problems if the user's
-	 * home directory is in AFS and it's not world-readable.
-	 */
-
-	if (options.kerberos_get_afs_token && k_hasafs() &&
-	    (s->authctxt->krb5_ctx != NULL)) {
-		char cell[64];
-
-		debug("Getting AFS token");
-
-		k_setpag();
-
-		if (k_afs_cell_of_file(pw->pw_dir, cell, sizeof(cell)) == 0)
-			krb5_afslog(s->authctxt->krb5_ctx,
-			    s->authctxt->krb5_fwd_ccache, cell, NULL);
-
-		krb5_afslog_home(s->authctxt->krb5_ctx,
-		    s->authctxt->krb5_fwd_ccache, NULL, NULL, pw->pw_dir);
-	}
-#endif
 
 	/* Change current directory to the user's home directory. */
 	if (chdir(pw->pw_dir) == -1) {
@@ -2307,16 +2258,6 @@ do_cleanup(struct ssh *ssh, Authctxt *authctxt)
 
 	if (authctxt == NULL || !authctxt->authenticated)
 		return;
-#ifdef KRB5
-	if (options.kerberos_ticket_cleanup &&
-	    authctxt->krb5_ctx)
-		krb5_cleanup_proc(authctxt);
-#endif
-
-#ifdef GSSAPI
-	if (options.gss_cleanup_creds)
-		ssh_gssapi_cleanup_creds();
-#endif
 
 	/* remove agent socket */
 	auth_sock_cleanup_proc(authctxt->pw);

@@ -770,14 +770,6 @@ host key database, separated by whitespace.
 The default is
 .Pa /etc/ssh/ssh_known_hosts ,
 .Pa /etc/ssh/ssh_known_hosts2 .
-.It Cm GSSAPIAuthentication
-Specifies whether user authentication based on GSSAPI is allowed.
-The default is
-.Cm no .
-.It Cm GSSAPIDelegateCredentials
-Forward (delegate) credentials to the server.
-The default is
-.Cm no .
 .It Cm HashKnownHosts
 Indicates that
 .Xr ssh 1
@@ -1251,7 +1243,7 @@ over another method (e.g.\&
 .Cm password ) .
 The default is:
 .Bd -literal -offset indent
-gssapi-with-mic,hostbased,publickey,
+hostbased,publickey,
 keyboard-interactive,password
 .Ed
 .It Cm ProxyCommand

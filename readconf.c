@@ -145,7 +145,7 @@ typedef enum {
 	oHostKeyAlgorithms, oBindAddress, oBindInterface, oPKCS11Provider,
 	oClearAllForwardings, oNoHostAuthenticationForLocalhost,
 	oEnableSSHKeysign, oRekeyLimit, oVerifyHostKeyDNS, oConnectTimeout,
-	oAddressFamily, oGssAuthentication, oGssDelegateCreds,
+	oAddressFamily,
 	oServerAliveInterval, oServerAliveCountMax, oIdentitiesOnly,
 	oSendEnv, oSetEnv, oControlPath, oControlMaster, oControlPersist,
 	oHashKnownHosts,
@@ -180,20 +180,11 @@ static struct {
 
 	/* Unsupported options */
 	{ "afstokenpassing", oUnsupported },
-	{ "kerberosauthentication", oUnsupported },
-	{ "kerberostgtpassing", oUnsupported },
 	{ "rsaauthentication", oUnsupported },
 	{ "rhostsrsaauthentication", oUnsupported },
 	{ "compressionlevel", oUnsupported },
 
 	/* Sometimes-unsupported options */
-#if defined(GSSAPI)
-	{ "gssapiauthentication", oGssAuthentication },
-	{ "gssapidelegatecredentials", oGssDelegateCreds },
-# else
-	{ "gssapiauthentication", oUnsupported },
-	{ "gssapidelegatecredentials", oUnsupported },
-#endif
 #ifdef ENABLE_PKCS11
 	{ "pkcs11provider", oPKCS11Provider },
 	{ "smartcarddevice", oPKCS11Provider },
@@ -1036,14 +1027,6 @@ parse_time:
 
 	case oChallengeResponseAuthentication:
 		intptr = &options->challenge_response_authentication;
-		goto parse_flag;
-
-	case oGssAuthentication:
-		intptr = &options->gss_authentication;
-		goto parse_flag;
-
-	case oGssDelegateCreds:
-		intptr = &options->gss_deleg_creds;
 		goto parse_flag;
 
 	case oBatchMode:
@@ -1956,8 +1939,6 @@ initialize_options(Options * options)
 	options->fwd_opts.streamlocal_bind_unlink = -1;
 	options->pubkey_authentication = -1;
 	options->challenge_response_authentication = -1;
-	options->gss_authentication = -1;
-	options->gss_deleg_creds = -1;
 	options->password_authentication = -1;
 	options->kbd_interactive_authentication = -1;
 	options->kbd_interactive_devices = NULL;
@@ -2105,10 +2086,6 @@ fill_default_options(Options * options)
 		options->pubkey_authentication = 1;
 	if (options->challenge_response_authentication == -1)
 		options->challenge_response_authentication = 1;
-	if (options->gss_authentication == -1)
-		options->gss_authentication = 0;
-	if (options->gss_deleg_creds == -1)
-		options->gss_deleg_creds = 0;
 	if (options->password_authentication == -1)
 		options->password_authentication = 1;
 	if (options->kbd_interactive_authentication == -1)
@@ -2746,10 +2723,6 @@ dump_client_config(Options *o, const char *host)
 	dump_cfg_fmtint(oForwardX11, o->forward_x11);
 	dump_cfg_fmtint(oForwardX11Trusted, o->forward_x11_trusted);
 	dump_cfg_fmtint(oGatewayPorts, o->fwd_opts.gateway_ports);
-#ifdef GSSAPI
-	dump_cfg_fmtint(oGssAuthentication, o->gss_authentication);
-	dump_cfg_fmtint(oGssDelegateCreds, o->gss_deleg_creds);
-#endif /* GSSAPI */
 	dump_cfg_fmtint(oHashKnownHosts, o->hash_known_hosts);
 	dump_cfg_fmtint(oHostbasedAuthentication, o->hostbased_authentication);
 	dump_cfg_fmtint(oIdentitiesOnly, o->identities_only);

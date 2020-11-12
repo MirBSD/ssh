@@ -66,16 +66,10 @@ extern Authmethod method_pubkey;
 extern Authmethod method_passwd;
 extern Authmethod method_kbdint;
 extern Authmethod method_hostbased;
-#ifdef GSSAPI
-extern Authmethod method_gssapi;
-#endif
 
 Authmethod *authmethods[] = {
 	&method_none,
 	&method_pubkey,
-#ifdef GSSAPI
-	&method_gssapi,
-#endif
 	&method_passwd,
 	&method_kbdint,
 	&method_hostbased,
@@ -298,12 +292,6 @@ input_userauth_request(int type, u_int32_t seq, struct ssh *ssh)
 	}
 	/* reset state */
 	auth2_challenge_stop(ssh);
-
-#ifdef GSSAPI
-	/* XXX move to auth2_gssapi_stop() */
-	ssh_dispatch_set(ssh, SSH2_MSG_USERAUTH_GSSAPI_TOKEN, NULL);
-	ssh_dispatch_set(ssh, SSH2_MSG_USERAUTH_GSSAPI_EXCHANGE_COMPLETE, NULL);
-#endif
 
 	auth2_authctxt_reset_info(authctxt);
 	authctxt->postponed = 0;

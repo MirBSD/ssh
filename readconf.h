@@ -40,8 +40,6 @@ typedef struct {
 	int     hostbased_authentication;	/* ssh2's rhosts_rsa */
 	int     challenge_response_authentication;
 					/* Try S/Key or TIS, authentication. */
-	int     gss_authentication;	/* Try GSS authentication */
-	int     gss_deleg_creds;	/* Delegate GSS credentials */
 	int     password_authentication;	/* Try password
 						 * authentication. */
 	int     kbd_interactive_authentication; /* Try keyboard-interactive auth. */

@@ -400,11 +400,6 @@ privsep_preauth_child(void)
 	/* Enable challenge-response authentication for privilege separation */
 	privsep_challenge_enable();
 
-#ifdef GSSAPI
-	/* Cache supported mechanism OIDs for later use */
-	ssh_gssapi_prepare_supported_oids();
-#endif
-
 	/* Demote the private keys to public keys. */
 	demote_sensitive_data();
 

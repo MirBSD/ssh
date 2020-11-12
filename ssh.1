@@ -330,13 +330,6 @@ Use
 .Pa ~/.ssh/config
 to specify configuration for jump hosts.
 .Pp
-.It Fl K
-Enables GSSAPI-based authentication and forwarding (delegation) of GSSAPI
-credentials to the server.
-.Pp
-.It Fl k
-Disables forwarding (delegation) of GSSAPI credentials to the server.
-.Pp
 .It Fl L Xo
 .Sm off
 .Oo Ar bind_address : Oc
@@ -512,8 +505,6 @@ For full details of the options listed below, and their possible values, see
 .It ForwardX11Trusted
 .It GatewayPorts
 .It GlobalKnownHostsFile
-.It GSSAPIAuthentication
-.It GSSAPIDelegateCredentials
 .It HashKnownHosts
 .It Host
 .It HostbasedAuthentication
@@ -835,7 +826,6 @@ The file format and configuration options are described in
 The OpenSSH SSH client supports SSH protocol 2.
 .Pp
 The methods available for authentication are:
-GSSAPI-based authentication,
 host-based authentication,
 public key authentication,
 challenge-response authentication,

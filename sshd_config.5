@@ -222,7 +222,6 @@ Note that each authentication method listed should also be explicitly enabled
 in the configuration.
 .Pp
 The available authentication methods are:
-.Qq gssapi-with-mic ,
 .Qq hostbased ,
 .Qq keyboard-interactive ,
 .Qq none
@@ -633,29 +632,6 @@ to force remote port forwardings to bind to the wildcard address, or
 to allow the client to select the address to which the forwarding is bound.
 The default is
 .Cm no .
-.It Cm GSSAPIAuthentication
-Specifies whether user authentication based on GSSAPI is allowed.
-The default is
-.Cm no .
-.It Cm GSSAPICleanupCredentials
-Specifies whether to automatically destroy the user's credentials cache
-on logout.
-The default is
-.Cm yes .
-.It Cm GSSAPIStrictAcceptorCheck
-Determines whether to be strict about the identity of the GSSAPI acceptor
-a client authenticates against.
-If set to
-.Cm yes
-then the client must authenticate against the host
-service on the current hostname.
-If set to
-.Cm no
-then the client may authenticate against any service key stored in the
-machine's default store.
-This facility is provided to assist with operation on multi homed machines.
-The default is
-.Cm yes .
 .It Cm HostbasedAcceptedKeyTypes
 Specifies the key types that will be accepted for hostbased authentication
 as a list of comma-separated patterns.
@@ -856,31 +832,6 @@ The default is to use whatever value
 is set to
 (by default
 .Cm yes ) .
-.It Cm KerberosAuthentication
-Specifies whether the password provided by the user for
-.Cm PasswordAuthentication
-will be validated through the Kerberos KDC.
-To use this option, the server needs a
-Kerberos servtab which allows the verification of the KDC's identity.
-The default is
-.Cm no .
-.It Cm KerberosGetAFSToken
-If AFS is active and the user has a Kerberos 5 TGT, attempt to acquire
-an AFS token before accessing the user's home directory.
-The default is
-.Cm no .
-.It Cm KerberosOrLocalPasswd
-If password authentication through Kerberos fails then
-the password will be validated via any additional local mechanism
-such as
-.Pa /etc/passwd .
-The default is
-.Cm yes .
-.It Cm KerberosTicketCleanup
-Specifies whether to automatically destroy the user's ticket cache
-file on logout.
-The default is
-.Cm yes .
 .It Cm KexAlgorithms
 Specifies the available KEX (Key Exchange) algorithms.
 Multiple algorithms must be comma-separated.
@@ -1157,7 +1108,6 @@ Available keywords are
 .Cm DenyUsers ,
 .Cm ForceCommand ,
 .Cm GatewayPorts ,
-.Cm GSSAPIAuthentication ,
 .Cm HostbasedAcceptedKeyTypes ,
 .Cm HostbasedAuthentication ,
 .Cm HostbasedUsesNameFromPacketOnly ,
@@ -1165,7 +1115,6 @@ Available keywords are
 .Cm Include ,
 .Cm IPQoS ,
 .Cm KbdInteractiveAuthentication ,
-.Cm KerberosAuthentication ,
 .Cm LogLevel ,
 .Cm MaskRemoteAddress ,
 .Cm MaxAuthTries ,

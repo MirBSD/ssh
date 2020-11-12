@@ -78,10 +78,6 @@
 #include "match.h"
 #include "ssherr.h"
 
-#ifdef GSSAPI
-static Gssctxt *gsscontext = NULL;
-#endif
-
 /* Imports */
 extern ServerOptions options;
 extern u_int utmp_len;
@@ -114,13 +110,6 @@ int mm_answer_rsa_challenge(struct ssh *, int, struct sshbuf *);
 int mm_answer_rsa_response(struct ssh *, int, struct sshbuf *);
 int mm_answer_sesskey(struct ssh *, int, struct sshbuf *);
 int mm_answer_sessid(struct ssh *, int, struct sshbuf *);
-
-#ifdef GSSAPI
-int mm_answer_gss_setup_ctx(struct ssh *, int, struct sshbuf *);
-int mm_answer_gss_accept_ctx(struct ssh *, int, struct sshbuf *);
-int mm_answer_gss_userok(struct ssh *, int, struct sshbuf *);
-int mm_answer_gss_checkmic(struct ssh *, int, struct sshbuf *);
-#endif
 
 static Authctxt *authctxt;
 
@@ -167,12 +156,6 @@ struct mon_table mon_dispatch_proto20[] = {
     {MONITOR_REQ_BSDAUTHRESPOND, MON_AUTH, mm_answer_bsdauthrespond},
     {MONITOR_REQ_KEYALLOWED, MON_ISAUTH, mm_answer_keyallowed},
     {MONITOR_REQ_KEYVERIFY, MON_AUTH, mm_answer_keyverify},
-#ifdef GSSAPI
-    {MONITOR_REQ_GSSSETUP, MON_ISAUTH, mm_answer_gss_setup_ctx},
-    {MONITOR_REQ_GSSSTEP, 0, mm_answer_gss_accept_ctx},
-    {MONITOR_REQ_GSSUSEROK, MON_ONCE|MON_AUTHDECIDE, mm_answer_gss_userok},
-    {MONITOR_REQ_GSSCHECKMIC, MON_ONCE, mm_answer_gss_checkmic},
-#endif
     {0, 0, NULL}
 };
 
@@ -1448,131 +1431,3 @@ monitor_reinit(struct monitor *mon)
 {
 	monitor_openfds(mon, 0);
 }
-
-#ifdef GSSAPI
-int
-mm_answer_gss_setup_ctx(struct ssh *ssh, int sock, struct sshbuf *m)
-{
-	gss_OID_desc goid;
-	OM_uint32 major;
-	size_t len;
-	u_char *p;
-	int r;
-
-	if (!options.gss_authentication)
-		fatal_f("GSSAPI authentication not enabled");
-
-	if ((r = sshbuf_get_string(m, &p, &len)) != 0)
-		fatal_fr(r, "parse");
-	goid.elements = p;
-	goid.length = len;
-
-	major = ssh_gssapi_server_ctx(&gsscontext, &goid);
-
-	free(goid.elements);
-
-	sshbuf_reset(m);
-	if ((r = sshbuf_put_u32(m, major)) != 0)
-		fatal_fr(r, "assemble");
-
-	mm_request_send(sock, MONITOR_ANS_GSSSETUP, m);
-
-	/* Now we have a context, enable the step */
-	monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 1);
-
-	return (0);
-}
-
-int
-mm_answer_gss_accept_ctx(struct ssh *ssh, int sock, struct sshbuf *m)
-{
-	gss_buffer_desc in;
-	gss_buffer_desc out = GSS_C_EMPTY_BUFFER;
-	OM_uint32 major, minor;
-	OM_uint32 flags = 0; /* GSI needs this */
-	int r;
-
-	if (!options.gss_authentication)
-		fatal_f("GSSAPI authentication not enabled");
-
-	if ((r = ssh_gssapi_get_buffer_desc(m, &in)) != 0)
-		fatal_fr(r, "ssh_gssapi_get_buffer_desc");
-	major = ssh_gssapi_accept_ctx(gsscontext, &in, &out, &flags);
-	free(in.value);
-
-	sshbuf_reset(m);
-	if ((r = sshbuf_put_u32(m, major)) != 0 ||
-	    (r = sshbuf_put_string(m, out.value, out.length)) != 0 ||
-	    (r = sshbuf_put_u32(m, flags)) != 0)
-		fatal_fr(r, "assemble");
-	mm_request_send(sock, MONITOR_ANS_GSSSTEP, m);
-
-	gss_release_buffer(&minor, &out);
-
-	if (major == GSS_S_COMPLETE) {
-		monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 0);
-		monitor_permit(mon_dispatch, MONITOR_REQ_GSSUSEROK, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_GSSCHECKMIC, 1);
-	}
-	return (0);
-}
-
-int
-mm_answer_gss_checkmic(struct ssh *ssh, int sock, struct sshbuf *m)
-{
-	gss_buffer_desc gssbuf, mic;
-	OM_uint32 ret;
-	int r;
-
-	if (!options.gss_authentication)
-		fatal_f("GSSAPI authentication not enabled");
-
-	if ((r = ssh_gssapi_get_buffer_desc(m, &gssbuf)) != 0 ||
-	    (r = ssh_gssapi_get_buffer_desc(m, &mic)) != 0)
-		fatal_fr(r, "ssh_gssapi_get_buffer_desc");
-
-	ret = ssh_gssapi_checkmic(gsscontext, &gssbuf, &mic);
-
-	free(gssbuf.value);
-	free(mic.value);
-
-	sshbuf_reset(m);
-	if ((r = sshbuf_put_u32(m, ret)) != 0)
-		fatal_fr(r, "assemble");
-
-	mm_request_send(sock, MONITOR_ANS_GSSCHECKMIC, m);
-
-	if (!GSS_ERROR(ret))
-		monitor_permit(mon_dispatch, MONITOR_REQ_GSSUSEROK, 1);
-
-	return (0);
-}
-
-int
-mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
-{
-	int r, authenticated;
-	const char *displayname;
-
-	if (!options.gss_authentication)
-		fatal_f("GSSAPI authentication not enabled");
-
-	authenticated = authctxt->valid && ssh_gssapi_userok(authctxt->user);
-
-	sshbuf_reset(m);
-	if ((r = sshbuf_put_u32(m, authenticated)) != 0)
-		fatal_fr(r, "assemble");
-
-	debug3_f("sending result %d", authenticated);
-	mm_request_send(sock, MONITOR_ANS_GSSUSEROK, m);
-
-	auth_method = "gssapi-with-mic";
-
-	if ((displayname = ssh_gssapi_displayname()) != NULL)
-		auth2_record_info(authctxt, "%s", displayname);
-
-	/* Monitor loop will terminate if authenticated */
-	return (authenticated);
-}
-#endif /* GSSAPI */
-

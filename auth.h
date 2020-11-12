@@ -31,9 +31,6 @@
 #include <signal.h>
 
 #include <bsd_auth.h>
-#ifdef KRB5
-#include <krb5.h>
-#endif
 
 struct passwd;
 struct ssh;
@@ -67,12 +64,6 @@ struct Authctxt {
 	void		*methoddata;
 	void		*kbdintctxt;
 	auth_session_t	*as;
-#ifdef KRB5
-	krb5_context	 krb5_ctx;
-	krb5_ccache	 krb5_fwd_ccache;
-	krb5_principal	 krb5_user;
-	char		*krb5_ticket_file;
-#endif
 
 	/* Authentication keys already used; these will be refused henceforth */
 	struct sshkey	**prev_keys;
@@ -137,13 +128,6 @@ void	 auth2_record_info(Authctxt *authctxt, const char *, ...)
 	    __attribute__((__format__ (printf, 2, 3)))
 	    __attribute__((__nonnull__ (2)));
 void	 auth2_update_session_info(Authctxt *, const char *, const char *);
-
-#ifdef KRB5
-int	auth_krb5(Authctxt *authctxt, krb5_data *auth, char **client, krb5_data *);
-int	auth_krb5_tgt(Authctxt *authctxt, krb5_data *tgt);
-int	auth_krb5_password(Authctxt *authctxt, const char *password);
-void	krb5_cleanup_proc(Authctxt *authctxt);
-#endif /* KRB5 */
 
 void	do_authentication2(struct ssh *);
 

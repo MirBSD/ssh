@@ -84,14 +84,6 @@ auth_password(struct ssh *ssh, const char *password)
 		ok = 0;
 	if (*password == '\0' && options.permit_empty_passwd == 0)
 		return 0;
-#ifdef KRB5
-	if (options.kerberos_authentication == 1) {
-		int ret = auth_krb5_password(authctxt, password);
-		if (ret == 1 || ret == 0)
-			return ret && ok;
-		/* Fall back to ordinary passwd authentication. */
-	}
-#endif
 	return (sys_auth_passwd(ssh, password) && ok);
 }
 

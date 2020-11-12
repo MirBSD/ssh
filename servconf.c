@@ -112,13 +112,6 @@ initialize_server_options(ServerOptions *options)
 	options->pubkey_authentication = -1;
 	options->pubkey_auth_options = -1;
 	options->pubkey_key_types = NULL;
-	options->kerberos_authentication = -1;
-	options->kerberos_or_local_passwd = -1;
-	options->kerberos_ticket_cleanup = -1;
-	options->kerberos_get_afs_token = -1;
-	options->gss_authentication=-1;
-	options->gss_cleanup_creds = -1;
-	options->gss_strict_acceptor = -1;
 	options->password_authentication = -1;
 	options->kbd_interactive_authentication = -1;
 	options->challenge_response_authentication = -1;
@@ -338,20 +331,6 @@ fill_default_server_options(ServerOptions *options)
 		options->pubkey_authentication = 1;
 	if (options->pubkey_auth_options == -1)
 		options->pubkey_auth_options = 0;
-	if (options->kerberos_authentication == -1)
-		options->kerberos_authentication = 0;
-	if (options->kerberos_or_local_passwd == -1)
-		options->kerberos_or_local_passwd = 1;
-	if (options->kerberos_ticket_cleanup == -1)
-		options->kerberos_ticket_cleanup = 1;
-	if (options->kerberos_get_afs_token == -1)
-		options->kerberos_get_afs_token = 0;
-	if (options->gss_authentication == -1)
-		options->gss_authentication = 0;
-	if (options->gss_cleanup_creds == -1)
-		options->gss_cleanup_creds = 1;
-	if (options->gss_strict_acceptor == -1)
-		options->gss_strict_acceptor = 1;
 	if (options->password_authentication == -1)
 		options->password_authentication = 1;
 	if (options->kbd_interactive_authentication == -1)
@@ -473,8 +452,7 @@ typedef enum {
 	sBadOption,		/* == unknown option */
 	sPort, sHostKeyFile, sLoginGraceTime,
 	sPermitRootLogin, sLogFacility, sLogLevel, sLogVerbose,
-	sKerberosAuthentication, sKerberosOrLocalPasswd, sKerberosTicketCleanup,
-	sKerberosGetAFSToken, sChallengeResponseAuthentication,
+	sChallengeResponseAuthentication,
 	sPasswordAuthentication, sKbdInteractiveAuthentication,
 	sListenAddress, sAddressFamily,
 	sPrintMotd, sPrintLastLog, sIgnoreRhosts,
@@ -489,7 +467,6 @@ typedef enum {
 	sHostbasedUsesNameFromPacketOnly, sHostbasedAcceptedKeyTypes,
 	sHostKeyAlgorithms,
 	sClientAliveInterval, sClientAliveCountMax, sAuthorizedKeysFile,
-	sGssAuthentication, sGssCleanupCreds, sGssStrictAcceptor,
 	sAcceptEnv, sSetEnv, sPermitTunnel,
 	sMatch, sPermitOpen, sPermitListen, sForceCommand, sChrootDirectory,
 	sUsePrivilegeSeparation, sAllowAgentForwarding,
@@ -540,28 +517,7 @@ static struct {
 	{ "pubkeyauthentication", sPubkeyAuthentication, SSHCFG_ALL },
 	{ "pubkeyacceptedkeytypes", sPubkeyAcceptedKeyTypes, SSHCFG_ALL },
 	{ "dsaauthentication", sPubkeyAuthentication, SSHCFG_GLOBAL }, /* alias */
-#ifdef KRB5
-	{ "kerberosauthentication", sKerberosAuthentication, SSHCFG_ALL },
-	{ "kerberosorlocalpasswd", sKerberosOrLocalPasswd, SSHCFG_GLOBAL },
-	{ "kerberosticketcleanup", sKerberosTicketCleanup, SSHCFG_GLOBAL },
-	{ "kerberosgetafstoken", sKerberosGetAFSToken, SSHCFG_GLOBAL },
-#else
-	{ "kerberosauthentication", sUnsupported, SSHCFG_ALL },
-	{ "kerberosorlocalpasswd", sUnsupported, SSHCFG_GLOBAL },
-	{ "kerberosticketcleanup", sUnsupported, SSHCFG_GLOBAL },
-	{ "kerberosgetafstoken", sUnsupported, SSHCFG_GLOBAL },
-#endif
-	{ "kerberostgtpassing", sUnsupported, SSHCFG_GLOBAL },
 	{ "afstokenpassing", sUnsupported, SSHCFG_GLOBAL },
-#ifdef GSSAPI
-	{ "gssapiauthentication", sGssAuthentication, SSHCFG_ALL },
-	{ "gssapicleanupcredentials", sGssCleanupCreds, SSHCFG_GLOBAL },
-	{ "gssapistrictacceptorcheck", sGssStrictAcceptor, SSHCFG_GLOBAL },
-#else
-	{ "gssapiauthentication", sUnsupported, SSHCFG_ALL },
-	{ "gssapicleanupcredentials", sUnsupported, SSHCFG_GLOBAL },
-	{ "gssapistrictacceptorcheck", sUnsupported, SSHCFG_GLOBAL },
-#endif
 	{ "passwordauthentication", sPasswordAuthentication, SSHCFG_ALL },
 	{ "kbdinteractiveauthentication", sKbdInteractiveAuthentication, SSHCFG_ALL },
 	{ "challengeresponseauthentication", sChallengeResponseAuthentication, SSHCFG_GLOBAL },
@@ -1466,34 +1422,6 @@ process_server_config_line_depth(ServerOptions *options, char *line,
 	case sPubkeyAcceptedKeyTypes:
 		charptr = &options->pubkey_key_types;
 		goto parse_keytypes;
-
-	case sKerberosAuthentication:
-		intptr = &options->kerberos_authentication;
-		goto parse_flag;
-
-	case sKerberosOrLocalPasswd:
-		intptr = &options->kerberos_or_local_passwd;
-		goto parse_flag;
-
-	case sKerberosTicketCleanup:
-		intptr = &options->kerberos_ticket_cleanup;
-		goto parse_flag;
-
-	case sKerberosGetAFSToken:
-		intptr = &options->kerberos_get_afs_token;
-		goto parse_flag;
-
-	case sGssAuthentication:
-		intptr = &options->gss_authentication;
-		goto parse_flag;
-
-	case sGssCleanupCreds:
-		intptr = &options->gss_cleanup_creds;
-		goto parse_flag;
-
-	case sGssStrictAcceptor:
-		intptr = &options->gss_strict_acceptor;
-		goto parse_flag;
 
 	case sPasswordAuthentication:
 		intptr = &options->password_authentication;
@@ -2416,10 +2344,8 @@ copy_set_server_options(ServerOptions *dst, ServerOptions *src, int preauth)
 } while (0)
 
 	M_CP_INTOPT(password_authentication);
-	M_CP_INTOPT(gss_authentication);
 	M_CP_INTOPT(pubkey_authentication);
 	M_CP_INTOPT(pubkey_auth_options);
-	M_CP_INTOPT(kerberos_authentication);
 	M_CP_INTOPT(hostbased_authentication);
 	M_CP_INTOPT(hostbased_uses_name_from_packet_only);
 	M_CP_INTOPT(kbd_interactive_authentication);
@@ -2720,16 +2646,6 @@ dump_config(ServerOptions *o)
 	dump_cfg_fmtint(sHostbasedUsesNameFromPacketOnly,
 	    o->hostbased_uses_name_from_packet_only);
 	dump_cfg_fmtint(sPubkeyAuthentication, o->pubkey_authentication);
-#ifdef KRB5
-	dump_cfg_fmtint(sKerberosAuthentication, o->kerberos_authentication);
-	dump_cfg_fmtint(sKerberosOrLocalPasswd, o->kerberos_or_local_passwd);
-	dump_cfg_fmtint(sKerberosTicketCleanup, o->kerberos_ticket_cleanup);
-	dump_cfg_fmtint(sKerberosGetAFSToken, o->kerberos_get_afs_token);
-#endif
-#ifdef GSSAPI
-	dump_cfg_fmtint(sGssAuthentication, o->gss_authentication);
-	dump_cfg_fmtint(sGssCleanupCreds, o->gss_cleanup_creds);
-#endif
 	dump_cfg_fmtint(sPasswordAuthentication, o->password_authentication);
 	dump_cfg_fmtint(sKbdInteractiveAuthentication,
 	    o->kbd_interactive_authentication);
