@@ -9,3 +9,23 @@ OpenSSH 7.6:
  * [587]ssh(1)/[588]sshd(8): remove support for the hmac-ripemd160 MAC.
  * [589]ssh(1)/[590]sshd(8): remove support for the arcfour, blowfish and CAST ciphers.
  * [591]ssh(1): do not offer CBC ciphers by default.
+
+
+fixup unused code/data (maybe reintroduce lib):
+
+   text    data     bss     dec     hex filename
+
+ 202661    3380   13792  219833   35ab9 /usr/obj/usr.bin/ssh/ssh/ssh
+ 245428    4388   19512  269328   41c10 /usr/obj/usr.bin/ssh/sshd/sshd
+
+ 368440    3064   11076  382580   5d674 ssh/obj/ssh
+ 413020    3824   11980  428824   68b18 sshd/obj/sshd
+
+ 367233    3100    7848  378181   5c545 ssh/obj/ssh	MKC_DEBG=gc-sections
+ 412614    3984    8480  425078   67c76 sshd/obj/sshd	MKC_DEBG=gc-sections
+
+   1207     -36    3228         saved in ssh
+    406    -160    3500         saved in sshd
+
+Evidently, MKC_DEBG=gc-sections is not for prod
+because .data size has gone up which it cannot sensibly…
