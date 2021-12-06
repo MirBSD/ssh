@@ -1,4 +1,4 @@
-/* $OpenBSD: misc.c,v 1.155 2020/10/18 11:32:01 djm Exp $ */
+/* $OpenBSD: misc.c,v 1.171 2021/11/13 21:14:13 deraadt Exp $ */
 /*
  * Copyright (c) 2000 Markus Friedl.  All rights reserved.
  * Copyright (c) 2005-2020 Damien Miller.  All rights reserved.
@@ -69,6 +69,20 @@ chop(char *s)
 	}
 	return s;
 
+}
+
+/* remove whitespace from end of string */
+void
+rtrim(char *s)
+{
+	size_t i;
+
+	if ((i = strlen(s)) == 0)
+		return;
+	for (i--; i > 0; i--) {
+		if (isspace((int)s[i]))
+			s[i] = '\0';
+	}
 }
 
 /* set/unset filedescriptor to non-blocking */
@@ -204,6 +218,49 @@ set_rdomain(int fd, const char *name)
 	return 0;
 }
 
+int
+get_sock_af(int fd)
+{
+	struct sockaddr_storage to;
+	socklen_t tolen = sizeof(to);
+
+	memset(&to, 0, sizeof(to));
+	if (getsockname(fd, (struct sockaddr *)&to, &tolen) == -1)
+		return -1;
+	return to.ss_family;
+}
+
+void
+set_sock_tos(int fd, int tos)
+{
+	int af;
+
+	switch ((af = get_sock_af(fd))) {
+	case -1:
+		/* assume not a socket */
+		break;
+	case AF_INET:
+		debug3_f("set socket %d IP_TOS 0x%02x", fd, tos);
+		if (setsockopt(fd, IPPROTO_IP, IP_TOS,
+		    &tos, sizeof(tos)) == -1) {
+			error("setsockopt socket %d IP_TOS %d: %s:",
+			    fd, tos, strerror(errno));
+		}
+		break;
+	case AF_INET6:
+		debug3_f("set socket %d IPV6_TCLASS 0x%02x", fd, tos);
+		if (setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS,
+		    &tos, sizeof(tos)) == -1) {
+			error("setsockopt socket %d IPV6_TCLASS %d: %.100s:",
+			    fd, tos, strerror(errno));
+		}
+		break;
+	default:
+		debug2_f("unsupported socket family %d", af);
+		break;
+	}
+}
+
 /*
  * Wait up to *timeoutp milliseconds for events on fd. Updates
  * *timeoutp with time remaining.
@@ -216,10 +273,10 @@ waitfd(int fd, int *timeoutp, short events)
 	struct timeval t_start;
 	int oerrno, r;
 
-	monotime_tv(&t_start);
 	pfd.fd = fd;
 	pfd.events = events;
 	for (; *timeoutp >= 0;) {
+		monotime_tv(&t_start);
 		r = poll(&pfd, 1, *timeoutp);
 		oerrno = errno;
 		ms_subtract_diff(&t_start, timeoutp);
@@ -454,7 +511,7 @@ a2tun(const char *s, int *remote)
  *
  * Return -1 if time string is invalid.
  */
-long
+int
 convtime(const char *s)
 {
 	long total, secs, multiplier;
@@ -471,7 +528,7 @@ convtime(const char *s)
 	while (*p) {
 		secs = strtol(p, &endp, 10);
 		if (p == endp ||
-		    (errno == ERANGE && (secs == LONG_MIN || secs == LONG_MAX)) ||
+		    (errno == ERANGE && (secs == INT_MIN || secs == INT_MAX)) ||
 		    secs < 0)
 			return -1;
 
@@ -502,10 +559,10 @@ convtime(const char *s)
 		default:
 			return -1;
 		}
-		if (secs >= LONG_MAX / multiplier)
+		if (secs > INT_MAX / multiplier)
 			return -1;
 		secs *= multiplier;
-		if  (total >= LONG_MAX - secs)
+		if  (total > INT_MAX - secs)
 			return -1;
 		total += secs;
 		if (total < 0)
@@ -1012,29 +1069,37 @@ freeargs(arglist *args)
  * Expands tildes in the file name.  Returns data allocated by xmalloc.
  * Warning: this calls getpw*.
  */
-char *
-tilde_expand_filename(const char *filename, uid_t uid)
+int
+tilde_expand(const char *filename, uid_t uid, char **retp)
 {
 	const char *path, *sep;
 	char user[128], *ret;
 	struct passwd *pw;
 	u_int len, slash;
 
-	if (*filename != '~')
-		return (xstrdup(filename));
+	if (*filename != '~') {
+		*retp = xstrdup(filename);
+		return 0;
+	}
 	filename++;
 
 	path = strchr(filename, '/');
 	if (path != NULL && path > filename) {		/* ~user/path */
 		slash = path - filename;
-		if (slash > sizeof(user) - 1)
-			fatal("tilde_expand_filename: ~username too long");
+		if (slash > sizeof(user) - 1) {
+			error_f("~username too long");
+			return -1;
+		}
 		memcpy(user, filename, slash);
 		user[slash] = '\0';
-		if ((pw = getpwnam(user)) == NULL)
-			fatal("tilde_expand_filename: No such user %s", user);
-	} else if ((pw = getpwuid(uid)) == NULL)	/* ~/path */
-		fatal("tilde_expand_filename: No such uid %ld", (long)uid);
+		if ((pw = getpwnam(user)) == NULL) {
+			error_f("No such user %s", user);
+			return -1;
+		}
+	} else if ((pw = getpwuid(uid)) == NULL) {	/* ~/path */
+		error_f("No such uid %ld", (long)uid);
+		return -1;
+	}
 
 	/* Make sure directory has a trailing '/' */
 	len = strlen(pw->pw_dir);
@@ -1047,10 +1112,23 @@ tilde_expand_filename(const char *filename, uid_t uid)
 	if (path != NULL)
 		filename = path + 1;
 
-	if (xasprintf(&ret, "%s%s%s", pw->pw_dir, sep, filename) >= PATH_MAX)
-		fatal("tilde_expand_filename: Path too long");
+	if (xasprintf(&ret, "%s%s%s", pw->pw_dir, sep, filename) >= PATH_MAX) {
+		error_f("Path too long");
+		return -1;
+	}
 
-	return (ret);
+	*retp = ret;
+	return 0;
+}
+
+char *
+tilde_expand_filename(const char *filename, uid_t uid)
+{
+	char *ret;
+
+	if (tilde_expand(filename, uid, &ret) != 0)
+		cleanup_exit(255);
+	return ret;
 }
 
 /*
@@ -1106,7 +1184,7 @@ vdollar_percent_expand(int *parseerror, int dollar, int percent,
 			string += 2;  /* skip over '${' */
 			if ((varend = strchr(string, '}')) == NULL) {
 				error_f("environment variable '%s' missing "
-				   "closing '}'", string);
+				    "closing '}'", string);
 				goto out;
 			}
 			len = varend - string;
@@ -1484,12 +1562,12 @@ ms_subtract_diff(struct timeval *start, int *ms)
 }
 
 void
-ms_to_timeval(struct timeval *tv, int ms)
+ms_to_timespec(struct timespec *ts, int ms)
 {
 	if (ms < 0)
 		ms = 0;
-	tv->tv_sec = ms / 1000;
-	tv->tv_usec = (ms % 1000) * 1000;
+	ts->tv_sec = ms / 1000;
+	ts->tv_nsec = (ms % 1000) * 1000 * 1000;
 }
 
 void
@@ -1780,14 +1858,13 @@ daemonized(void)
 	return 1;
 }
 
-
 /*
  * Splits 's' into an argument vector. Handles quoted string and basic
  * escape characters (\\, \", \'). Caller must free the argument vector
  * and its members.
  */
 int
-argv_split(const char *s, int *argcp, char ***argvp)
+argv_split(const char *s, int *argcp, char ***argvp, int terminate_on_comment)
 {
 	int r = SSH_ERR_INTERNAL_ERROR;
 	int argc = 0, quote, i, j;
@@ -1800,14 +1877,10 @@ argv_split(const char *s, int *argcp, char ***argvp)
 		/* Skip leading whitespace */
 		if (s[i] == ' ' || s[i] == '\t')
 			continue;
-
+		if (terminate_on_comment && s[i] == '#')
+			break;
 		/* Start of a token */
 		quote = 0;
-		if (s[i] == '\\' &&
-		    (s[i + 1] == '\'' || s[i + 1] == '\"' || s[i + 1] == '\\'))
-			i++;
-		else if (s[i] == '\'' || s[i] == '"')
-			quote = s[i++];
 
 		argv = xreallocarray(argv, (argc + 2), sizeof(*argv));
 		arg = argv[argc++] = xcalloc(1, strlen(s + i) + 1);
@@ -1818,7 +1891,8 @@ argv_split(const char *s, int *argcp, char ***argvp)
 			if (s[i] == '\\') {
 				if (s[i + 1] == '\'' ||
 				    s[i + 1] == '\"' ||
-				    s[i + 1] == '\\') {
+				    s[i + 1] == '\\' ||
+				    (quote == 0 && s[i + 1] == ' ')) {
 					i++; /* Skip '\' */
 					arg[j++] = s[i];
 				} else {
@@ -1827,8 +1901,10 @@ argv_split(const char *s, int *argcp, char ***argvp)
 				}
 			} else if (quote == 0 && (s[i] == ' ' || s[i] == '\t'))
 				break; /* done */
+			else if (quote == 0 && (s[i] == '\"' || s[i] == '\''))
+				quote = s[i]; /* quote start */
 			else if (quote != 0 && s[i] == quote)
-				break; /* done */
+				quote = 0; /* quote end */
 			else
 				arg[j++] = s[i];
 		}
@@ -1908,6 +1984,36 @@ argv_assemble(int argc, char **argv)
 	sshbuf_free(buf);
 	sshbuf_free(arg);
 	return ret;
+}
+
+char *
+argv_next(int *argcp, char ***argvp)
+{
+	char *ret = (*argvp)[0];
+
+	if (*argcp > 0 && ret != NULL) {
+		(*argcp)--;
+		(*argvp)++;
+	}
+	return ret;
+}
+
+void
+argv_consume(int *argcp)
+{
+	*argcp = 0;
+}
+
+void
+argv_free(char **av, int ac)
+{
+	int i;
+
+	if (av == NULL)
+		return;
+	for (i = 0; i < ac; i++)
+		free(av[i]);
+	free(av);
 }
 
 /* Returns 0 if pid exited cleanly, non-zero otherwise */
@@ -2199,10 +2305,13 @@ parse_absolute_time(const char *s, uint64_t *tp)
 	return 0;
 }
 
+/* On OpenBSD time_t is int64_t which is long long. */
+#define SSH_TIME_T_MAX LLONG_MAX
+
 void
 format_absolute_time(uint64_t t, char *buf, size_t len)
 {
-	time_t tt = t > INT_MAX ? INT_MAX : t; /* XXX revisit in 2038 :P */
+	time_t tt = t > SSH_TIME_T_MAX ? SSH_TIME_T_MAX : t;
 	struct tm tm;
 
 	localtime_r(&tt, &tm);
@@ -2297,6 +2406,32 @@ opt_match(const char **opts, const char *term)
 	return 0;
 }
 
+void
+opt_array_append2(const char *file, const int line, const char *directive,
+    char ***array, int **iarray, u_int *lp, const char *s, int i)
+{
+
+	if (*lp >= INT_MAX)
+		fatal("%s line %d: Too many %s entries", file, line, directive);
+
+	if (iarray != NULL) {
+		*iarray = xrecallocarray(*iarray, *lp, *lp + 1,
+		    sizeof(**iarray));
+		(*iarray)[*lp] = i;
+	}
+
+	*array = xrecallocarray(*array, *lp, *lp + 1, sizeof(**array));
+	(*array)[*lp] = xstrdup(s);
+	(*lp)++;
+}
+
+void
+opt_array_append(const char *file, const int line, const char *directive,
+    char ***array, u_int *lp, const char *s)
+{
+	opt_array_append2(file, line, directive, array, NULL, lp, s, 0);
+}
+
 sshsig_t
 ssh_signal(int signum, sshsig_t handler)
 {
@@ -2334,4 +2469,194 @@ stdfd_devnull(int do_stdin, int do_stdout, int do_stderr)
 	if (devnull > STDERR_FILENO)
 		close(devnull);
 	return ret;
+}
+
+/*
+ * Runs command in a subprocess with a minimal environment.
+ * Returns pid on success, 0 on failure.
+ * The child stdout and stderr maybe captured, left attached or sent to
+ * /dev/null depending on the contents of flags.
+ * "tag" is prepended to log messages.
+ * NB. "command" is only used for logging; the actual command executed is
+ * av[0].
+ */
+pid_t
+subprocess(const char *tag, const char *command,
+    int ac, char **av, FILE **child, u_int flags,
+    struct passwd *pw, privdrop_fn *drop_privs, privrestore_fn *restore_privs)
+{
+	FILE *f = NULL;
+	struct stat st;
+	int fd, devnull, p[2], i;
+	pid_t pid;
+	char *cp, errmsg[512];
+	u_int nenv = 0;
+	char **env = NULL;
+
+	/* If dropping privs, then must specify user and restore function */
+	if (drop_privs != NULL && (pw == NULL || restore_privs == NULL)) {
+		error("%s: inconsistent arguments", tag); /* XXX fatal? */
+		return 0;
+	}
+	if (pw == NULL && (pw = getpwuid(getuid())) == NULL) {
+		error("%s: no user for current uid", tag);
+		return 0;
+	}
+	if (child != NULL)
+		*child = NULL;
+
+	debug3_f("%s command \"%s\" running as %s (flags 0x%x)",
+	    tag, command, pw->pw_name, flags);
+
+	/* Check consistency */
+	if ((flags & SSH_SUBPROCESS_STDOUT_DISCARD) != 0 &&
+	    (flags & SSH_SUBPROCESS_STDOUT_CAPTURE) != 0) {
+		error_f("inconsistent flags");
+		return 0;
+	}
+	if (((flags & SSH_SUBPROCESS_STDOUT_CAPTURE) == 0) != (child == NULL)) {
+		error_f("inconsistent flags/output");
+		return 0;
+	}
+
+	/*
+	 * If executing an explicit binary, then verify the it exists
+	 * and appears safe-ish to execute
+	 */
+	if (!path_absolute(av[0])) {
+		error("%s path is not absolute", tag);
+		return 0;
+	}
+	if (drop_privs != NULL)
+		drop_privs(pw);
+	if (stat(av[0], &st) == -1) {
+		error("Could not stat %s \"%s\": %s", tag,
+		    av[0], strerror(errno));
+		goto restore_return;
+	}
+	if ((flags & SSH_SUBPROCESS_UNSAFE_PATH) == 0 &&
+	    safe_path(av[0], &st, NULL, 0, errmsg, sizeof(errmsg)) != 0) {
+		error("Unsafe %s \"%s\": %s", tag, av[0], errmsg);
+		goto restore_return;
+	}
+	/* Prepare to keep the child's stdout if requested */
+	if (pipe(p) == -1) {
+		error("%s: pipe: %s", tag, strerror(errno));
+ restore_return:
+		if (restore_privs != NULL)
+			restore_privs();
+		return 0;
+	}
+	if (restore_privs != NULL)
+		restore_privs();
+
+	switch ((pid = fork())) {
+	case -1: /* error */
+		error("%s: fork: %s", tag, strerror(errno));
+		close(p[0]);
+		close(p[1]);
+		return 0;
+	case 0: /* child */
+		/* Prepare a minimal environment for the child. */
+		if ((flags & SSH_SUBPROCESS_PRESERVE_ENV) == 0) {
+			nenv = 5;
+			env = xcalloc(sizeof(*env), nenv);
+			child_set_env(&env, &nenv, "PATH", _PATH_STDPATH);
+			child_set_env(&env, &nenv, "USER", pw->pw_name);
+			child_set_env(&env, &nenv, "LOGNAME", pw->pw_name);
+			child_set_env(&env, &nenv, "HOME", pw->pw_dir);
+			if ((cp = getenv("LANG")) != NULL)
+				child_set_env(&env, &nenv, "LANG", cp);
+		}
+
+		for (i = 1; i < NSIG; i++)
+			ssh_signal(i, SIG_DFL);
+
+		if ((devnull = open(_PATH_DEVNULL, O_RDWR)) == -1) {
+			error("%s: open %s: %s", tag, _PATH_DEVNULL,
+			    strerror(errno));
+			_exit(1);
+		}
+		if (dup2(devnull, STDIN_FILENO) == -1) {
+			error("%s: dup2: %s", tag, strerror(errno));
+			_exit(1);
+		}
+
+		/* Set up stdout as requested; leave stderr in place for now. */
+		fd = -1;
+		if ((flags & SSH_SUBPROCESS_STDOUT_CAPTURE) != 0)
+			fd = p[1];
+		else if ((flags & SSH_SUBPROCESS_STDOUT_DISCARD) != 0)
+			fd = devnull;
+		if (fd != -1 && dup2(fd, STDOUT_FILENO) == -1) {
+			error("%s: dup2: %s", tag, strerror(errno));
+			_exit(1);
+		}
+		closefrom(STDERR_FILENO + 1);
+
+		if (geteuid() == 0 &&
+		    initgroups(pw->pw_name, pw->pw_gid) == -1) {
+			error("%s: initgroups(%s, %u): %s", tag,
+			    pw->pw_name, (u_int)pw->pw_gid, strerror(errno));
+			_exit(1);
+		}
+		if (setresgid(pw->pw_gid, pw->pw_gid, pw->pw_gid) == -1) {
+			error("%s: setresgid %u: %s", tag, (u_int)pw->pw_gid,
+			    strerror(errno));
+			_exit(1);
+		}
+		if (setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid) == -1) {
+			error("%s: setresuid %u: %s", tag, (u_int)pw->pw_uid,
+			    strerror(errno));
+			_exit(1);
+		}
+		/* stdin is pointed to /dev/null at this point */
+		if ((flags & SSH_SUBPROCESS_STDOUT_DISCARD) != 0 &&
+		    dup2(STDIN_FILENO, STDERR_FILENO) == -1) {
+			error("%s: dup2: %s", tag, strerror(errno));
+			_exit(1);
+		}
+		if (env != NULL)
+			execve(av[0], av, env);
+		else
+			execv(av[0], av);
+		error("%s %s \"%s\": %s", tag, env == NULL ? "execv" : "execve",
+		    command, strerror(errno));
+		_exit(127);
+	default: /* parent */
+		break;
+	}
+
+	close(p[1]);
+	if ((flags & SSH_SUBPROCESS_STDOUT_CAPTURE) == 0)
+		close(p[0]);
+	else if ((f = fdopen(p[0], "r")) == NULL) {
+		error("%s: fdopen: %s", tag, strerror(errno));
+		close(p[0]);
+		/* Don't leave zombie child */
+		kill(pid, SIGTERM);
+		while (waitpid(pid, NULL, 0) == -1 && errno == EINTR)
+			;
+		return 0;
+	}
+	/* Success */
+	debug3_f("%s pid %ld", tag, (long)pid);
+	if (child != NULL)
+		*child = f;
+	return pid;
+}
+
+const char *
+lookup_env_in_list(const char *env, char * const *envs, size_t nenvs)
+{
+	size_t i, envlen;
+
+	envlen = strlen(env);
+	for (i = 0; i < nenvs; i++) {
+		if (strncmp(envs[i], env, envlen) == 0 &&
+		    envs[i][envlen] == '=') {
+			return envs[i] + envlen + 1;
+		}
+	}
+	return NULL;
 }

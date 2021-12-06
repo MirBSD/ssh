@@ -1,4 +1,4 @@
-/* $OpenBSD: sshkey.h,v 1.48 2020/11/08 11:46:12 dtucker Exp $ */
+/* $OpenBSD: sshkey.h,v 1.50 2021/07/23 03:37:52 djm Exp $ */
 
 /*
  * Copyright (c) 2000, 2001 Markus Friedl.  All rights reserved.
@@ -189,8 +189,12 @@ int	 sshkey_type_plain(int);
 int	 sshkey_to_certified(struct sshkey *);
 int	 sshkey_drop_cert(struct sshkey *);
 int	 sshkey_cert_copy(const struct sshkey *, struct sshkey *);
-int	 sshkey_cert_check_authority(const struct sshkey *, int, int,
+int	 sshkey_cert_check_authority(const struct sshkey *, int, int, int,
+    uint64_t, const char *, const char **);
+int	 sshkey_cert_check_authority_now(const struct sshkey *, int, int, int,
     const char *, const char **);
+int	 sshkey_cert_check_host(const struct sshkey *, const char *,
+    int , const char *, const char **);
 size_t	 sshkey_format_cert_validity(const struct sshkey_cert *,
     char *, size_t) __attribute__((__bounded__(__string__, 2, 3)));
 int	 sshkey_check_cert_sigtype(const struct sshkey *, const char *);

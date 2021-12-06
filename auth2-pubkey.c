@@ -1,4 +1,4 @@
-/* $OpenBSD: auth2-pubkey.c,v 1.101 2020/10/18 11:32:01 djm Exp $ */
+/* $OpenBSD: auth2-pubkey.c,v 1.110 2021/09/29 01:33:32 djm Exp $ */
 /*
  * Copyright (c) 2000 Markus Friedl.  All rights reserved.
  *
@@ -44,6 +44,7 @@
 #include "ssh.h"
 #include "ssh2.h"
 #include "packet.h"
+#include "kex.h"
 #include "sshbuf.h"
 #include "log.h"
 #include "misc.h"
@@ -69,8 +70,6 @@
 
 /* import */
 extern ServerOptions options;
-extern u_char *session_id2;
-extern u_int session_id2_len;
 
 static char *
 format_key(const struct sshkey *key)
@@ -147,8 +146,8 @@ userauth_pubkey(struct ssh *ssh)
 		logit("refusing previously-used %s key", sshkey_type(key));
 		goto done;
 	}
-	if (match_pattern_list(pkalg, options.pubkey_key_types, 0) != 1) {
-		logit_f("key type %s not in PubkeyAcceptedKeyTypes",
+	if (match_pattern_list(pkalg, options.pubkey_accepted_algos, 0) != 1) {
+		logit_f("key type %s not in PubkeyAcceptedAlgorithms",
 		    sshkey_ssh_name(key));
 		goto done;
 	}
@@ -172,11 +171,11 @@ userauth_pubkey(struct ssh *ssh)
 		if ((b = sshbuf_new()) == NULL)
 			fatal_f("sshbuf_new failed");
 		if (ssh->compat & SSH_OLD_SESSIONID) {
-			if ((r = sshbuf_put(b, session_id2, session_id2_len)) != 0)
+			if ((r = sshbuf_putb(b, ssh->kex->session_id)) != 0)
 				fatal_fr(r, "put old session id");
 		} else {
-			if ((r = sshbuf_put_string(b, session_id2,
-			    session_id2_len)) != 0)
+			if ((r = sshbuf_put_stringb(b,
+			    ssh->kex->session_id)) != 0)
 				fatal_fr(r, "put session id");
 		}
 		if (!authctxt->valid || authctxt->user == NULL) {
@@ -374,7 +373,7 @@ process_principals(struct ssh *ssh, FILE *f, const char *file,
 {
 	char loc[256], *line = NULL, *cp, *ep;
 	size_t linesize = 0;
-	u_long linenum = 0;
+	u_long linenum = 0, nonblank = 0;
 	u_int found_principal = 0;
 
 	if (authoptsp != NULL)
@@ -395,10 +394,12 @@ process_principals(struct ssh *ssh, FILE *f, const char *file,
 		if (!*cp || *cp == '\n')
 			continue;
 
+		nonblank++;
 		snprintf(loc, sizeof(loc), "%.200s:%lu", file, linenum);
 		if (check_principals_line(ssh, cp, cert, loc, authoptsp) == 0)
 			found_principal = 1;
 	}
+	debug2_f("%s: processed %lu/%lu lines", file, nonblank, linenum);
 	free(line);
 	return found_principal;
 }
@@ -473,7 +474,8 @@ match_principals_command(struct ssh *ssh, struct passwd *user_pw,
 	}
 
 	/* Turn the command into an argument vector */
-	if (argv_split(options.authorized_principals_command, &ac, &av) != 0) {
+	if (argv_split(options.authorized_principals_command,
+	    &ac, &av, 0) != 0) {
 		error("AuthorizedPrincipalsCommand \"%s\" contains "
 		    "invalid quotes", options.authorized_principals_command);
 		goto out;
@@ -527,9 +529,10 @@ match_principals_command(struct ssh *ssh, struct passwd *user_pw,
 	/* Prepare a printable command for logs, etc. */
 	command = argv_assemble(ac, av);
 
-	if ((pid = subprocess("AuthorizedPrincipalsCommand", runas_pw, command,
+	if ((pid = subprocess("AuthorizedPrincipalsCommand", command,
 	    ac, av, &f,
-	    SSH_SUBPROCESS_STDOUT_CAPTURE|SSH_SUBPROCESS_STDERR_DISCARD)) == 0)
+	    SSH_SUBPROCESS_STDOUT_CAPTURE|SSH_SUBPROCESS_STDERR_DISCARD,
+	    runas_pw, temporarily_use_uid, restore_uid)) == 0)
 		goto out;
 
 	uid_swapped = 1;
@@ -670,8 +673,9 @@ check_authkey_line(struct ssh *ssh, struct passwd *pw, struct sshkey *key,
 		reason = "Certificate does not contain an authorized principal";
 		goto fail_reason;
 	}
-	if (sshkey_cert_check_authority(key, 0, 0,
-	   keyopts->cert_principals == NULL ? pw->pw_name : NULL, &reason) != 0)
+	if (sshkey_cert_check_authority_now(key, 0, 0, 0,
+	    keyopts->cert_principals == NULL ? pw->pw_name : NULL,
+	    &reason) != 0)
 		goto fail_reason;
 
 	verbose("Accepted certificate ID \"%s\" (serial %llu) "
@@ -714,7 +718,7 @@ check_authkeys_file(struct ssh *ssh, struct passwd *pw, FILE *f,
 	char *cp, *line = NULL, loc[256];
 	size_t linesize = 0;
 	int found_key = 0;
-	u_long linenum = 0;
+	u_long linenum = 0, nonblank = 0;
 
 	if (authoptsp != NULL)
 		*authoptsp = NULL;
@@ -730,11 +734,14 @@ check_authkeys_file(struct ssh *ssh, struct passwd *pw, FILE *f,
 		skip_space(&cp);
 		if (!*cp || *cp == '\n' || *cp == '#')
 			continue;
+
+		nonblank++;
 		snprintf(loc, sizeof(loc), "%.200s:%lu", file, linenum);
 		if (check_authkey_line(ssh, pw, key, cp, loc, authoptsp) == 0)
 			found_key = 1;
 	}
 	free(line);
+	debug2_f("%s: processed %lu/%lu lines", file, nonblank, linenum);
 	return found_key;
 }
 
@@ -782,14 +789,14 @@ user_cert_trusted_ca(struct ssh *ssh, struct passwd *pw, struct sshkey *key,
 		found_principal = 1;
 	/* If principals file or command is specified, then require a match */
 	use_authorized_principals = principals_file != NULL ||
-            options.authorized_principals_command != NULL;
+	    options.authorized_principals_command != NULL;
 	if (!found_principal && use_authorized_principals) {
 		reason = "Certificate does not contain an authorized principal";
 		goto fail_reason;
 	}
 	if (use_authorized_principals && principals_opts == NULL)
 		fatal_f("internal error: missing principals_opts");
-	if (sshkey_cert_check_authority(key, 0, 1,
+	if (sshkey_cert_check_authority_now(key, 0, 1, 0,
 	    use_authorized_principals ? NULL : pw->pw_name, &reason) != 0)
 		goto fail_reason;
 
@@ -922,14 +929,14 @@ user_key_command_allowed2(struct ssh *ssh, struct passwd *user_pw,
 	}
 
 	/* Turn the command into an argument vector */
-	if (argv_split(options.authorized_keys_command, &ac, &av) != 0) {
+	if (argv_split(options.authorized_keys_command, &ac, &av, 0) != 0) {
 		error("AuthorizedKeysCommand \"%s\" contains invalid quotes",
-		    command);
+		    options.authorized_keys_command);
 		goto out;
 	}
 	if (ac == 0) {
 		error("AuthorizedKeysCommand \"%s\" yielded no arguments",
-		    command);
+		    options.authorized_keys_command);
 		goto out;
 	}
 	snprintf(uidstr, sizeof(uidstr), "%llu",
@@ -965,9 +972,10 @@ user_key_command_allowed2(struct ssh *ssh, struct passwd *user_pw,
 		xasprintf(&command, "%s %s", av[0], av[1]);
 	}
 
-	if ((pid = subprocess("AuthorizedKeysCommand", runas_pw, command,
+	if ((pid = subprocess("AuthorizedKeysCommand", command,
 	    ac, av, &f,
-	    SSH_SUBPROCESS_STDOUT_CAPTURE|SSH_SUBPROCESS_STDERR_DISCARD)) == 0)
+	    SSH_SUBPROCESS_STDOUT_CAPTURE|SSH_SUBPROCESS_STDERR_DISCARD,
+	    runas_pw, temporarily_use_uid, restore_uid)) == 0)
 		goto out;
 
 	uid_swapped = 1;

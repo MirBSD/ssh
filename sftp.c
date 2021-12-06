@@ -1,4 +1,4 @@
-/* $OpenBSD: sftp.c,v 1.204 2020/10/29 02:52:43 djm Exp $ */
+/* $OpenBSD: sftp.c,v 1.212 2021/09/11 09:05:50 schwarze Exp $ */
 /*
  * Copyright (c) 2001-2004 Damien Miller <djm@openbsd.org>
  *
@@ -50,9 +50,6 @@
 #include "sftp-common.h"
 #include "sftp-client.h"
 
-#define DEFAULT_COPY_BUFLEN	32768	/* Size of buffer for up/download */
-#define DEFAULT_NUM_REQUESTS	64	/* # concurrent outstanding requests */
-
 /* File to read commands from */
 FILE* infile;
 
@@ -62,7 +59,7 @@ int batchmode = 0;
 /* PID of ssh transport process */
 static volatile pid_t sshpid = -1;
 
-/* Suppress diagnositic messages */
+/* Suppress diagnostic messages */
 int quiet = 0;
 
 /* This is set to 0 if the progressmeter is not desired. */
@@ -233,6 +230,13 @@ cmd_interrupt(int signo)
 	errno = olderrno;
 }
 
+/* ARGSUSED */
+static void
+read_interrupt(int signo)
+{
+	interrupted = 1;
+}
+
 /*ARGSUSED*/
 static void
 sigchld_handler(int sig)
@@ -361,20 +365,6 @@ path_strip(const char *path, const char *strip)
 	}
 
 	return (xstrdup(path));
-}
-
-static char *
-make_absolute(char *p, const char *pwd)
-{
-	char *abs_str;
-
-	/* Derelativise */
-	if (p && !path_absolute(p)) {
-		abs_str = path_append(pwd, p);
-		free(p);
-		return(abs_str);
-	} else
-		return(p);
 }
 
 static int
@@ -586,40 +576,6 @@ parse_no_flags(const char *cmd, char **argv, int argc)
 }
 
 static int
-is_dir(const char *path)
-{
-	struct stat sb;
-
-	/* XXX: report errors? */
-	if (stat(path, &sb) == -1)
-		return(0);
-
-	return(S_ISDIR(sb.st_mode));
-}
-
-static int
-remote_is_dir(struct sftp_conn *conn, const char *path)
-{
-	Attrib *a;
-
-	/* XXX: report errors? */
-	if ((a = do_stat(conn, path, 1)) == NULL)
-		return(0);
-	if (!(a->flags & SSH2_FILEXFER_ATTR_PERMISSIONS))
-		return(0);
-	return(S_ISDIR(a->perm));
-}
-
-/* Check whether path returned from glob(..., GLOB_MARK, ...) is a directory */
-static int
-pathname_is_dir(const char *pathname)
-{
-	size_t l = strlen(pathname);
-
-	return l > 0 && pathname[l - 1] == '/';
-}
-
-static int
 process_get(struct sftp_conn *conn, const char *src, const char *dst,
     const char *pwd, int pflag, int rflag, int resume, int fflag)
 {
@@ -648,7 +604,7 @@ process_get(struct sftp_conn *conn, const char *src, const char *dst,
 	 * If multiple matches then dst must be a directory or
 	 * unspecified.
 	 */
-	if (g.gl_matchc > 1 && dst != NULL && !is_dir(dst)) {
+	if (g.gl_matchc > 1 && dst != NULL && !local_is_dir(dst)) {
 		error("Multiple source paths, but destination "
 		    "\"%s\" is not a directory", dst);
 		err = -1;
@@ -665,7 +621,7 @@ process_get(struct sftp_conn *conn, const char *src, const char *dst,
 		}
 
 		if (g.gl_matchc == 1 && dst) {
-			if (is_dir(dst)) {
+			if (local_is_dir(dst)) {
 				abs_dst = path_append(dst, filename);
 			} else {
 				abs_dst = xstrdup(dst);
@@ -684,10 +640,11 @@ process_get(struct sftp_conn *conn, const char *src, const char *dst,
 		else if (!quiet && !resume)
 			mprintf("Fetching %s to %s\n",
 			    g.gl_pathv[i], abs_dst);
-		if (pathname_is_dir(g.gl_pathv[i]) && (rflag || global_rflag)) {
+		/* XXX follow link flag */
+		if (globpath_is_dir(g.gl_pathv[i]) && (rflag || global_rflag)) {
 			if (download_dir(conn, g.gl_pathv[i], abs_dst, NULL,
 			    pflag || global_pflag, 1, resume,
-			    fflag || global_fflag) == -1)
+			    fflag || global_fflag, 0) == -1)
 				err = -1;
 		} else {
 			if (do_download(conn, g.gl_pathv[i], abs_dst, NULL,
@@ -770,17 +727,18 @@ process_put(struct sftp_conn *conn, const char *src, const char *dst,
 		}
 		free(tmp);
 
-                resume |= global_aflag;
+		resume |= global_aflag;
 		if (!quiet && resume)
 			mprintf("Resuming upload of %s to %s\n",
 			    g.gl_pathv[i], abs_dst);
 		else if (!quiet && !resume)
 			mprintf("Uploading %s to %s\n",
 			    g.gl_pathv[i], abs_dst);
-		if (pathname_is_dir(g.gl_pathv[i]) && (rflag || global_rflag)) {
+		/* XXX follow_link_flag */
+		if (globpath_is_dir(g.gl_pathv[i]) && (rflag || global_rflag)) {
 			if (upload_dir(conn, g.gl_pathv[i], abs_dst,
 			    pflag || global_pflag, 1, resume,
-			    fflag || global_fflag) == -1)
+			    fflag || global_fflag, 0) == -1)
 				err = -1;
 		} else {
 			if (do_upload(conn, g.gl_pathv[i], abs_dst,
@@ -915,9 +873,12 @@ sglob_comp(const void *aa, const void *bb)
 #define NCMP(a,b) (a == b ? 0 : (a < b ? 1 : -1))
 	if (sort_flag & LS_NAME_SORT)
 		return (rmul * strcmp(ap, bp));
-	else if (sort_flag & LS_TIME_SORT)
-		return (rmul * timespeccmp(&as->st_mtim, &bs->st_mtim, <));
-	else if (sort_flag & LS_SIZE_SORT)
+	else if (sort_flag & LS_TIME_SORT) {
+		if (timespeccmp(&as->st_mtim, &bs->st_mtim, ==))
+			return 0;
+		return timespeccmp(&as->st_mtim, &bs->st_mtim, <) ?
+		    rmul : -rmul;
+	} else if (sort_flag & LS_SIZE_SORT)
 		return (rmul * NCMP(as->st_size, bs->st_size));
 
 	fatal("Unknown ls sort type");
@@ -2211,23 +2172,34 @@ interactive_loop(struct sftp_conn *conn, char *file1, char *file2)
 	interactive = !batchmode && isatty(STDIN_FILENO);
 	err = 0;
 	for (;;) {
+		struct sigaction sa;
 		const char *line;
 		int count = 0;
 
-		ssh_signal(SIGINT, SIG_IGN);
-
+		interrupted = 0;
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_handler = interactive ? read_interrupt : killchild;
+		if (sigaction(SIGINT, &sa, NULL) == -1) {
+			debug3("sigaction(%s): %s", strsignal(SIGINT),
+			    strerror(errno));
+			break;
+		}
 		if (el == NULL) {
 			if (interactive)
 				printf("sftp> ");
 			if (fgets(cmd, sizeof(cmd), infile) == NULL) {
 				if (interactive)
 					printf("\n");
+				if (interrupted)
+					continue;
 				break;
 			}
 		} else {
 			if ((line = el_gets(el, &count)) == NULL ||
 			    count <= 0) {
 				printf("\n");
+				if (interrupted)
+					continue;
 				break;
 			}
 			history(hl, &hev, H_ENTER, line);
@@ -2339,8 +2311,8 @@ main(int argc, char **argv)
 	extern int optind;
 	extern char *optarg;
 	struct sftp_conn *conn;
-	size_t copy_buffer_len = DEFAULT_COPY_BUFLEN;
-	size_t num_requests = DEFAULT_NUM_REQUESTS;
+	size_t copy_buffer_len = 0;
+	size_t num_requests = 0;
 	long long limit_kbps = 0;
 
 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */

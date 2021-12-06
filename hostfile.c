@@ -1,4 +1,4 @@
-/* $OpenBSD: hostfile.c,v 1.86 2020/10/18 11:32:01 djm Exp $ */
+/* $OpenBSD: hostfile.c,v 1.92 2021/10/02 03:17:01 dtucker Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -43,10 +43,10 @@
 
 #include <errno.h>
 #include <resolv.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <unistd.h>
 
 #include "xmalloc.h"
@@ -59,11 +59,7 @@
 #include "ssherr.h"
 #include "digest.h"
 #include "hmac.h"
-
-struct hostkeys {
-	struct hostkey_entry *entries;
-	u_int num_entries;
-};
+#include "sshbuf.h"
 
 /* XXX hmac is too easy to dictionary attack; use bcrypt? */
 
@@ -120,7 +116,7 @@ host_hash(const char *host, const char *name_from_hostfile, u_int src_len)
 	struct ssh_hmac_ctx *ctx;
 	u_char salt[256], result[256];
 	char uu_salt[512], uu_result[512];
-	static char encoded[1024];
+	char *encoded = NULL;
 	u_int len;
 
 	len = ssh_digest_bytes(SSH_DIGEST_SHA1);
@@ -145,9 +141,8 @@ host_hash(const char *host, const char *name_from_hostfile, u_int src_len)
 	if (__b64_ntop(salt, len, uu_salt, sizeof(uu_salt)) == -1 ||
 	    __b64_ntop(result, len, uu_result, sizeof(uu_result)) == -1)
 		fatal_f("__b64_ntop failed");
-
-	snprintf(encoded, sizeof(encoded), "%s%s%c%s", HASH_MAGIC, uu_salt,
-	    HASH_DELIM, uu_result);
+	xasprintf(&encoded, "%s%s%c%s", HASH_MAGIC, uu_salt, HASH_DELIM,
+	    uu_result);
 
 	return (encoded);
 }
@@ -258,6 +253,7 @@ record_hostkey(struct hostkey_foreach_line *l, void *_ctx)
 	hostkeys->entries[hostkeys->num_entries].key = l->key;
 	l->key = NULL; /* steal it */
 	hostkeys->entries[hostkeys->num_entries].marker = l->marker;
+	hostkeys->entries[hostkeys->num_entries].note = l->note;
 	hostkeys->num_entries++;
 	ctx->num_loaded++;
 
@@ -265,7 +261,8 @@ record_hostkey(struct hostkey_foreach_line *l, void *_ctx)
 }
 
 void
-load_hostkeys(struct hostkeys *hostkeys, const char *host, const char *path)
+load_hostkeys_file(struct hostkeys *hostkeys, const char *host,
+    const char *path, FILE *f, u_int note)
 {
 	int r;
 	struct load_callback_ctx ctx;
@@ -274,13 +271,28 @@ load_hostkeys(struct hostkeys *hostkeys, const char *host, const char *path)
 	ctx.num_loaded = 0;
 	ctx.hostkeys = hostkeys;
 
-	if ((r = hostkeys_foreach(path, record_hostkey, &ctx, host, NULL,
-	    HKF_WANT_MATCH|HKF_WANT_PARSE_KEY)) != 0) {
+	if ((r = hostkeys_foreach_file(path, f, record_hostkey, &ctx, host,
+	    NULL, HKF_WANT_MATCH|HKF_WANT_PARSE_KEY, note)) != 0) {
 		if (r != SSH_ERR_SYSTEM_ERROR && errno != ENOENT)
 			debug_fr(r, "hostkeys_foreach failed for %s", path);
 	}
 	if (ctx.num_loaded != 0)
 		debug3_f("loaded %lu keys from %s", ctx.num_loaded, host);
+}
+
+void
+load_hostkeys(struct hostkeys *hostkeys, const char *host, const char *path,
+    u_int note)
+{
+	FILE *f;
+
+	if ((f = fopen(path, "r")) == NULL) {
+		debug_f("fopen %s: %s", path, strerror(errno));
+		return;
+	}
+
+	load_hostkeys_file(hostkeys, host, path, f, note);
+	fclose(f);
 }
 
 void
@@ -376,7 +388,7 @@ check_hostkeys_by_key_or_type(struct hostkeys *hostkeys,
 					*found = hostkeys->entries + i;
 				break;
 			}
-			/* A non-maching key exists */
+			/* A non-matching key exists */
 			end_return = HOST_CHANGED;
 			if (found != NULL)
 				*found = hostkeys->entries + i;
@@ -441,6 +453,7 @@ write_host_entry(FILE *f, const char *host, const char *ip,
 	else {
 		fprintf(f, "%s ", lhost);
 	}
+	free(hashed_host);
 	free(lhost);
 	if ((r = sshkey_write(key, f)) == 0)
 		success = 1;
@@ -613,7 +626,7 @@ hostfile_replace_entries(const char *filename, const char *host, const char *ip,
 
 	/* Remove stale/mismatching entries for the specified host */
 	if ((r = hostkeys_foreach(filename, host_delete, &ctx, host, ip,
-	    HKF_WANT_PARSE_KEY)) != 0) {
+	    HKF_WANT_PARSE_KEY, 0)) != 0) {
 		oerrno = errno;
 		error_fr(r, "hostkeys_foreach");
 		goto fail;
@@ -710,8 +723,8 @@ hostfile_replace_entries(const char *filename, const char *host, const char *ip,
 static int
 match_maybe_hashed(const char *host, const char *names, int *was_hashed)
 {
-	int hashed = *names == HASH_DELIM;
-	const char *hashed_host;
+	int hashed = *names == HASH_DELIM, ret;
+	char *hashed_host = NULL;
 	size_t nlen = strlen(names);
 
 	if (was_hashed != NULL)
@@ -719,17 +732,18 @@ match_maybe_hashed(const char *host, const char *names, int *was_hashed)
 	if (hashed) {
 		if ((hashed_host = host_hash(host, names, nlen)) == NULL)
 			return -1;
-		return nlen == strlen(hashed_host) &&
-		    strncmp(hashed_host, names, nlen) == 0;
+		ret = (nlen == strlen(hashed_host) &&
+		    strncmp(hashed_host, names, nlen) == 0);
+		free(hashed_host);
+		return ret;
 	}
 	return match_hostname(host, names) == 1;
 }
 
 int
-hostkeys_foreach(const char *path, hostkeys_foreach_fn *callback, void *ctx,
-    const char *host, const char *ip, u_int options)
+hostkeys_foreach_file(const char *path, FILE *f, hostkeys_foreach_fn *callback,
+    void *ctx, const char *host, const char *ip, u_int options, u_int note)
 {
-	FILE *f;
 	char *line = NULL, ktype[128];
 	u_long linenum = 0;
 	char *cp, *cp2;
@@ -742,10 +756,7 @@ hostkeys_foreach(const char *path, hostkeys_foreach_fn *callback, void *ctx,
 	memset(&lineinfo, 0, sizeof(lineinfo));
 	if (host == NULL && (options & HKF_WANT_MATCH) != 0)
 		return SSH_ERR_INVALID_ARGUMENT;
-	if ((f = fopen(path, "r")) == NULL)
-		return SSH_ERR_SYSTEM_ERROR;
 
-	debug3_f("reading file \"%s\"", path);
 	while (getline(&line, &linesize, f) != -1) {
 		linenum++;
 		line[strcspn(line, "\n")] = '\0';
@@ -759,6 +770,7 @@ hostkeys_foreach(const char *path, hostkeys_foreach_fn *callback, void *ctx,
 		lineinfo.marker = MRK_NONE;
 		lineinfo.status = HKF_STATUS_OK;
 		lineinfo.keytype = KEY_UNSPEC;
+		lineinfo.note = note;
 
 		/* Skip any leading whitespace, comments and empty lines. */
 		for (cp = line; *cp == ' ' || *cp == '\t'; cp++)
@@ -895,6 +907,24 @@ hostkeys_foreach(const char *path, hostkeys_foreach_fn *callback, void *ctx,
 	sshkey_free(lineinfo.key);
 	free(lineinfo.line);
 	free(line);
+	return r;
+}
+
+int
+hostkeys_foreach(const char *path, hostkeys_foreach_fn *callback, void *ctx,
+    const char *host, const char *ip, u_int options, u_int note)
+{
+	FILE *f;
+	int r, oerrno;
+
+	if ((f = fopen(path, "r")) == NULL)
+		return SSH_ERR_SYSTEM_ERROR;
+
+	debug3_f("reading file \"%s\"", path);
+	r = hostkeys_foreach_file(path, f, callback, ctx, host, ip,
+	    options, note);
+	oerrno = errno;
 	fclose(f);
+	errno = oerrno;
 	return r;
 }

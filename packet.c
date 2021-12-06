@@ -1,4 +1,4 @@
-/* $OpenBSD: packet.c,v 1.297 2020/10/18 11:32:01 djm Exp $ */
+/* $OpenBSD: packet.c,v 1.303 2021/11/25 23:02:24 djm Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -455,14 +455,7 @@ ssh_packet_get_bytes(struct ssh *ssh, u_int64_t *ibytes, u_int64_t *obytes)
 int
 ssh_packet_connection_af(struct ssh *ssh)
 {
-	struct sockaddr_storage to;
-	socklen_t tolen = sizeof(to);
-
-	memset(&to, 0, sizeof(to));
-	if (getsockname(ssh->state->connection_out, (struct sockaddr *)&to,
-	    &tolen) == -1)
-		return 0;
-	return to.ss_family;
+	return get_sock_af(ssh->state->connection_out);
 }
 
 /* Sets the connection into non-blocking mode. */
@@ -671,7 +664,7 @@ static int
 ssh_packet_init_compression(struct ssh *ssh)
 {
 	if (!ssh->state->compression_buffer &&
-	   ((ssh->state->compression_buffer = sshbuf_new()) == NULL))
+	    ((ssh->state->compression_buffer = sshbuf_new()) == NULL))
 		return SSH_ERR_ALLOC_FAIL;
 	return 0;
 }
@@ -858,7 +851,7 @@ ssh_set_newkeys(struct ssh *ssh, int mode)
 	int r, crypt_type;
 	const char *dir = mode == MODE_OUT ? "out" : "in";
 
-	debug2("set_newkeys: mode %d", mode);
+	debug2_f("mode %d", mode);
 
 	if (mode == MODE_OUT) {
 		ccp = &state->send_context;
@@ -873,11 +866,11 @@ ssh_set_newkeys(struct ssh *ssh, int mode)
 	}
 	if (state->newkeys[mode] != NULL) {
 		debug_f("rekeying %s, input %llu bytes %llu blocks, "
-		   "output %llu bytes %llu blocks", dir,
-		   (unsigned long long)state->p_read.bytes,
-		   (unsigned long long)state->p_read.blocks,
-		   (unsigned long long)state->p_send.bytes,
-		   (unsigned long long)state->p_send.blocks);
+		    "output %llu bytes %llu blocks", dir,
+		    (unsigned long long)state->p_read.bytes,
+		    (unsigned long long)state->p_read.blocks,
+		    (unsigned long long)state->p_send.bytes,
+		    (unsigned long long)state->p_send.blocks);
 		kex_free_newkeys(state->newkeys[mode]);
 		state->newkeys[mode] = NULL;
 	}
@@ -895,7 +888,7 @@ ssh_set_newkeys(struct ssh *ssh, int mode)
 			return r;
 	}
 	mac->enabled = 1;
-	DBG(debug_f("cipher_init_context: %s", dir));
+	DBG(debug_f("cipher_init: %s", dir));
 	cipher_free(*ccp);
 	*ccp = NULL;
 	if ((r = cipher_init(ccp, enc->cipher, enc->key, enc->key_len,
@@ -912,7 +905,7 @@ ssh_set_newkeys(struct ssh *ssh, int mode)
 	   explicit_bzero(mac->key, mac->key_len); */
 	if ((comp->type == COMP_ZLIB ||
 	    (comp->type == COMP_DELAYED &&
-	     state->after_authentication)) && comp->enabled == 0) {
+	    state->after_authentication)) && comp->enabled == 0) {
 		if ((r = ssh_packet_init_compression(ssh)) < 0)
 			return r;
 		if (mode == MODE_OUT) {
@@ -987,6 +980,15 @@ ssh_packet_need_rekeying(struct ssh *ssh, u_int outbound_packet_len)
 	    (state->p_send.blocks + out_blocks > state->max_blocks_out)) ||
 	    (state->max_blocks_in &&
 	    (state->p_read.blocks > state->max_blocks_in));
+}
+
+int
+ssh_packet_check_rekey(struct ssh *ssh)
+{
+	if (!ssh_packet_need_rekeying(ssh, 0))
+		return 0;
+	debug3_f("rekex triggered");
+	return kex_start_rekex(ssh);
 }
 
 /*
@@ -1303,16 +1305,12 @@ ssh_packet_read_seqnr(struct ssh *ssh, u_char *typep, u_int32_t *seqnr_p)
 {
 	struct session_state *state = ssh->state;
 	int len, r, ms_remain;
-	fd_set *setp;
+	struct pollfd pfd;
 	char buf[8192];
-	struct timeval timeout, start, *timeoutp = NULL;
+	struct timeval start;
+	struct timespec timespec, *timespecp = NULL;
 
 	DBG(debug("packet_read()"));
-
-	setp = calloc(howmany(state->connection_in + 1,
-	    NFDBITS), sizeof(fd_mask));
-	if (setp == NULL)
-		return SSH_ERR_ALLOC_FAIL;
 
 	/*
 	 * Since we are blocking, ensure that all written packets have
@@ -1334,22 +1332,20 @@ ssh_packet_read_seqnr(struct ssh *ssh, u_char *typep, u_int32_t *seqnr_p)
 		 * Otherwise, wait for some data to arrive, add it to the
 		 * buffer, and try again.
 		 */
-		memset(setp, 0, howmany(state->connection_in + 1,
-		    NFDBITS) * sizeof(fd_mask));
-		FD_SET(state->connection_in, setp);
+		pfd.fd = state->connection_in;
+		pfd.events = POLLIN;
 
 		if (state->packet_timeout_ms > 0) {
 			ms_remain = state->packet_timeout_ms;
-			timeoutp = &timeout;
+			timespecp = &timespec;
 		}
 		/* Wait for some data to arrive. */
 		for (;;) {
 			if (state->packet_timeout_ms > 0) {
-				ms_to_timeval(&timeout, ms_remain);
+				ms_to_timespec(&timespec, ms_remain);
 				monotime_tv(&start);
 			}
-			if ((r = select(state->connection_in + 1, setp,
-			    NULL, NULL, timeoutp)) >= 0)
+			if ((r = ppoll(&pfd, 1, timespecp, NULL)) >= 0)
 				break;
 			if (errno != EAGAIN && errno != EINTR) {
 				r = SSH_ERR_SYSTEM_ERROR;
@@ -1383,7 +1379,6 @@ ssh_packet_read_seqnr(struct ssh *ssh, u_char *typep, u_int32_t *seqnr_p)
 			goto out;
 	}
  out:
-	free(setp);
 	return r;
 }
 
@@ -1681,12 +1676,8 @@ ssh_packet_read_poll2(struct ssh *ssh, u_char *typep, u_int32_t *seqnr_p)
 	/* reset for next packet */
 	state->packlen = 0;
 
-	/* do we need to rekey? */
-	if (ssh_packet_need_rekeying(ssh, 0)) {
-		debug3_f("rekex triggered");
-		if ((r = kex_start_rekex(ssh)) != 0)
-			return r;
-	}
+	if ((r = ssh_packet_check_rekey(ssh)) != 0)
+		return r;
  out:
 	return r;
 }
@@ -1966,35 +1957,28 @@ ssh_packet_write_poll(struct ssh *ssh)
 int
 ssh_packet_write_wait(struct ssh *ssh)
 {
-	fd_set *setp;
 	int ret, r, ms_remain = 0;
-	struct timeval start, timeout, *timeoutp = NULL;
+	struct timeval start;
+	struct timespec timespec, *timespecp = NULL;
 	struct session_state *state = ssh->state;
+	struct pollfd pfd;
 
-	setp = calloc(howmany(state->connection_out + 1,
-	    NFDBITS), sizeof(fd_mask));
-	if (setp == NULL)
-		return SSH_ERR_ALLOC_FAIL;
-	if ((r = ssh_packet_write_poll(ssh)) != 0) {
-		free(setp);
+	if ((r = ssh_packet_write_poll(ssh)) != 0)
 		return r;
-	}
 	while (ssh_packet_have_data_to_write(ssh)) {
-		memset(setp, 0, howmany(state->connection_out + 1,
-		    NFDBITS) * sizeof(fd_mask));
-		FD_SET(state->connection_out, setp);
+		pfd.fd = state->connection_out;
+		pfd.events = POLLOUT;
 
 		if (state->packet_timeout_ms > 0) {
 			ms_remain = state->packet_timeout_ms;
-			timeoutp = &timeout;
+			timespecp = &timespec;
 		}
 		for (;;) {
 			if (state->packet_timeout_ms > 0) {
-				ms_to_timeval(&timeout, ms_remain);
+				ms_to_timespec(&timespec, ms_remain);
 				monotime_tv(&start);
 			}
-			if ((ret = select(state->connection_out + 1,
-			    NULL, setp, NULL, timeoutp)) >= 0)
+			if ((ret = ppoll(&pfd, 1, timespecp, NULL)) >= 0)
 				break;
 			if (errno != EAGAIN && errno != EINTR)
 				break;
@@ -2006,16 +1990,11 @@ ssh_packet_write_wait(struct ssh *ssh)
 				break;
 			}
 		}
-		if (ret == 0) {
-			free(setp);
+		if (ret == 0)
 			return SSH_ERR_CONN_TIMEOUT;
-		}
-		if ((r = ssh_packet_write_poll(ssh)) != 0) {
-			free(setp);
+		if ((r = ssh_packet_write_poll(ssh)) != 0)
 			return r;
-		}
 	}
-	free(setp);
 	return 0;
 }
 
@@ -2043,22 +2022,7 @@ ssh_packet_set_tos(struct ssh *ssh, int tos)
 {
 	if (!ssh_packet_connection_is_on_socket(ssh) || tos == INT_MAX)
 		return;
-	switch (ssh_packet_connection_af(ssh)) {
-	case AF_INET:
-		debug3_f("set IP_TOS 0x%02x", tos);
-		if (setsockopt(ssh->state->connection_in,
-		    IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) == -1)
-			error("setsockopt IP_TOS %d: %.100s:",
-			    tos, strerror(errno));
-		break;
-	case AF_INET6:
-		debug3_f("set IPV6_TCLASS 0x%02x", tos);
-		if (setsockopt(ssh->state->connection_in,
-		    IPPROTO_IPV6, IPV6_TCLASS, &tos, sizeof(tos)) == -1)
-			error("setsockopt IPV6_TCLASS %d: %.100s:",
-			    tos, strerror(errno));
-		break;
-	}
+	set_sock_tos(ssh->state->connection_in, tos);
 }
 
 /* Informs that the current session is interactive.  Sets IP flags for that. */
@@ -2079,8 +2043,7 @@ ssh_packet_set_interactive(struct ssh *ssh, int interactive, int qos_interactive
 	if (!ssh_packet_connection_is_on_socket(ssh))
 		return;
 	set_nodelay(state->connection_in);
-	ssh_packet_set_tos(ssh, interactive ? qos_interactive :
-	    qos_bulk);
+	ssh_packet_set_tos(ssh, interactive ? qos_interactive : qos_bulk);
 }
 
 /* Returns true if the current connection is interactive. */
@@ -2097,16 +2060,16 @@ ssh_packet_set_maxsize(struct ssh *ssh, u_int s)
 	struct session_state *state = ssh->state;
 
 	if (state->set_maxsize_called) {
-		logit("packet_set_maxsize: called twice: old %d new %d",
+		logit_f("called twice: old %d new %d",
 		    state->max_packet_size, s);
 		return -1;
 	}
 	if (s < 4 * 1024 || s > 1024 * 1024) {
-		logit("packet_set_maxsize: bad size %d", s);
+		logit_f("bad size %d", s);
 		return -1;
 	}
 	state->set_maxsize_called = 1;
-	debug("packet_set_maxsize: setting to %d", s);
+	debug_f("setting to %d", s);
 	state->max_packet_size = s;
 	return s;
 }
@@ -2196,9 +2159,7 @@ kex_to_blob(struct sshbuf *m, struct kex *kex)
 {
 	int r;
 
-	if ((r = sshbuf_put_string(m, kex->session_id,
-	    kex->session_id_len)) != 0 ||
-	    (r = sshbuf_put_u32(m, kex->we_need)) != 0 ||
+	if ((r = sshbuf_put_u32(m, kex->we_need)) != 0 ||
 	    (r = sshbuf_put_cstring(m, kex->hostkey_alg)) != 0 ||
 	    (r = sshbuf_put_u32(m, kex->hostkey_type)) != 0 ||
 	    (r = sshbuf_put_u32(m, kex->hostkey_nid)) != 0 ||
@@ -2207,6 +2168,7 @@ kex_to_blob(struct sshbuf *m, struct kex *kex)
 	    (r = sshbuf_put_stringb(m, kex->peer)) != 0 ||
 	    (r = sshbuf_put_stringb(m, kex->client_version)) != 0 ||
 	    (r = sshbuf_put_stringb(m, kex->server_version)) != 0 ||
+	    (r = sshbuf_put_stringb(m, kex->session_id)) != 0 ||
 	    (r = sshbuf_put_u32(m, kex->flags)) != 0)
 		return r;
 	return 0;
@@ -2359,8 +2321,7 @@ kex_from_blob(struct sshbuf *m, struct kex **kexp)
 
 	if ((kex = kex_new()) == NULL)
 		return SSH_ERR_ALLOC_FAIL;
-	if ((r = sshbuf_get_string(m, &kex->session_id, &kex->session_id_len)) != 0 ||
-	    (r = sshbuf_get_u32(m, &kex->we_need)) != 0 ||
+	if ((r = sshbuf_get_u32(m, &kex->we_need)) != 0 ||
 	    (r = sshbuf_get_cstring(m, &kex->hostkey_alg, NULL)) != 0 ||
 	    (r = sshbuf_get_u32(m, (u_int *)&kex->hostkey_type)) != 0 ||
 	    (r = sshbuf_get_u32(m, (u_int *)&kex->hostkey_nid)) != 0 ||
@@ -2369,6 +2330,7 @@ kex_from_blob(struct sshbuf *m, struct kex **kexp)
 	    (r = sshbuf_get_stringb(m, kex->peer)) != 0 ||
 	    (r = sshbuf_get_stringb(m, kex->client_version)) != 0 ||
 	    (r = sshbuf_get_stringb(m, kex->server_version)) != 0 ||
+	    (r = sshbuf_get_stringb(m, kex->session_id)) != 0 ||
 	    (r = sshbuf_get_u32(m, &kex->flags)) != 0)
 		goto out;
 	kex->server = 1;
